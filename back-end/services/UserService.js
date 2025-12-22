@@ -1,0 +1,111 @@
+import { User } from '../models/User.js';
+
+/**
+ * User Service
+ * Handles business logic for users
+ */
+class UserServiceClass {
+  // In a real app, this would interact with a database
+  // For now, using in-memory storage as an example
+  constructor() {
+    this.users = [];
+    this.nextId = 1;
+  }
+
+  /**
+   * Get all users
+   */
+  async getAllUsers() {
+    return this.users;
+  }
+
+  /**
+   * Get user by ID
+   */
+  async getUserById(id) {
+    // Handle both string and numeric IDs
+    const userId = typeof id === 'string' && id === 'default' ? 1 : parseInt(id);
+    return this.users.find(user => user.id === userId);
+  }
+
+  /**
+   * Create a new user
+   */
+  async createUser(userData) {
+    // If id is provided, use it; otherwise auto-increment
+    const userId = userData.id || this.nextId++;
+    
+    // If using provided id, make sure nextId is at least that value
+    if (userData.id && userData.id >= this.nextId) {
+      this.nextId = userData.id + 1;
+    }
+    
+    const user = new User({
+      ...userData,
+      id: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const validation = user.validate();
+    if (!validation.isValid) {
+      throw new Error(validation.errors.join(', '));
+    }
+
+    this.users.push(user);
+    return user;
+  }
+
+  /**
+   * Update user
+   */
+  async updateUser(id, userData) {
+    const userIndex = this.users.findIndex(user => user.id === parseInt(id));
+    if (userIndex === -1) {
+      return null;
+    }
+
+    const updatedUser = new User({
+      ...this.users[userIndex],
+      ...userData,
+      id: parseInt(id),
+      updatedAt: new Date(),
+    });
+
+    const validation = updatedUser.validate();
+    if (!validation.isValid) {
+      throw new Error(validation.errors.join(', '));
+    }
+
+    this.users[userIndex] = updatedUser;
+    return updatedUser;
+  }
+
+  /**
+   * Complete onboarding
+   */
+  async completeOnboarding(id, userData) {
+    const user = await this.updateUser(id, {
+      ...userData,
+      onboardingCompleted: true,
+    });
+    return user;
+  }
+
+  /**
+   * Delete user
+   */
+  async deleteUser(id) {
+    const userIndex = this.users.findIndex(user => user.id === parseInt(id));
+    if (userIndex === -1) {
+      return false;
+    }
+
+    this.users.splice(userIndex, 1);
+    return true;
+  }
+}
+
+// Export singleton instance
+export const UserService = new UserServiceClass();
+
