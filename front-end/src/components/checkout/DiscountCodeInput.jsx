@@ -116,7 +116,8 @@ export const DiscountCodeInput = ({ promoCode, onPromoCodeChange, cart }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/cart/promo', {
+      const { API_BASE_URL } = await import('../../config/api.js');
+      const response = await fetch(`${API_BASE_URL}/cart/promo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

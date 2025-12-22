@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { appConfig } from './config/app.js';
 import { logger, errorHandler, notFound } from './middleware/index.js';
 import apiRoutes from './routes/index.js';
@@ -10,7 +12,13 @@ import { SellerService } from './services/SellerService.js';
 import { ProductService } from './services/ProductService.js';
 import redisClient from './config/redis.js';
 
-dotenv.config();
+// Get root directory (two levels up from back-end/server.js)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, '..');
+
+// Load .env from root directory
+dotenv.config({ path: path.join(rootDir, '.env') });
 
 const app = express();
 const PORT = appConfig.port;

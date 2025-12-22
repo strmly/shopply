@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import { API_BASE_URL } from '../../config/api.js';
 
 const Overlay = styled.div`
   position: fixed;
@@ -236,11 +237,14 @@ const formatTime = (dateString) => {
   return date.toLocaleDateString();
 };
 
-export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBaseUrl = 'http://localhost:5000/api' }) => {
+export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBaseUrl = null }) => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Use provided apiBaseUrl or fall back to centralized config
+  const baseUrl = apiBaseUrl || API_BASE_URL;
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -252,7 +256,7 @@ export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBas
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${apiBaseUrl}/notifications/user/${userId}`);
+      const response = await fetch(`${baseUrl}/notifications/user/${userId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -267,7 +271,7 @@ export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBas
 
   const fetchUnreadCount = async () => {
     try {
-      const response = await fetch(`${apiBaseUrl}/notifications/user/${userId}/count`);
+      const response = await fetch(`${baseUrl}/notifications/user/${userId}/count`);
       const data = await response.json();
       
       if (data.success) {
@@ -282,7 +286,7 @@ export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBas
     // Mark as read if not already read
     if (!notification.read) {
       try {
-        await fetch(`${apiBaseUrl}/notifications/${notification.id}/read`, {
+        await fetch(`${baseUrl}/notifications/${notification.id}/read`, {
           method: 'PUT',
         });
         // Update local state
@@ -302,7 +306,7 @@ export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBas
 
   const handleMarkAllRead = async () => {
     try {
-      await fetch(`${apiBaseUrl}/notifications/user/${userId}/read-all`, {
+      await fetch(`${baseUrl}/notifications/user/${userId}/read-all`, {
         method: 'PUT',
       });
       // Update local state

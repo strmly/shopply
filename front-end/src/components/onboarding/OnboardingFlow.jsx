@@ -187,7 +187,8 @@ export const OnboardingFlow = ({ onComplete, onBrowseAsGuest }) => {
   const handleConfirmAddress = async (confirmedAddress) => {
     // Save address to backend
     try {
-      const response = await fetch('http://localhost:5000/api/addresses', {
+      const { API_BASE_URL } = await import('../../config/api.js');
+      const response = await fetch(`${API_BASE_URL}/addresses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +221,8 @@ export const OnboardingFlow = ({ onComplete, onBrowseAsGuest }) => {
   const handleProfileComplete = async (profileData) => {
     // Save user profile to backend
     try {
-      const response = await fetch('http://localhost:5000/api/users', {
+      const { API_BASE_URL } = await import('../../config/api.js');
+      const response = await fetch(`${API_BASE_URL}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

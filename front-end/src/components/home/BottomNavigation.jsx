@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
+import { API_BASE_URL } from '../../config/api.js';
 
 const NavContainer = styled.nav`
   position: fixed;
@@ -129,7 +130,7 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
     // Also try to sync with server cart periodically
     const syncWithServer = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/cart?userId=default');
+        const response = await fetch(`${API_BASE_URL}/cart?userId=default`);
         const data = await response.json();
         if (data.success && data.data && data.data.itemCount !== undefined) {
           const serverCount = data.data.itemCount || 0;

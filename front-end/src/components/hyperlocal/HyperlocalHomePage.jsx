@@ -4,6 +4,7 @@ import LocationSelector from './LocationSelector';
 import HyperlocalProductCard from './HyperlocalProductCard';
 import ExpansionBanner from './ExpansionBanner';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../config/api.js';
 
 /**
  * HyperlocalHomePage Component
@@ -29,7 +30,7 @@ const HyperlocalHomePage = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3001/api/hyperlocal/feed/home?lat=${location.lat}&lng=${location.lng}&tier_index=${selectedRadius}`
+        `${API_BASE_URL}/hyperlocal/feed/home?lat=${location.lat}&lng=${location.lng}&tier_index=${selectedRadius}`
       );
       const result = await response.json();
       

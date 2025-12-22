@@ -4,6 +4,7 @@ import LocationSelector from './LocationSelector';
 import HyperlocalProductCard from './HyperlocalProductCard';
 import ExpansionBanner from './ExpansionBanner';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { API_BASE_URL } from '../../config/api.js';
 
 /**
  * HyperlocalSearchPage Component
@@ -49,7 +50,7 @@ const HyperlocalSearchPage = () => {
       if (filters.maxPrice) params.append('max_price', filters.maxPrice);
 
       const response = await fetch(
-        `http://localhost:3001/api/hyperlocal/search?${params.toString()}`
+        `${API_BASE_URL}/hyperlocal/search?${params.toString()}`
       );
       const result = await response.json();
       
