@@ -1,44 +1,46 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { fadeIn } from '../../theme/animations';
 
 const Header = styled.header`
   position: sticky;
   top: 0;
-  background: ${props => props.$scrolled 
-    ? props.theme.colors.background 
-    : props.theme.colors.background};
   z-index: 1000;
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
+  background: ${props => props.$scrolled ? 'rgba(255, 255, 255, 0.88)' : '#ffffff'};
+  border-bottom: 1px solid ${props => props.$scrolled ? 'rgba(228, 231, 236, 0.72)' : 'transparent'};
   transition: ${props => props.theme.transitions.swift};
-  box-shadow: ${props => props.$scrolled ? props.theme.shadows.sm : 'none'};
-  backdrop-filter: blur(10px);
+  box-shadow: ${props => props.$scrolled ? '0 12px 32px rgba(16, 24, 40, 0.08)' : 'none'};
+  backdrop-filter: blur(18px);
 `;
 
 const HeaderContent = styled.div`
+  max-width: 1180px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
+  padding: 18px min(5vw, 48px);
   gap: ${props => props.theme.spacing.md};
 `;
 
 const BackButton = styled.button`
-  background: ${props => props.theme.colors.surface};
-  border: none;
+  background: #ffffff;
+  border: 1px solid ${props => props.theme.colors.border.default};
   border-radius: ${props => props.theme.radii.circle};
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
+  color: ${props => props.theme.colors.text.primary};
   font-size: 20px;
-  box-shadow: ${props => props.theme.shadows.xs};
+  font-weight: 900;
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.1);
 
   &:hover {
     background: ${props => props.theme.colors.primarySoftBg};
+    color: ${props => props.theme.colors.primary};
     transform: scale(1.05);
   }
 
@@ -49,23 +51,35 @@ const BackButton = styled.button`
 
 const TitleSection = styled.div`
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  gap: 4px;
+`;
+
+const Eyebrow = styled.div`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
+  text-transform: uppercase;
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
   margin: 0;
-  font-weight: 700;
-  font-size: 20px;
+  font-size: clamp(28px, 5vw, 44px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
-const Subtitle = styled.div`
+const CountPill = styled.div`
   ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 13px;
+  color: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 900;
+  white-space: nowrap;
 `;
 
 export const CartHeader = ({ itemCount, onClose }) => {
@@ -83,26 +97,17 @@ export const CartHeader = ({ itemCount, onClose }) => {
   return (
     <Header $scrolled={scrolled}>
       <HeaderContent>
-        <BackButton onClick={onClose}>
-          {onClose ? '×' : '←'}
+        <BackButton onClick={onClose} aria-label={onClose ? 'Close cart' : 'Go back'}>
+          {onClose ? 'x' : '<'}
         </BackButton>
-        
+
         <TitleSection>
+          <Eyebrow>Ready when you are</Eyebrow>
           <Title>Your Cart</Title>
-          <Subtitle>{itemCount} {itemCount === 1 ? 'item' : 'items'}</Subtitle>
         </TitleSection>
+
+        <CountPill>{itemCount} {itemCount === 1 ? 'item' : 'items'}</CountPill>
       </HeaderContent>
     </Header>
   );
 };
-
-
-
-
-
-
-
-
-
-
-

@@ -3,12 +3,13 @@ import styled from 'styled-components';
 const Badge = styled.div`
   display: inline-flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.radii.md};
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 900;
   white-space: nowrap;
+  box-shadow: 0 10px 20px rgba(16, 24, 40, 0.05);
   
   ${props => {
     const colorMap = {
@@ -58,13 +59,22 @@ const Badge = styled.div`
 `;
 
 const Icon = styled.span`
-  font-size: 14px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 10px;
+  font-weight: 900;
 `;
 
 export const StatusBadge = ({ status, color = 'blue', isUrgent = false, icon, children }) => {
+  const marker = String(children || status || 'O').trim().slice(0, 1).toUpperCase();
+
   return (
     <Badge color={color} $isUrgent={isUrgent}>
-      {icon && <Icon>{icon}</Icon>}
+      <Icon>{marker}</Icon>
       {children || status}
     </Badge>
   );

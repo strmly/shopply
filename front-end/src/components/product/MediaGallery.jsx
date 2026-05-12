@@ -5,9 +5,31 @@ import { fadeIn } from '../../theme/animations';
 const GalleryContainer = styled.div`
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 1 / 0.92;
   overflow: hidden;
-  background: ${props => props.theme.colors.surface};
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.28), rgba(196, 184, 252, 0.22), rgba(255,255,255,0.7)) border-box;
+  border: 1px solid transparent;
+  border-radius: 30px;
+  box-shadow: 0 30px 70px rgba(16, 24, 40, 0.14);
+  isolation: isolate;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0) 48%, rgba(13,28,51,0.36) 100%),
+      linear-gradient(115deg, rgba(255,255,255,0.28), transparent 42%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    border-radius: 24px;
+    aspect-ratio: 1;
+  }
 `;
 
 const ImageCarousel = styled.div`
@@ -25,13 +47,19 @@ const ImageSlide = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${props => props.theme.colors.surface};
+  background: ${props => props.theme.colors.gradient.soft};
+  cursor: zoom-in;
 `;
 
 const ProductImage = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  ${GalleryContainer}:hover & {
+    transform: scale(1.035);
+  }
 `;
 
 const ImagePlaceholder = styled.div`
@@ -42,6 +70,8 @@ const ImagePlaceholder = styled.div`
   justify-content: center;
   font-size: 64px;
   background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
 `;
 
 const Dots = styled.div`
@@ -60,31 +90,33 @@ const Dot = styled.button`
   border-radius: 50%;
   border: none;
   background: ${props => props.$active 
-    ? props.theme.colors.text.inverse 
-    : 'rgba(255, 255, 255, 0.5)'};
+    ? props.theme.colors.primary 
+    : 'rgba(255, 255, 255, 0.72)'};
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   padding: 0;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  position: relative;
+  z-index: 3;
 `;
 
 const GalleryIndicator = styled.div`
   position: absolute;
   top: ${props => props.theme.spacing.md};
   right: ${props => props.theme.spacing.md};
-  background: rgba(0, 0, 0, 0.6);
-  color: ${props => props.theme.colors.text.inverse};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
+  background: rgba(255, 255, 255, 0.88);
+  color: ${props => props.theme.colors.text.primary};
+  padding: 8px 12px;
   border-radius: ${props => props.theme.radii.pill};
   ${props => props.theme.typography.caption}
-  font-weight: 600;
-  z-index: 10;
+  font-weight: 800;
+  z-index: 3;
   backdrop-filter: blur(10px);
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
 
   &:hover {
-    background: rgba(0, 0, 0, 0.8);
+    background: #ffffff;
     transform: scale(1.05);
   }
 `;
@@ -147,7 +179,7 @@ export const MediaGallery = ({ product }) => {
   if (images.length === 0) {
     return (
       <GalleryContainer>
-        <ImagePlaceholder>🛍️</ImagePlaceholder>
+        <ImagePlaceholder>F</ImagePlaceholder>
       </GalleryContainer>
     );
   }
@@ -174,7 +206,7 @@ export const MediaGallery = ({ product }) => {
         {images.length > 1 && (
           <>
             <GalleryIndicator onClick={handleImageClick}>
-              {currentIndex + 1} / {images.length} • Tap to view
+              {currentIndex + 1} / {images.length}
             </GalleryIndicator>
             <Dots>
               {images.map((_, index) => (
@@ -192,14 +224,14 @@ export const MediaGallery = ({ product }) => {
         )}
         {images.length === 1 && (
           <GalleryIndicator onClick={handleImageClick}>
-            Tap to view fullscreen
+            View image
           </GalleryIndicator>
         )}
       </GalleryContainer>
 
       {isFullscreen && (
         <FullscreenOverlay onClick={handleCloseFullscreen}>
-          <CloseButton onClick={handleCloseFullscreen}>×</CloseButton>
+          <CloseButton onClick={handleCloseFullscreen}>x</CloseButton>
           <FullscreenImage 
             src={images[currentIndex]} 
             alt={`${product.name} - Fullscreen`}

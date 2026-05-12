@@ -2,10 +2,13 @@ import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
 const Container = styled.section`
-  padding: ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.surface};
-  margin: ${props => props.theme.spacing.md} 0;
-  border-radius: ${props => props.theme.radii.lg};
+  padding: 26px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.18), rgba(196, 184, 252, 0.14), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 24px;
+  box-shadow: 0 14px 32px rgba(16, 24, 40, 0.06);
   animation: ${fadeIn} 0.3s ease-in;
 `;
 
@@ -13,38 +16,42 @@ const SectionTitle = styled.h3`
   ${props => props.theme.typography.heading4}
   color: ${props => props.theme.colors.text.primary};
   margin: 0 0 ${props => props.theme.spacing.md} 0;
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: 900;
+  font-size: 18px;
 `;
 
 const SpecsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.sm};
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const SpecRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: ${props => props.theme.spacing.sm} 0;
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
-  
-  &:last-child {
-    border-bottom: none;
-  }
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid ${props => props.theme.colors.border.light};
+  border-radius: 16px;
+  background: ${props => props.theme.colors.neutral[50]};
 `;
 
 const SpecLabel = styled.span`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.secondary};
   font-size: 14px;
+  font-weight: 700;
 `;
 
 const SpecValue = styled.span`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
+  font-weight: 800;
   font-size: 14px;
   text-align: right;
 `;
@@ -78,7 +85,7 @@ export const ProductSpecs = ({ product }) => {
     const dims = product.dimensions_cm;
     specs.push({ 
       label: 'Dimensions', 
-      value: `W:${dims.width} × D:${dims.depth} × H:${dims.height}cm` 
+      value: `W:${dims.width} x D:${dims.depth} x H:${dims.height}cm` 
     });
   }
 
@@ -144,7 +151,7 @@ export const ProductSpecs = ({ product }) => {
   }
 
   if (product.rating) {
-    specs.push({ label: 'Rating', value: `${product.rating.toFixed(1)} ⭐` });
+    specs.push({ label: 'Rating', value: `${product.rating.toFixed(1)} rated` });
   }
 
   // Care notes (furniture-specific)

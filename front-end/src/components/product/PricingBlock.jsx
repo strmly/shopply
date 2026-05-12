@@ -3,147 +3,121 @@ import { fadeIn } from '../../theme/animations';
 
 const pulse = keyframes`
   0%, 100% {
-    opacity: 1;
     transform: scale(1);
   }
   50% {
-    opacity: 0.9;
-    transform: scale(1.02);
+    transform: scale(1.025);
   }
 `;
 
 const Container = styled.section`
-  padding: 0 ${props => props.theme.spacing.xl} ${props => props.theme.spacing.xl};
+  padding: 22px 24px;
+  background: ${props => props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 24px;
+  box-shadow: 0 16px 34px rgba(16, 24, 40, 0.07);
   animation: ${fadeIn} 0.3s ease-in;
 `;
 
 const PriceRow = styled.div`
   display: flex;
   align-items: baseline;
-  gap: ${props => props.theme.spacing.md};
+  gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: ${props => props.theme.spacing.sm};
 `;
 
 const CurrentPrice = styled.span`
-  ${props => props.theme.typography.heading1}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 32px;
-  line-height: 1.2;
+  font-size: clamp(32px, 5vw, 44px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
 const OriginalPrice = styled.span`
-  ${props => props.theme.typography.heading4}
+  ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.tertiary};
   text-decoration: line-through;
-  font-size: 20px;
+  font-weight: 700;
+`;
+
+const BadgeRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
 `;
 
 const SavingsBadge = styled.span`
   ${props => props.theme.typography.body2}
   background: ${props => props.theme.colors.dangerBase};
   color: ${props => props.theme.colors.text.inverse};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.radii.pill};
-  font-weight: 700;
-  font-size: 14px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-weight: 800;
   animation: ${pulse} 2s ease-in-out infinite;
 `;
 
 const DiscountBadge = styled.span`
   ${props => props.theme.typography.body2}
-  background: ${props => props.theme.colors.dangerBase};
-  color: ${props => props.theme.colors.text.inverse};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.radii.pill};
-  font-weight: 700;
-  font-size: 14px;
+  background: #ffffff;
+  color: ${props => props.theme.colors.dangerBase};
+  border: 1px solid ${props => props.theme.colors.danger[100]};
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-weight: 800;
 `;
 
-const PriceSignal = styled.div`
+const SignalGrid = styled.div`
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+`;
+
+const Signal = styled.div`
   ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.successBase};
-  margin-top: ${props => props.theme.spacing.xs};
-  font-weight: 600;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  color: ${props => props.$tone === 'success'
+    ? props.theme.colors.successBase
+    : props.$tone === 'info'
+      ? props.theme.colors.info[600]
+      : props.theme.colors.text.secondary};
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 14px;
+  padding: 9px 11px;
+  font-weight: 800;
 `;
 
-const PriceDropSignal = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.info[600]};
-  margin-top: ${props => props.theme.spacing.xs};
-  font-weight: 600;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: ${props => props.theme.colors.info[50]};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.radii.md};
-  width: fit-content;
-`;
-
-const ComparisonSignal = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
-  margin-top: ${props => props.theme.spacing.xs};
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-`;
-
-export const PricingBlock = ({ product, location }) => {
+export const PricingBlock = ({ product }) => {
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
   const discountAmount = hasDiscount ? (product.originalPrice - product.price).toFixed(2) : null;
-  const discountPercent = hasDiscount 
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
+  const discountPercent = hasDiscount
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : null;
 
-  // Mock price signals (in production, these would come from backend)
-  const isBestPrice = hasDiscount;
-  const priceDropped = hasDiscount; // Mock: assume if discounted, price dropped
-  const betterThanNearby = hasDiscount; // Mock: assume if discounted, better than nearby
+  const displayPrice = typeof product.price === 'number' ? product.price.toFixed(2) : product.price;
 
   return (
     <Container>
       <PriceRow>
-        <CurrentPrice>R{typeof product.price === 'number' ? product.price.toFixed(2) : product.price}</CurrentPrice>
-        {hasDiscount && (
-          <>
-            <OriginalPrice>R{product.originalPrice.toFixed(2)}</OriginalPrice>
-            {discountAmount && (
-              <SavingsBadge>Save R{discountAmount}</SavingsBadge>
-            )}
-            {discountPercent && (
-              <DiscountBadge>-{discountPercent}%</DiscountBadge>
-            )}
-          </>
-        )}
+        <CurrentPrice>R{displayPrice}</CurrentPrice>
+        {hasDiscount && <OriginalPrice>R{product.originalPrice.toFixed(2)}</OriginalPrice>}
       </PriceRow>
-      
-      {isBestPrice && (
-        <PriceSignal>
-          ✓ Lowest price within 3 km
-        </PriceSignal>
+
+      {hasDiscount && (
+        <BadgeRow>
+          {discountAmount && <SavingsBadge>Save R{discountAmount}</SavingsBadge>}
+          {discountPercent && <DiscountBadge>{discountPercent}% off</DiscountBadge>}
+        </BadgeRow>
       )}
-      
-      {priceDropped && (
-        <PriceDropSignal>
-          📉 Price dropped 1 hour ago
-        </PriceDropSignal>
-      )}
-      
-      {betterThanNearby && (
-        <ComparisonSignal>
-          💰 Better price than 90% of nearby stores
-        </ComparisonSignal>
+
+      {hasDiscount && (
+        <SignalGrid>
+          <Signal $tone="success">Lowest price within 3 km</Signal>
+          <Signal $tone="info">Price dropped recently</Signal>
+          <Signal>Better price than most nearby stores</Signal>
+        </SignalGrid>
       )}
     </Container>
   );
 };
-

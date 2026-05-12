@@ -26,8 +26,9 @@ export class AddressService {
    * Sorted: default first, then by most recently used, then alphabetically
    */
   async getAddressesByUserId(userId) {
-    const userAddresses = this.addresses.filter(addr => addr.userId === parseInt(userId));
-    const recentlyUsed = this.recentlyUsed.get(parseInt(userId)) || [];
+    const uid = String(userId);
+    const userAddresses = this.addresses.filter(addr => String(addr.userId) === uid);
+    const recentlyUsed = this.recentlyUsed.get(uid) || [];
     
     // Sort: default first, then by recently used, then by updatedAt, then by label
     return userAddresses.sort((a, b) => {
@@ -59,14 +60,14 @@ export class AddressService {
    * @private
    */
   markAsRecentlyUsed(userId, addressId) {
-    const userIdNum = parseInt(userId);
+    const uid = String(userId);
     const addressIdNum = parseInt(addressId);
-    
-    if (!this.recentlyUsed.has(userIdNum)) {
-      this.recentlyUsed.set(userIdNum, []);
+
+    if (!this.recentlyUsed.has(uid)) {
+      this.recentlyUsed.set(uid, []);
     }
-    
-    const recent = this.recentlyUsed.get(userIdNum);
+
+    const recent = this.recentlyUsed.get(uid);
     // Remove if already exists
     const index = recent.indexOf(addressIdNum);
     if (index !== -1) {
@@ -84,8 +85,9 @@ export class AddressService {
    * Get default address for user
    */
   async getDefaultAddress(userId) {
+    const uid = String(userId);
     return this.addresses.find(
-      addr => addr.userId === parseInt(userId) && addr.isDefault
+      addr => String(addr.userId) === uid && addr.isDefault
     );
   }
 
@@ -220,7 +222,7 @@ export class AddressService {
     
     // Prevent deleting if it's the only address for the user
     if (userId) {
-      const userAddresses = this.addresses.filter(addr => addr.userId === parseInt(userId));
+      const userAddresses = this.addresses.filter(addr => String(addr.userId) === String(userId));
       if (userAddresses.length === 1 && userAddresses[0].id === address.id) {
         throw new Error('Cannot delete the only address');
       }
@@ -285,13 +287,13 @@ export class AddressService {
       return null;
     }
 
-    if (address.userId !== parseInt(userId)) {
+    if (String(address.userId) !== String(userId)) {
       throw new Error('Address does not belong to user');
     }
 
     // Unset other defaults for this user
     this.addresses.forEach(addr => {
-      if (addr.userId === parseInt(userId) && addr.id !== address.id) {
+      if (String(addr.userId) === String(userId) && addr.id !== address.id) {
         addr.isDefault = false;
         addr.updatedAt = new Date();
       }

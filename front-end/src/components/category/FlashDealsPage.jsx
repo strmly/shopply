@@ -5,10 +5,12 @@ import { fadeIn } from '../../theme/animations';
 import { TopNavigation } from '../home/TopNavigation';
 import { ProductGrid } from '../home/ProductGrid';
 import { BottomNavigation } from '../home/BottomNavigation';
+import API_BASE_URL from '@config/api';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: linear-gradient(180deg, #FFD700 0%, #FFF8DC 15%, #FFFFFF 30%);
+  background:
+    linear-gradient(180deg, #ffffff 0%, #ffffff 54%, #F8FAFC 100%);
   animation: ${fadeIn} 0.3s ease-in;
   padding-bottom: 100px;
 `;
@@ -17,136 +19,139 @@ const Content = styled.div`
   max-width: 100%;
 `;
 
-const HeroHeader = styled.div`
-  padding: ${props => props.theme.spacing.xl} ${props => props.theme.spacing.xl} ${props => props.theme.spacing.lg};
-  background: linear-gradient(135deg, #FF6B35 0%, #FFD700 50%, #FF6B35 100%);
-  background-size: 200% 200%;
-  animation: gradientShift 3s ease infinite;
-  color: white;
+const Hero = styled.section`
+  max-width: 1180px;
+  margin: 24px auto 22px;
+  padding: 0 min(5vw, 48px);
+`;
+
+const HeroPanel = styled.div`
   position: relative;
   overflow: hidden;
-  
-  @keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 10px,
-      rgba(255,255,255,0.1) 10px,
-      rgba(255,255,255,0.1) 20px
-    );
-    animation: slide 20s linear infinite;
-  }
-  
-  @keyframes slide {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(100px); }
+  padding: 30px;
+  background:
+    linear-gradient(115deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 48%, rgba(254,247,227,0.9) 100%) padding-box,
+    linear-gradient(140deg, rgba(245, 158, 11, 0.24), rgba(61, 129, 239, 0.16), rgba(255,255,255,0.82)) border-box;
+  border: 1px solid transparent;
+  border-radius: 30px;
+  box-shadow: 0 24px 58px rgba(16, 24, 40, 0.1);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 22px;
+  align-items: center;
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
   }
 `;
 
-const HeaderContent = styled.div`
-  position: relative;
-  z-index: 1;
+const Icon = styled.div`
+  width: 82px;
+  height: 82px;
+  border-radius: 26px;
+  background: ${props => props.theme.colors.warning[100]};
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: ${props => props.theme.colors.warning[600]};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 900;
+  box-shadow: 0 18px 34px rgba(16, 24, 40, 0.12);
 `;
 
-const LightningIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: ${props => props.theme.spacing.md};
-  animation: flash 1.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 10px rgba(255,255,255,0.8));
-  
-  @keyframes flash {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.2); }
-  }
+const Eyebrow = styled.div`
+  width: fit-content;
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.warning[600]};
+  background: ${props => props.theme.colors.warning[100]};
+  border: 1px solid rgba(245, 158, 11, 0.18);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 12px;
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading1}
-  color: white;
-  margin: 0 0 ${props => props.theme.spacing.xs} 0;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  color: ${props => props.theme.colors.text.primary};
+  margin: 0;
+  font-size: clamp(34px, 6vw, 58px);
+  line-height: 0.98;
   font-weight: 900;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
 `;
 
 const Subtitle = styled.p`
   ${props => props.theme.typography.body1}
-  color: rgba(255,255,255,0.95);
-  margin: 0;
-  font-weight: 600;
-`;
-
-const TimerBadge = styled.div`
-  margin-top: ${props => props.theme.spacing.md};
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  background: rgba(0,0,0,0.3);
-  border-radius: ${props => props.theme.radii.md};
-  backdrop-filter: blur(10px);
-  display: inline-flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  ${props => props.theme.typography.body2}
-  font-weight: 700;
-  border: 2px solid rgba(255,255,255,0.3);
-`;
-
-const ProductCount = styled.div`
-  margin-top: ${props => props.theme.spacing.sm};
-  ${props => props.theme.typography.caption}
-  opacity: 0.9;
-`;
-
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  padding: ${props => props.theme.spacing.xxl};
   color: ${props => props.theme.colors.text.secondary};
+  margin: 12px 0 0;
+  font-weight: 500;
+  max-width: 560px;
 `;
 
-const EmptyState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  padding: ${props => props.theme.spacing.xxl};
+const CountCard = styled.div`
+  min-width: 150px;
+  padding: 16px;
+  border-radius: 22px;
+  background: ${props => props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
   text-align: center;
 `;
 
-const EmptyIcon = styled.div`
-  font-size: 64px;
-  margin-bottom: ${props => props.theme.spacing.lg};
-  opacity: 0.5;
-`;
-
-const EmptyTitle = styled.h2`
-  ${props => props.theme.typography.heading2}
+const CountValue = styled.div`
   color: ${props => props.theme.colors.text.primary};
-  margin: 0 0 ${props => props.theme.spacing.sm} 0;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 900;
 `;
 
-const EmptyMessage = styled.p`
+const CountLabel = styled.div`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.text.secondary};
+  font-weight: 800;
+  margin-top: 5px;
+`;
+
+const CenterState = styled.div`
+  max-width: 680px;
+  margin: 40px auto;
+  padding: 36px 24px;
+  text-align: center;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(245, 158, 11, 0.2), rgba(61, 129, 239, 0.16), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
+`;
+
+const StateIcon = styled.div`
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border-radius: 22px;
+  background: ${props => props.theme.colors.warning[100]};
+  color: ${props => props.theme.colors.warning[600]};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 900;
+`;
+
+const StateTitle = styled.h2`
+  color: ${props => props.theme.colors.text.primary};
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 900;
+`;
+
+const StateMessage = styled.p`
   ${props => props.theme.typography.body1}
   color: ${props => props.theme.colors.text.secondary};
   margin: 0;
 `;
-
-import API_BASE_URL from '@config/api';
 
 export const FlashDealsPage = ({ location }) => {
   const navigate = useNavigate();
@@ -162,7 +167,7 @@ export const FlashDealsPage = ({ location }) => {
       setLoading(true);
       const response = await fetch(`${API_BASE_URL}/products/flash-deals?limit=50`);
       const data = await response.json();
-      
+
       if (data.success) {
         setProducts(data.data || []);
       }
@@ -189,8 +194,8 @@ export const FlashDealsPage = ({ location }) => {
       };
 
       const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
-      const existingIndex = cart.findIndex(item => 
-        item.id === product.id && 
+      const existingIndex = cart.findIndex(item =>
+        item.id === product.id &&
         JSON.stringify(item.selectedVariant) === JSON.stringify(null)
       );
 
@@ -216,31 +221,35 @@ export const FlashDealsPage = ({ location }) => {
             storeId: product.storeId,
           }),
         });
-      } catch (error) {
-        console.error('Error syncing cart to backend:', error);
+      } catch (syncError) {
+        console.error('Error syncing cart to backend:', syncError);
       }
 
       window.dispatchEvent(new Event('cartUpdated'));
-      console.log('Added to cart:', product.name);
-    } catch (error) {
-      console.error('Error adding to cart:', error);
+    } catch (cartError) {
+      console.error('Error adding to cart:', cartError);
     }
   };
+
+  const nav = (
+    <TopNavigation
+      location={location}
+      onLocationClick={() => console.log('Location clicked')}
+      onSearch={(query) => console.log('Search:', query)}
+      onNotificationClick={() => navigate('/')}
+      onSearchClick={() => navigate('/search')}
+    />
+  );
 
   if (loading) {
     return (
       <Container>
-        <TopNavigation 
-          location={location}
-          onLocationClick={() => console.log('Location clicked')}
-          onSearch={(query) => console.log('Search:', query)}
-          onNotificationClick={() => navigate('/')}
-          onSearchClick={() => navigate('/search')}
-        />
-        <LoadingContainer>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
-          <div>Loading flash deals...</div>
-        </LoadingContainer>
+        {nav}
+        <CenterState>
+          <StateIcon>%</StateIcon>
+          <StateTitle>Loading deals</StateTitle>
+          <StateMessage>Finding limited offers from local stores.</StateMessage>
+        </CenterState>
         <BottomNavigation currentPath="/deals" />
       </Container>
     );
@@ -248,37 +257,30 @@ export const FlashDealsPage = ({ location }) => {
 
   return (
     <Container>
-      <TopNavigation 
-        location={location}
-        onLocationClick={() => console.log('Location clicked')}
-        onSearch={(query) => console.log('Search:', query)}
-        onNotificationClick={() => navigate('/')}
-        onSearchClick={() => navigate('/search')}
-      />
-      
+      {nav}
+
       <Content>
-        <HeroHeader>
-          <HeaderContent>
-            <LightningIcon>⚡</LightningIcon>
-            <Title>Flash Deals</Title>
-            <Subtitle>Limited time offers - Don't miss out!</Subtitle>
-            <TimerBadge>
-              ⏰ Limited Time Only
-            </TimerBadge>
-            <ProductCount>
-              {products.length} {products.length === 1 ? 'deal' : 'deals'} available now
-            </ProductCount>
-          </HeaderContent>
-        </HeroHeader>
+        <Hero>
+          <HeroPanel>
+            <Icon>%</Icon>
+            <div>
+              <Eyebrow>Limited offers</Eyebrow>
+              <Title>Deals</Title>
+              <Subtitle>Limited offers with local availability, styled for fast decisions.</Subtitle>
+            </div>
+            <CountCard>
+              <CountValue>{products.length}</CountValue>
+              <CountLabel>{products.length === 1 ? 'deal' : 'deals'} available</CountLabel>
+            </CountCard>
+          </HeroPanel>
+        </Hero>
 
         {products.length === 0 ? (
-          <EmptyState>
-            <EmptyIcon>⚡</EmptyIcon>
-            <EmptyTitle>No Flash Deals</EmptyTitle>
-            <EmptyMessage>
-              Check back soon for amazing limited-time deals!
-            </EmptyMessage>
-          </EmptyState>
+          <CenterState>
+            <StateIcon>%</StateIcon>
+            <StateTitle>No Deals</StateTitle>
+            <StateMessage>Check back soon for limited-time offers.</StateMessage>
+          </CenterState>
         ) : (
           <ProductGrid
             products={products}
@@ -287,10 +289,8 @@ export const FlashDealsPage = ({ location }) => {
           />
         )}
       </Content>
-      
+
       <BottomNavigation currentPath="/deals" />
     </Container>
   );
 };
-
-

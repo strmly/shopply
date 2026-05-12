@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { fadeIn } from '../../theme/animations';
 
 const slideUp = keyframes`
   from {
@@ -27,13 +26,13 @@ const Bar = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  background: ${props => props.theme.colors.background};
-  border-top: 1px solid ${props => props.theme.colors.border.light};
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  padding-bottom: calc(${props => props.theme.spacing.md} + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.86);
+  border-top: 1px solid rgba(228, 231, 236, 0.9);
+  padding: 14px min(5vw, 48px);
+  padding-bottom: calc(14px + env(safe-area-inset-bottom));
   z-index: 1000;
-  box-shadow: ${props => props.theme.shadows.lg};
-  backdrop-filter: blur(10px);
+  box-shadow: 0 -20px 48px rgba(16, 24, 40, 0.12);
+  backdrop-filter: blur(18px);
   animation: ${slideUp} 0.3s ease-out;
 `;
 
@@ -42,63 +41,67 @@ const BarContent = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: ${props => props.theme.spacing.md};
-  max-width: 600px;
+  max-width: 1180px;
   margin: 0 auto;
 `;
 
 const PriceSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
 `;
 
 const Price = styled.div`
   ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 22px;
-  line-height: 1.2;
+  font-weight: 900;
+  font-size: 24px;
+  line-height: 1.1;
 `;
 
 const PriceSubtext = styled.div`
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
-  font-size: 11px;
+  font-weight: 700;
 `;
 
 const StoreName = styled.div`
   ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 11px;
-  margin-top: 2px;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 42vw;
 `;
 
 const AddToCartButton = styled.button`
   flex: 1;
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
+  max-width: 420px;
+  padding: 16px 24px;
   background: ${props => {
-    if (props.disabled) return props.theme.colors.surface;
+    if (props.disabled) return props.theme.colors.neutral[200];
     if (props.$added) return props.theme.colors.successBase;
-    return props.theme.colors.primary;
+    return props.theme.colors.text.primary;
   }};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
-  border-radius: ${props => props.theme.radii.md};
+  border-radius: 999px;
   ${props => props.theme.typography.button}
-  font-weight: 700;
+  font-weight: 800;
   font-size: 16px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: ${props => props.theme.transitions.swift};
   position: relative;
   overflow: hidden;
-  min-width: 140px;
+  min-width: 150px;
+  box-shadow: 0 18px 34px rgba(16, 24, 40, 0.18);
 
   &:hover:not(:disabled) {
-    background: ${props => props.$added 
-      ? props.theme.colors.successBase 
-      : props.theme.colors.primaryHover};
-    transform: translateY(-1px);
-    box-shadow: ${props => props.theme.shadows.md};
+    background: ${props => props.$added ? props.theme.colors.successBase : props.theme.colors.primary};
+    transform: translateY(-2px);
+    box-shadow: 0 22px 42px rgba(16, 24, 40, 0.2);
   }
 
   &:active:not(:disabled) {
@@ -122,15 +125,17 @@ export const AddToCartBar = ({ product, selectedVariant, quantity, onAddToCart, 
   if (!product || !product.price) return null;
 
   const isOutOfStock = stock === 'out';
+  const hasVariants = product.variants && product.variants.length > 0;
+  const needsVariantSelection = hasVariants && !selectedVariant;
   const totalPrice = (product.price * quantity).toFixed(2);
 
   const handleClick = () => {
-    if (isOutOfStock) return;
+    if (isOutOfStock || needsVariantSelection) return;
 
     setRippleKey(prev => prev + 1);
     onAddToCart();
     setAdded(true);
-    
+
     setTimeout(() => {
       setAdded(false);
     }, 2000);
@@ -142,27 +147,24 @@ export const AddToCartBar = ({ product, selectedVariant, quantity, onAddToCart, 
         <PriceSection>
           <Price>R{totalPrice}</Price>
           <PriceSubtext>incl. VAT</PriceSubtext>
-          {selectedStore && (
-            <StoreName>From {selectedStore.name}</StoreName>
-          )}
+          {selectedStore && <StoreName>From {selectedStore.name}</StoreName>}
         </PriceSection>
-        
+
         <AddToCartButton
-          disabled={isOutOfStock || !selectedVariant}
+          disabled={isOutOfStock || needsVariantSelection}
           $added={added}
           onClick={handleClick}
         >
-          {isOutOfStock 
-            ? 'Out of Stock' 
-            : !selectedVariant && product.variants && product.variants.length > 0
-              ? 'Select Variant'
-              : added 
-                ? 'Added ✓' 
-                : 'Add to Cart'}
-          {!isOutOfStock && selectedVariant && <Ripple key={rippleKey} />}
+          {isOutOfStock
+            ? 'Out of stock'
+            : needsVariantSelection
+              ? 'Select variant'
+              : added
+                ? 'Added'
+                : 'Add to cart'}
+          {!isOutOfStock && !needsVariantSelection && <Ripple key={rippleKey} />}
         </AddToCartButton>
       </BarContent>
     </Bar>
   );
 };
-

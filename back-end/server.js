@@ -31,9 +31,13 @@ app.use(logger);
 
 // Seed new furniture products on startup (1000 furniture items from IKEA, West Elm, Wayfair)
 import { seedNewFurniture } from './scripts/seedNewFurniture.js';
-seedNewFurniture().catch(err => {
-  console.error('Failed to seed new furniture products:', err);
-});
+import { seedFlashDeals } from './scripts/seedFlashDeals.js';
+import { seedBundles } from './scripts/seedBundles.js';
+seedNewFurniture()
+  .then(() => Promise.all([seedFlashDeals(), seedBundles()]))
+  .catch(err => {
+    console.error('Failed to seed products:', err);
+  });
 
 // OLD SEED: Commented out - using new furniture seeder instead
 // seedFurnitureMarketplace().catch(err => {

@@ -5,10 +5,12 @@ import { fadeIn } from '../../theme/animations';
 import { TopNavigation } from '../home/TopNavigation';
 import { ProductGrid } from '../home/ProductGrid';
 import { BottomNavigation } from '../home/BottomNavigation';
+import API_BASE_URL from '@config/api';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
+  background:
+    linear-gradient(180deg, #ffffff 0%, #ffffff 54%, #F8FAFC 100%);
   animation: ${fadeIn} 0.3s ease-in;
   padding-bottom: 100px;
 `;
@@ -17,162 +19,185 @@ const Content = styled.div`
   max-width: 100%;
 `;
 
-const Header = styled.div`
-  padding: ${props => props.theme.spacing.lg} ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.surface};
-  border-bottom: 1px solid ${props => props.theme.colors.border.default};
+const Hero = styled.section`
+  max-width: 1180px;
+  margin: 24px auto 22px;
+  padding: 0 min(5vw, 48px);
 `;
 
-const CategoryHeader = styled.div`
-  display: flex;
+const HeroPanel = styled.div`
+  position: relative;
+  overflow: hidden;
+  padding: 30px;
+  background:
+    linear-gradient(115deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 48%, rgba(241,247,255,0.86) 100%) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.24), rgba(196, 184, 252, 0.2), rgba(255,255,255,0.82)) border-box;
+  border: 1px solid transparent;
+  border-radius: 30px;
+  box-shadow: 0 24px 58px rgba(16, 24, 40, 0.1);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 22px;
   align-items: center;
-  gap: ${props => props.theme.spacing.md};
-  margin-bottom: ${props => props.theme.spacing.sm};
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 18px;
+    bottom: -50px;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(126, 193, 246, 0.2), transparent 70%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 720px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const CategoryIcon = styled.div`
-  width: 48px;
-  height: 48px;
-  border-radius: ${props => props.theme.radii.circle};
-  background: ${props => props.color || props.theme.colors.primarySoftBg};
+  width: 82px;
+  height: 82px;
+  border-radius: 26px;
+  background: ${props => props.$color || props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
+  color: ${props => props.theme.colors.primarySoftText};
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  flex-shrink: 0;
+  font-size: 36px;
+  font-weight: 900;
+  box-shadow: 0 18px 34px rgba(16, 24, 40, 0.12);
 `;
 
-const CategoryInfo = styled.div`
-  flex: 1;
-  min-width: 0;
+const HeroCopy = styled.div`
+  position: relative;
+  z-index: 1;
+`;
+
+const Eyebrow = styled.div`
+  width: fit-content;
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.primarySoftText};
+  background: ${props => props.theme.colors.primarySoftBg};
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 12px;
 `;
 
 const CategoryTitle = styled.h1`
-  ${props => props.theme.typography.heading2}
   color: ${props => props.theme.colors.text.primary};
-  margin: 0 0 ${props => props.theme.spacing.xs} 0;
-`;
-
-const ProductCount = styled.p`
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.text.secondary};
   margin: 0;
+  font-size: clamp(34px, 6vw, 58px);
+  line-height: 0.98;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  padding: ${props => props.theme.spacing.xxl};
+const CategoryDescription = styled.p`
+  ${props => props.theme.typography.body1}
   color: ${props => props.theme.colors.text.secondary};
+  margin: 12px 0 0;
+  font-weight: 500;
+  max-width: 560px;
 `;
 
-const EmptyState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  padding: ${props => props.theme.spacing.xxl};
+const CountCard = styled.div`
+  position: relative;
+  z-index: 1;
+  min-width: 150px;
+  padding: 16px;
+  border-radius: 22px;
+  background: ${props => props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
   text-align: center;
 `;
 
-const EmptyIcon = styled.div`
-  font-size: 64px;
-  margin-bottom: ${props => props.theme.spacing.lg};
-  opacity: 0.5;
-`;
-
-const EmptyTitle = styled.h2`
-  ${props => props.theme.typography.heading2}
+const CountValue = styled.div`
   color: ${props => props.theme.colors.text.primary};
-  margin: 0 0 ${props => props.theme.spacing.sm} 0;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 900;
 `;
 
-const EmptyMessage = styled.p`
-  ${props => props.theme.typography.body1}
+const CountLabel = styled.div`
+  ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
-  margin: 0;
+  font-weight: 800;
+  margin-top: 5px;
 `;
 
-const ErrorContainer = styled.div`
+const CenterState = styled.div`
+  max-width: 680px;
+  margin: 40px auto;
+  padding: 36px 24px;
+  text-align: center;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.2), rgba(196, 184, 252, 0.16), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
+`;
+
+const StateIcon = styled.div`
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border-radius: 22px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 60vh;
-  padding: ${props => props.theme.spacing.xxl};
-  text-align: center;
+  font-size: 28px;
+  font-weight: 900;
 `;
 
-const ErrorIcon = styled.div`
-  font-size: 64px;
-  margin-bottom: ${props => props.theme.spacing.lg};
-  opacity: 0.5;
-`;
-
-const ErrorTitle = styled.h2`
-  ${props => props.theme.typography.heading2}
+const StateTitle = styled.h2`
   color: ${props => props.theme.colors.text.primary};
-  margin: 0 0 ${props => props.theme.spacing.sm} 0;
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 900;
 `;
 
-const ErrorMessage = styled.p`
+const StateMessage = styled.p`
   ${props => props.theme.typography.body1}
   color: ${props => props.theme.colors.text.secondary};
-  margin: 0 0 ${props => props.theme.spacing.lg} 0;
+  margin: 0 0 18px;
 `;
 
 const RetryButton = styled.button`
   ${props => props.theme.typography.button}
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
-  background: ${props => props.theme.colors.primary};
+  padding: 14px 20px;
+  background: ${props => props.theme.colors.text.primary};
   color: white;
   border: none;
-  border-radius: ${props => props.theme.radii.md};
+  border-radius: 999px;
   cursor: pointer;
+  font-weight: 900;
   transition: ${props => props.theme.transitions.swift};
-  
+
   &:hover {
-    background: ${props => props.theme.colors.primaryHover};
+    background: ${props => props.theme.colors.primary};
     transform: translateY(-1px);
-    box-shadow: ${props => props.theme.shadows.md};
-  }
-  
-  &:active {
-    transform: translateY(0);
   }
 `;
 
-import API_BASE_URL from '@config/api';
-
-// Furniture Room/Category metadata (matches backend furnitureTaxonomy.js)
 const FURNITURE_ROOMS = {
-  'living': { icon: '🛋️', label: 'Living Room', color: '#E8F1FF' },
-  'bedroom': { icon: '🛏️', label: 'Bedroom', color: '#F3F0FE' },
-  'dining': { icon: '🍽️', label: 'Dining Room', color: '#DBF8EE' },
-  'office': { icon: '💼', label: 'Office', color: '#FDE4EE' },
-  'outdoor': { icon: '🌳', label: 'Outdoor', color: '#FEF7E3' },
-  'kids': { icon: '🧸', label: 'Kids Room', color: '#E6F2FF' },
-  'storage': { icon: '📦', label: 'Storage', color: '#FDE4EE' },
-  'all': { icon: '🪑', label: 'All Furniture', color: '#DBF8EE' },
+  living: { icon: 'L', label: 'Living Room', description: 'Sofas and tables', color: '#E8F1FF' },
+  bedroom: { icon: 'B', label: 'Bedroom', description: 'Beds and storage', color: '#F3F0FE' },
+  dining: { icon: 'D', label: 'Dining Room', description: 'Tables, chairs, and hosting pieces', color: '#DBF8EE' },
+  office: { icon: 'O', label: 'Office', description: 'Desks, storage, and focus pieces', color: '#E6F2FF' },
+  outdoor: { icon: 'G', label: 'Outdoor', description: 'Garden, patio, and balcony finds', color: '#FEF7E3' },
+  kids: { icon: 'K', label: 'Kids Room', description: 'Playful furniture for little spaces', color: '#FDF2F8' },
+  storage: { icon: 'S', label: 'Storage', description: 'Cabinets, shelving, and tidy solutions', color: '#F2F5F9' },
+  all: { icon: 'A', label: 'All Rooms', description: 'Every curated local furniture find', color: '#ECFEFF' },
 };
-
-// Legacy support - keep for backward compatibility
-const CATEGORY_MAP = {
-  'Living': 'living',
-  'Bedroom': 'bedroom',
-  'Dining': 'dining',
-  'Office': 'office',
-  'Outdoor': 'outdoor',
-  'Kids': 'kids',
-  'Storage': 'storage',
-  'All Furniture': 'all',
-};
-
-const CATEGORY_METADATA = FURNITURE_ROOMS;
 
 export const CategoryProductsPage = ({ location }) => {
   const { categoryName } = useParams();
@@ -185,9 +210,13 @@ export const CategoryProductsPage = ({ location }) => {
   const [hasMore, setHasMore] = useState(false);
   const itemsPerPage = 12;
 
-  // Check if this is a furniture room
   const furnitureRoom = FURNITURE_ROOMS[categoryName];
-  const categoryMeta = furnitureRoom || { icon: '📦', label: categoryName, color: '#E8F1FF' };
+  const categoryMeta = furnitureRoom || {
+    icon: 'A',
+    label: categoryName,
+    description: 'Curated local availability.',
+    color: '#E8F1FF',
+  };
 
   useEffect(() => {
     if (categoryName) {
@@ -205,18 +234,15 @@ export const CategoryProductsPage = ({ location }) => {
         setLoadingMore(true);
       }
       setError(null);
-      
-      // Build API URL - filter by room for furniture
+
       let apiUrl = `${API_BASE_URL}/products?page=${pageNum}&limit=${itemsPerPage}`;
-      
       if (furnitureRoom && categoryName !== 'all') {
-        // Filter by room for furniture categories
         apiUrl += `&room=${categoryName}`;
       }
-      
+
       const response = await fetch(apiUrl);
       const data = await response.json();
-      
+
       if (data.success) {
         if (reset) {
           setProducts(data.data || []);
@@ -250,7 +276,6 @@ export const CategoryProductsPage = ({ location }) => {
     if (!product || !product.id) return;
 
     try {
-      // Add to localStorage cart
       const cartItem = {
         ...product,
         quantity: 1,
@@ -259,10 +284,8 @@ export const CategoryProductsPage = ({ location }) => {
       };
 
       const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
-      
-      // Check if item already exists
-      const existingIndex = cart.findIndex(item => 
-        item.id === product.id && 
+      const existingIndex = cart.findIndex(item =>
+        item.id === product.id &&
         JSON.stringify(item.selectedVariant) === JSON.stringify(null)
       );
 
@@ -273,12 +296,9 @@ export const CategoryProductsPage = ({ location }) => {
       }
 
       localStorage.setItem('shopply_cart', JSON.stringify(cart));
-      
-      // Update cart count in localStorage
       const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
       localStorage.setItem('shopply_cart_count', cartCount.toString());
 
-      // Sync with backend
       try {
         await fetch(`${API_BASE_URL}/cart/items`, {
           method: 'POST',
@@ -291,34 +311,35 @@ export const CategoryProductsPage = ({ location }) => {
             storeId: product.storeId,
           }),
         });
-      } catch (error) {
-        console.error('Error syncing cart to backend:', error);
+      } catch (syncError) {
+        console.error('Error syncing cart to backend:', syncError);
       }
 
-      // Dispatch custom event to update cart count in other components
       window.dispatchEvent(new Event('cartUpdated'));
-
-      // Show success feedback
-      console.log('Added to cart:', product.name);
-    } catch (error) {
-      console.error('Error adding to cart:', error);
+    } catch (cartError) {
+      console.error('Error adding to cart:', cartError);
     }
   };
+
+  const nav = (
+    <TopNavigation
+      location={location}
+      onLocationClick={() => console.log('Location clicked')}
+      onSearch={(query) => console.log('Search:', query)}
+      onNotificationClick={() => navigate('/')}
+      onSearchClick={() => navigate('/search')}
+    />
+  );
 
   if (loading) {
     return (
       <Container>
-        <TopNavigation 
-          location={location}
-          onLocationClick={() => console.log('Location clicked')}
-          onSearch={(query) => console.log('Search:', query)}
-          onNotificationClick={() => navigate('/')}
-          onSearchClick={() => navigate('/search')}
-        />
-        <LoadingContainer>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
-          <div>Loading products...</div>
-        </LoadingContainer>
+        {nav}
+        <CenterState>
+          <StateIcon>{categoryMeta.icon}</StateIcon>
+          <StateTitle>Loading {categoryMeta.label}</StateTitle>
+          <StateMessage>Finding local availability and beautiful pieces nearby.</StateMessage>
+        </CenterState>
         <BottomNavigation currentPath="/category" />
       </Container>
     );
@@ -327,19 +348,13 @@ export const CategoryProductsPage = ({ location }) => {
   if (error) {
     return (
       <Container>
-        <TopNavigation 
-          location={location}
-          onLocationClick={() => console.log('Location clicked')}
-          onSearch={(query) => console.log('Search:', query)}
-          onNotificationClick={() => navigate('/')}
-          onSearchClick={() => navigate('/search')}
-        />
-        <ErrorContainer>
-          <ErrorIcon>⚠️</ErrorIcon>
-          <ErrorTitle>Error Loading Products</ErrorTitle>
-          <ErrorMessage>{error}</ErrorMessage>
-          <RetryButton onClick={loadProducts}>Try Again</RetryButton>
-        </ErrorContainer>
+        {nav}
+        <CenterState>
+          <StateIcon>!</StateIcon>
+          <StateTitle>Error Loading Products</StateTitle>
+          <StateMessage>{error}</StateMessage>
+          <RetryButton onClick={() => loadProducts(1, true)}>Try Again</RetryButton>
+        </CenterState>
         <BottomNavigation currentPath="/category" />
       </Container>
     );
@@ -347,37 +362,32 @@ export const CategoryProductsPage = ({ location }) => {
 
   return (
     <Container>
-      <TopNavigation 
-        location={location}
-        onLocationClick={() => console.log('Location clicked')}
-        onSearch={(query) => console.log('Search:', query)}
-        onNotificationClick={() => navigate('/')}
-        onSearchClick={() => navigate('/search')}
-      />
-      
+      {nav}
+
       <Content>
-        <Header>
-          <CategoryHeader>
-            <CategoryIcon color={categoryMeta.color}>
-              {categoryMeta.icon}
-            </CategoryIcon>
-            <CategoryInfo>
+        <Hero>
+          <HeroPanel>
+            <CategoryIcon $color={categoryMeta.color}>{categoryMeta.icon}</CategoryIcon>
+            <HeroCopy>
+              <Eyebrow>Shop by room</Eyebrow>
               <CategoryTitle>{categoryMeta.label}</CategoryTitle>
-              <ProductCount>
-                {products.length} {products.length === 1 ? 'product' : 'products'} available
-              </ProductCount>
-            </CategoryInfo>
-          </CategoryHeader>
-        </Header>
+              <CategoryDescription>{categoryMeta.description}</CategoryDescription>
+            </HeroCopy>
+            <CountCard>
+              <CountValue>{products.length}</CountValue>
+              <CountLabel>{products.length === 1 ? 'product' : 'products'} available</CountLabel>
+            </CountCard>
+          </HeroPanel>
+        </Hero>
 
         {products.length === 0 ? (
-          <EmptyState>
-            <EmptyIcon>📦</EmptyIcon>
-            <EmptyTitle>No Products Found</EmptyTitle>
-            <EmptyMessage>
-              We couldn't find any products in this category. Try browsing other categories!
-            </EmptyMessage>
-          </EmptyState>
+          <CenterState>
+            <StateIcon>{categoryMeta.icon}</StateIcon>
+            <StateTitle>No Products Found</StateTitle>
+            <StateMessage>
+              We could not find any products in this category. Try browsing another room.
+            </StateMessage>
+          </CenterState>
         ) : (
           <ProductGrid
             products={products}
@@ -390,10 +400,8 @@ export const CategoryProductsPage = ({ location }) => {
           />
         )}
       </Content>
-      
+
       <BottomNavigation currentPath="/category" />
     </Container>
   );
 };
-
-

@@ -10,63 +10,8 @@ export const ThemeModeContext = createContext({
   setMode: () => {},
 });
 
-const buildThemeForMode = (mode) => {
-  const isDark = mode === 'dark';
-
-  if (!isDark) {
-    return baseTheme;
-  }
-
-  // Dark theme: override key tokens while keeping the same structure
-  return {
-    ...baseTheme,
-    colors: {
-      ...baseTheme.colors,
-      background: '#101623',
-      surface: '#0F172A',
-      surfaceAlt: '#020617',
-      card: {
-        ...baseTheme.colors.card,
-        default: '#020617',
-        hover: '#020617',
-      },
-      text: {
-        ...baseTheme.colors.text,
-        primary: '#F9FAFB',
-        secondary: '#CBD5F5',
-        tertiary: '#64748B',
-        inverse: '#020617',
-      },
-      border: {
-        ...baseTheme.colors.border,
-        light: '#1F2937',
-        default: '#1F2937',
-        focus: baseTheme.colors.border.focus,
-      },
-      neutral: {
-        ...baseTheme.colors.neutral,
-        950: '#020617',
-        900: '#020617',
-        800: '#0B1220',
-        700: '#020617',
-        600: '#1F2937',
-        500: '#374151',
-        400: '#4B5563',
-        300: '#6B7280',
-        200: '#9CA3AF',
-        150: '#D1D5DB',
-        100: '#E5E7EB',
-        50: '#F9FAFB',
-        white: '#020617',
-      },
-      gradient: {
-        ...baseTheme.colors.gradient,
-        primary:
-          'linear-gradient(135deg, #0B1220 0%, #1F2937 35%, #1F4C8B 70%, #7EC1F6 100%)',
-        dark: baseTheme.colors.gradient.dark,
-      },
-    },
-  };
+const buildThemeForMode = () => {
+  return baseTheme;
 };
 
 export const ThemeModeProvider = ({ children }) => {

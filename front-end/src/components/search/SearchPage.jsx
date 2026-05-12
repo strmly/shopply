@@ -6,11 +6,11 @@ import { SearchIdleState } from './SearchIdleState';
 import { SearchAutocomplete } from './SearchAutocomplete';
 import { SearchResults } from './SearchResults';
 import { FilterOverlay } from './FilterOverlay';
-import { ProductCard } from '../home/ProductCard';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
+  background:
+    linear-gradient(180deg, #ffffff 0%, #ffffff 54%, #F8FAFC 100%);
   animation: ${fadeIn} 0.3s ease-in;
   padding-bottom: 80px;
 `;
@@ -18,50 +18,256 @@ const Container = styled.div`
 const SearchHeader = styled.div`
   position: sticky;
   top: 0;
-  background: ${props => props.theme.colors.background};
+  background: rgba(255, 255, 255, 0.9);
   z-index: 1000;
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  box-shadow: ${props => props.theme.shadows.sm};
-  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(228, 231, 236, 0.72);
+  padding: 16px min(5vw, 48px);
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.07);
+  backdrop-filter: blur(18px);
+`;
+
+const HeaderInner = styled.div`
+  max-width: 1180px;
+  margin: 0 auto;
 `;
 
 const SearchBarContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.sm};
+  gap: 12px;
+
+  @media (max-width: 560px) {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+`;
+
+const RoomSelectWrap = styled.div`
+  position: relative;
+  flex-shrink: 0;
+  display: grid;
+  min-width: 174px;
+  border-radius: 999px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.96), rgba(248,250,252,0.9)) padding-box,
+      linear-gradient(135deg, rgba(61, 129, 239, 0.4), rgba(245, 158, 11, 0.22), rgba(228, 231, 236, 0.84)) border-box;
+    border: 1px solid transparent;
+    box-shadow:
+      0 18px 40px rgba(16, 24, 40, 0.08),
+      inset 0 1px 0 rgba(255,255,255,0.94);
+    pointer-events: none;
+    transition: ${props => props.theme.transitions.swift};
+  }
+
+  &::before {
+    content: 'Shop rooms';
+    position: absolute;
+    left: 48px;
+    top: 8px;
+    z-index: 3;
+    color: ${props => props.theme.colors.primarySoftText};
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  &:focus-within,
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:focus-within::after,
+  &:hover::after {
+    box-shadow:
+      0 24px 52px rgba(16, 24, 40, 0.12),
+      0 0 0 4px ${props => props.theme.colors.primarySoftBg},
+      inset 0 1px 0 rgba(255,255,255,0.98);
+  }
+
+  @media (max-width: 560px) {
+    order: 3;
+    width: calc(100% - 92px);
+    min-width: 0;
+  }
+`;
+
+const RoomSelectIcon = styled.span`
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  font-size: 0;
+  transform: translateY(-50%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.82),
+    0 10px 20px rgba(61, 129, 239, 0.12);
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    width: 13px;
+    height: 11px;
+    border: 2px solid currentColor;
+    border-radius: 3px;
+    box-shadow:
+      7px 0 0 -2px currentColor,
+      0 7px 0 -2px currentColor,
+      7px 7px 0 -2px currentColor;
+  }
+`;
+
+const RoomSelectChevron = styled.span`
+  position: absolute;
+  z-index: 3;
+  right: 16px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  transform: translateY(-64%) rotate(45deg);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-right: 2px solid ${props => props.theme.colors.text.secondary};
+    border-bottom: 2px solid ${props => props.theme.colors.text.secondary};
+    transition: ${props => props.theme.transitions.swift};
+  }
+
+  ${RoomSelectWrap}:focus-within &::before,
+  ${RoomSelectWrap}:hover &::before {
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const RoomSelect = styled.select`
+  position: relative;
+  z-index: 2;
+  appearance: none;
+  height: 58px;
+  width: 100%;
+  min-width: 174px;
+  padding: 21px 40px 7px 48px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: ${props => props.theme.colors.text.primary};
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 900;
+  outline: none;
+  transition: ${props => props.theme.transitions.swift};
+  box-shadow: none;
+
+  &:hover,
+  &:focus {
+    color: ${props => props.theme.colors.primary};
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  @media (max-width: 560px) {
+    min-width: 0;
+    height: 52px;
+    padding-top: 18px;
+  }
 `;
 
 const SearchInput = styled.input`
+  position: relative;
+  z-index: 1;
   flex: 1;
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  padding-left: ${props => `calc(${props.theme.spacing.xl} + 24px)`};
-  border: 2px solid ${props => props.theme.colors.border.default};
-  border-radius: ${props => props.theme.radii.pill};
-  background: ${props => props.theme.colors.surface};
+  width: 100%;
+  min-width: 0;
+  height: 58px;
+  padding: 0 112px 0 66px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 900;
   transition: ${props => props.theme.transitions.swift};
+  box-shadow: none;
 
   &:focus {
     outline: none;
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.theme.colors.background};
-    box-shadow: 0 0 0 3px ${props => props.theme.colors.primarySoftBg};
   }
 
   &::placeholder {
-    color: ${props => props.theme.colors.text.tertiary};
+    color: ${props => props.theme.colors.text.secondary};
+    font-weight: 800;
+  }
+
+  @media (max-width: 560px) {
+    height: 54px;
+    padding: 0 58px 0 60px;
+    font-size: 14px;
   }
 `;
 
 const SearchIcon = styled.span`
   position: absolute;
-  left: ${props => props.theme.spacing.md};
-  color: ${props => props.theme.colors.text.tertiary};
-  font-size: 18px;
+  z-index: 2;
+  left: 10px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(61, 129, 239, 0.14), rgba(255, 255, 255, 0.92)),
+    ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 0;
   pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 10px 20px rgba(61, 129, 239, 0.16);
+
+  &::before {
+    content: '';
+    width: 13px;
+    height: 13px;
+    border: 2px solid currentColor;
+    border-radius: 999px;
+    transform: translate(-1px, -1px);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 9px;
+    height: 2px;
+    border-radius: 999px;
+    background: currentColor;
+    transform: translate(8px, 8px) rotate(45deg);
+  }
+
+  @media (max-width: 560px) {
+    width: 36px;
+    height: 36px;
+  }
 `;
 
 const SearchWrapper = styled.div`
@@ -69,37 +275,118 @@ const SearchWrapper = styled.div`
   flex: 1;
   display: flex;
   align-items: center;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(135deg, rgba(61, 129, 239, 0.5), rgba(228, 231, 236, 0.82), rgba(245, 158, 11, 0.24)) border-box;
+  box-shadow:
+    0 18px 40px rgba(16, 24, 40, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  transition: ${props => props.theme.transitions.swift};
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(61, 129, 239, 0.06), rgba(255, 255, 255, 0) 44%, rgba(245, 158, 11, 0.07));
+    pointer-events: none;
+  }
+
+  &:focus-within {
+    transform: translateY(-1px);
+    box-shadow:
+      0 24px 52px rgba(16, 24, 40, 0.13),
+      0 0 0 4px ${props => props.theme.colors.primarySoftBg},
+      inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  }
+`;
+
+const SearchAffordance = styled.span`
+  position: absolute;
+  z-index: 2;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.92);
+  border: 1px solid rgba(228, 231, 236, 0.86);
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  font-weight: 900;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  @media (max-width: 560px) {
+    display: none;
+  }
+`;
+
+const ClearButton = styled.button`
+  position: absolute;
+  z-index: 3;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(228, 231, 236, 0.88);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: ${props => props.theme.colors.text.secondary};
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 10px 20px rgba(16, 24, 40, 0.08);
+
+  &:hover {
+    color: ${props => props.theme.colors.primary};
+    border-color: rgba(61, 129, 239, 0.28);
+    transform: translateY(-1px);
+  }
 `;
 
 const CancelButton = styled.button`
-  background: transparent;
+  background: ${props => props.theme.colors.text.primary};
   border: none;
-  color: ${props => props.theme.colors.primary};
+  color: ${props => props.theme.colors.text.inverse};
+  border-radius: 999px;
   ${props => props.theme.typography.body2}
-  font-weight: 600;
+  font-weight: 900;
   cursor: pointer;
-  padding: ${props => props.theme.spacing.sm};
+  min-height: 50px;
+  padding: 0 18px;
   transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 16px 30px rgba(16, 24, 40, 0.16);
 
   &:hover {
-    opacity: 0.8;
+    background: ${props => props.theme.colors.primary};
+    transform: translateY(-1px);
   }
 `;
 
 const FilterButton = styled.button`
-  background: ${props => props.active ? props.theme.colors.primary : 'transparent'};
-  color: ${props => props.active ? props.theme.colors.text.inverse : props.theme.colors.text.primary};
-  border: 2px solid ${props => props.active ? props.theme.colors.primary : props.theme.colors.border.default};
-  border-radius: ${props => props.theme.radii.md};
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
+  background: ${props => props.$active ? props.theme.colors.gradient.soft : '#ffffff'};
+  color: ${props => props.$active ? props.theme.colors.primarySoftText : props.theme.colors.text.primary};
+  border: 1px solid ${props => props.$active ? 'rgba(61, 129, 239, 0.28)' : props.theme.colors.border.default};
+  border-radius: 999px;
+  padding: 10px 14px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
-  font-weight: 600;
+  font-weight: 900;
   font-size: 14px;
+  box-shadow: 0 10px 22px rgba(16, 24, 40, 0.06);
 
   &:hover {
     border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.theme.colors.primarySoftBg};
+    color: ${props => props.theme.colors.primary};
+    transform: translateY(-1px);
   }
 `;
 
@@ -107,7 +394,26 @@ const SortButton = styled(FilterButton)`
   margin-left: ${props => props.theme.spacing.xs};
 `;
 
+const ControlsRow = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+`;
+
 import API_BASE_URL from '@config/api';
+
+const ROOM_OPTIONS = [
+  { label: 'All Rooms', value: 'all' },
+  { label: 'Living Room', value: 'living' },
+  { label: 'Bedroom', value: 'bedroom' },
+  { label: 'Dining', value: 'dining' },
+  { label: 'Office', value: 'office' },
+  { label: 'Outdoor', value: 'outdoor' },
+  { label: 'Kids', value: 'kids' },
+  { label: 'Storage', value: 'storage' },
+];
 
 export const SearchPage = ({ location, onBack }) => {
   const navigate = useNavigate();
@@ -303,6 +609,17 @@ export const SearchPage = ({ location, onBack }) => {
     setQuery(e.target.value);
   };
 
+  const handleClearSearch = () => {
+    setQuery('');
+    setSuggestions(null);
+    setSearchResults([]);
+    setSearchPage(1);
+    setHasMoreResults(false);
+    setTotalResults(0);
+    setSearchState('idle');
+    inputRef.current?.focus();
+  };
+
   const handleSuggestionClick = (suggestion) => {
     if (suggestion.type === 'product') {
       setQuery(suggestion.label);
@@ -363,49 +680,77 @@ export const SearchPage = ({ location, onBack }) => {
     }
   };
 
+  const handleRoomChange = (event) => {
+    navigate(`/category/${event.target.value}`);
+  };
+
   const activeFilterCount = Object.values(filters).filter(v => v !== undefined && v !== '' && v !== false).length;
 
   return (
     <Container>
       <SearchHeader>
-        <SearchBarContainer>
-          <SearchWrapper>
-            <SearchIcon>🔍</SearchIcon>
-            <SearchInput
-              ref={inputRef}
-              type="text"
-              placeholder="Search nearby stores…"
-              value={query}
-              onChange={handleQueryChange}
-            />
-          </SearchWrapper>
-          <CancelButton onClick={handleBack}>Cancel</CancelButton>
-        </SearchBarContainer>
-        {searchState === 'results' && (
-          <div style={{ display: 'flex', gap: '8px', marginTop: '12px', alignItems: 'center' }}>
-            <FilterButton 
-              active={showFilters || activeFilterCount > 0}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
-            </FilterButton>
-            <SortButton
-              active={sortBy !== 'relevance'}
-              onClick={() => {
-                const sortOptions = ['relevance', 'nearest', 'price_asc', 'price_desc', 'popular', 'rating'];
-                const currentIndex = sortOptions.indexOf(sortBy);
-                const nextIndex = (currentIndex + 1) % sortOptions.length;
-                setSortBy(sortOptions[nextIndex]);
-              }}
-            >
-              Sort: {sortBy === 'relevance' ? 'Relevance' : 
-                     sortBy === 'nearest' ? 'Nearest' :
-                     sortBy === 'price_asc' ? 'Price ↑' :
-                     sortBy === 'price_desc' ? 'Price ↓' :
-                     sortBy === 'popular' ? 'Popular' : 'Rating'}
-            </SortButton>
-          </div>
-        )}
+        <HeaderInner>
+          <SearchBarContainer>
+            <RoomSelectWrap>
+              <RoomSelectIcon aria-hidden="true" />
+              <RoomSelect
+                aria-label="Shop by room"
+                defaultValue="all"
+                onChange={handleRoomChange}
+              >
+                {ROOM_OPTIONS.map(room => (
+                  <option key={room.value} value={room.value}>
+                    {room.label}
+                  </option>
+                ))}
+              </RoomSelect>
+              <RoomSelectChevron aria-hidden="true" />
+            </RoomSelectWrap>
+            <SearchWrapper>
+              <SearchIcon>S</SearchIcon>
+              <SearchInput
+                ref={inputRef}
+                type="text"
+                placeholder="Search refined finds nearby"
+                value={query}
+                onChange={handleQueryChange}
+              />
+              {query ? (
+                <ClearButton type="button" onClick={handleClearSearch} aria-label="Clear search">
+                  x
+                </ClearButton>
+              ) : (
+                <SearchAffordance>Nearby</SearchAffordance>
+              )}
+            </SearchWrapper>
+            <CancelButton onClick={handleBack}>Cancel</CancelButton>
+          </SearchBarContainer>
+          {searchState === 'results' && (
+            <ControlsRow>
+              <FilterButton
+                $active={showFilters || activeFilterCount > 0}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </FilterButton>
+              <SortButton
+                $active={sortBy !== 'relevance'}
+                onClick={() => {
+                  const sortOptions = ['relevance', 'nearest', 'price_asc', 'price_desc', 'popular', 'rating'];
+                  const currentIndex = sortOptions.indexOf(sortBy);
+                  const nextIndex = (currentIndex + 1) % sortOptions.length;
+                  setSortBy(sortOptions[nextIndex]);
+                }}
+              >
+                Sort: {sortBy === 'relevance' ? 'Relevance' :
+                       sortBy === 'nearest' ? 'Nearest' :
+                       sortBy === 'price_asc' ? 'Price up' :
+                       sortBy === 'price_desc' ? 'Price down' :
+                       sortBy === 'popular' ? 'Popular' : 'Rating'}
+              </SortButton>
+            </ControlsRow>
+          )}
+        </HeaderInner>
       </SearchHeader>
 
       {searchState === 'idle' && (

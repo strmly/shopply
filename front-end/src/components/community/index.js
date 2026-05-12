@@ -8,6 +8,7 @@ export { TrendingInArea } from './TrendingInArea';
 export { CommunityRecommendations } from './CommunityRecommendations';
 export { CommunityBundlePage } from './CommunityBundlePage';
 export { CurateBundlePage } from './CurateBundlePage';
+export { TrendingPage } from './TrendingPage';
 
 
 

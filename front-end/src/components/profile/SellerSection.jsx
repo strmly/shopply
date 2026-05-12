@@ -9,12 +9,14 @@ import { MessagesWidget } from '../seller/dashboard/MessagesWidget';
 import { QuickActions as SellerQuickActions } from '../seller/dashboard/QuickActions';
 
 const Container = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.lg};
-  padding: ${props => props.theme.spacing.lg};
-  border: 1px solid ${props => props.theme.colors.border.light};
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.18), rgba(196, 184, 252, 0.14), rgba(255,255,255,0.8)) border-box;
+  border-radius: 28px;
+  padding: 22px;
+  border: 1px solid transparent;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
   animation: ${fadeIn} 0.3s ease-in;
-  margin-bottom: ${props => props.theme.spacing.xl};
 `;
 
 const Header = styled.div`
@@ -27,8 +29,8 @@ const Header = styled.div`
 const Title = styled.h2`
   ${props => props.theme.typography.heading2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 20px;
+  font-weight: 900;
+  font-size: 24px;
   margin: 0;
 `;
 
@@ -41,17 +43,18 @@ const Subtitle = styled.p`
 
 const ViewAllButton = styled.button`
   ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.primary};
-  background: none;
+  color: ${props => props.theme.colors.text.inverse};
+  background: ${props => props.theme.colors.text.primary};
   border: none;
-  font-weight: 600;
+  font-weight: 900;
   cursor: pointer;
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.radii.md};
+  padding: 10px 14px;
+  border-radius: 999px;
   transition: ${props => props.theme.transitions.swift};
 
   &:hover {
-    background: ${props => props.theme.colors.primarySoftBg};
+    background: ${props => props.theme.colors.primary};
+    transform: translateY(-1px);
   }
 `;
 
@@ -104,7 +107,7 @@ export const SellerSection = ({ navigate }) => {
           <Subtitle>Manage your store and track performance</Subtitle>
         </div>
         <ViewAllButton onClick={handleViewDashboard}>
-          View Full Dashboard →
+          View dashboard
         </ViewAllButton>
       </Header>
       

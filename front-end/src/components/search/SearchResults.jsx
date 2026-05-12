@@ -3,81 +3,189 @@ import { fadeIn } from '../../theme/animations';
 import { ProductCard } from '../home/ProductCard';
 
 const Container = styled.div`
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px min(5vw, 48px);
   animation: ${fadeIn} 0.3s ease-in;
 `;
 
+const ResultsHero = styled.section`
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 18px;
+  padding: 26px;
+  background:
+    linear-gradient(115deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.94) 48%, rgba(241,247,255,0.86) 100%) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.22), rgba(196, 184, 252, 0.18), rgba(255,255,255,0.82)) border-box;
+  border: 1px solid transparent;
+  border-radius: 30px;
+  box-shadow: 0 24px 58px rgba(16, 24, 40, 0.1);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: auto 22px 0 auto;
+    width: 190px;
+    height: 190px;
+    background: radial-gradient(circle, rgba(126, 193, 246, 0.2), transparent 70%);
+    pointer-events: none;
+  }
+`;
+
 const ResultsHeader = styled.div`
-  display: flex;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const Eyebrow = styled.div`
+  display: inline-flex;
+  width: fit-content;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: ${props => props.theme.spacing.md};
-  flex-wrap: wrap;
-  gap: ${props => props.theme.spacing.sm};
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: ${props => props.theme.colors.primarySoftText};
+  ${props => props.theme.typography.caption}
+  font-weight: 900;
+  text-transform: uppercase;
+`;
+
+const DotMark = styled.span`
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.successBase};
+`;
+
+const ResultsTitle = styled.h2`
+  color: ${props => props.theme.colors.text.primary};
+  margin: 0;
+  font-size: clamp(34px, 6vw, 58px);
+  line-height: 0.98;
+  font-weight: 900;
+  letter-spacing: 0;
+`;
+
+const ResultsSubtitle = styled.p`
+  ${props => props.theme.typography.body1}
+  color: ${props => props.theme.colors.text.secondary};
+  margin: 12px 0 0;
+  max-width: 620px;
+  font-weight: 500;
 `;
 
 const ResultsCount = styled.div`
   ${props => props.theme.typography.body2}
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
+  background: ${props => props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 22px;
+  padding: 14px 16px;
+  min-width: 150px;
+  text-align: center;
+`;
+
+const CountValue = styled.div`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 900;
+`;
+
+const CountLabel = styled.div`
+  ${props => props.theme.typography.caption}
+  margin-top: 5px;
   color: ${props => props.theme.colors.text.secondary};
-  font-weight: 500;
+  font-weight: 800;
 `;
 
 const FilterChips = styled.div`
+  position: relative;
+  z-index: 1;
   display: flex;
-  gap: ${props => props.theme.spacing.sm};
+  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: ${props => props.theme.spacing.md};
+  margin-top: 20px;
 `;
 
 const FilterChip = styled.button`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  background: ${props => props.$active ? props.theme.colors.primarySoftBg : props.theme.colors.surface};
-  border: 2px solid ${props => props.$active ? props.theme.colors.primary : props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.pill};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.md};
+  background: ${props => props.$active ? props.theme.colors.primarySoftBg : '#ffffff'};
+  border: 1px solid ${props => props.$active ? 'rgba(61, 129, 239, 0.3)' : props.theme.colors.border.default};
+  border-radius: 999px;
+  padding: 8px 11px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   ${props => props.theme.typography.caption}
-  font-weight: 500;
-  color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.primary};
+  font-weight: 900;
+  color: ${props => props.$active ? props.theme.colors.primarySoftText : props.theme.colors.text.primary};
+  box-shadow: 0 10px 20px rgba(16, 24, 40, 0.04);
 
   &:hover {
     border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.theme.colors.primarySoftBg};
+    color: ${props => props.theme.colors.primary};
+    transform: translateY(-1px);
+  }
+`;
+
+const ProductsSurface = styled.div`
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid ${props => props.theme.colors.border.light};
+  border-radius: 28px;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.05);
+
+  @media (max-width: 640px) {
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
   }
 `;
 
 const ProductsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: ${props => props.theme.spacing.md};
-  
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
   @media (min-width: ${props => props.theme.breakpoints.tablet}) {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-  
+
   @media (min-width: ${props => props.theme.breakpoints.desktop}) {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 `;
 
 const LoadMoreButton = styled.button`
   width: 100%;
-  margin-top: ${props => props.theme.spacing.lg};
-  padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  margin-top: 24px;
+  padding: 16px;
+  background: ${props => props.theme.colors.text.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
-  border-radius: ${props => props.theme.radii.md};
+  border-radius: 999px;
   ${props => props.theme.typography.button}
-  font-weight: 700;
+  font-weight: 900;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 18px 34px rgba(16, 24, 40, 0.16);
 
   &:hover {
-    background: ${props => props.theme.colors.primaryHover};
+    background: ${props => props.theme.colors.primary};
     transform: translateY(-2px);
   }
 
@@ -90,80 +198,119 @@ const LoadMoreButton = styled.button`
 
 const LoadingText = styled.div`
   text-align: center;
-  padding: ${props => props.theme.spacing.md};
+  padding: 16px;
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.secondary};
+  font-weight: 700;
 `;
 
 const LoadingContainer = styled.div`
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 12px;
+  min-height: 300px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.2), rgba(196, 184, 252, 0.16), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
+  ${props => props.theme.typography.body1}
+  color: ${props => props.theme.colors.text.secondary};
+  font-weight: 700;
+`;
+
+const LoadingMark = styled.div`
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 200px;
-  ${props => props.theme.typography.body1}
-  color: ${props => props.theme.colors.text.secondary};
+  font-weight: 900;
+  box-shadow: 0 14px 28px rgba(16, 24, 40, 0.08);
 `;
 
 const EmptyState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  min-height: 360px;
   text-align: center;
-  padding: ${props => props.theme.spacing.xl};
+  padding: 36px 24px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.22), rgba(196, 184, 252, 0.18), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
 `;
 
 const EmptyIcon = styled.div`
-  font-size: ${props => props.theme.spacing.xxl * 4};
-  margin-bottom: ${props => props.theme.spacing.md};
-  opacity: 0.5;
+  width: 70px;
+  height: 70px;
+  border-radius: 24px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 900;
 `;
 
 const EmptyTitle = styled.h3`
-  ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
-  margin-bottom: ${props => props.theme.spacing.sm};
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 900;
 `;
 
 const EmptyText = styled.p`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.secondary};
-  margin-bottom: ${props => props.theme.spacing.md};
+  margin: 0;
+  max-width: 460px;
+  font-weight: 600;
 `;
 
 const RecoverySection = styled.div`
-  margin-top: ${props => props.theme.spacing.xl};
+  margin-top: 16px;
   width: 100%;
 `;
 
 const RecoveryTitle = styled.h4`
-  ${props => props.theme.typography.heading4}
+  ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  margin-bottom: ${props => props.theme.spacing.md};
-  text-align: left;
+  margin: 0 0 12px;
+  font-weight: 900;
 `;
 
 const RecoveryChips = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: ${props => props.theme.spacing.sm};
+  justify-content: center;
+  gap: 8px;
 `;
 
 const RecoveryChip = styled.button`
-  background: ${props => props.theme.colors.surface};
-  border: 2px solid ${props => props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.pill};
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
+  background: ${props => props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 999px;
+  padding: 10px 12px;
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 500;
+  font-weight: 900;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
 
   &:hover {
     border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.theme.colors.primarySoftBg};
+    color: ${props => props.theme.colors.primary};
     transform: translateY(-2px);
   }
 `;
@@ -183,7 +330,10 @@ export const SearchResults = ({
   if (loading && results.length === 0) {
     return (
       <Container>
-        <LoadingContainer>Searching...</LoadingContainer>
+        <LoadingContainer>
+          <LoadingMark>S</LoadingMark>
+          Searching nearby stores...
+        </LoadingContainer>
       </Container>
     );
   }
@@ -193,14 +343,14 @@ export const SearchResults = ({
     return (
       <Container>
         <EmptyState>
-          <EmptyIcon>🔍</EmptyIcon>
+          <EmptyIcon>S</EmptyIcon>
           <EmptyTitle>No matches for "{query}" near {suburb}</EmptyTitle>
           <EmptyText>
             Try searching with different keywords or browse trending items near you.
           </EmptyText>
-          
+
           <RecoverySection>
-            <RecoveryTitle>Suggested Alternatives</RecoveryTitle>
+            <RecoveryTitle>Suggested alternatives</RecoveryTitle>
             <RecoveryChips>
               <RecoveryChip>Wider radius results</RecoveryChip>
               <RecoveryChip>Popular in {suburb}</RecoveryChip>
@@ -218,40 +368,52 @@ export const SearchResults = ({
 
   return (
     <Container>
-      <ResultsHeader>
-        <ResultsCount>
-          {displayCount} {displayCount === 1 ? 'item' : 'items'} near {suburb}
-        </ResultsCount>
-      </ResultsHeader>
+      <ResultsHero>
+        <ResultsHeader>
+          <div>
+            <Eyebrow><DotMark />Curated in {suburb}</Eyebrow>
+            <ResultsTitle>Results for "{query}"</ResultsTitle>
+            <ResultsSubtitle>
+              Beautiful local finds ranked by availability, proximity, and what shoppers nearby are loving.
+            </ResultsSubtitle>
+          </div>
+          <ResultsCount>
+            <CountValue>{displayCount}</CountValue>
+            <CountLabel>{displayCount === 1 ? 'item' : 'items'} nearby</CountLabel>
+          </ResultsCount>
+        </ResultsHeader>
 
-      <FilterChips>
-        <FilterChip $active>In Stock</FilterChip>
-        <FilterChip>On Sale</FilterChip>
-        <FilterChip>Under R50</FilterChip>
-        <FilterChip>Deliver Today</FilterChip>
-        <FilterChip>Free Delivery</FilterChip>
-        <FilterChip>Within 1 km</FilterChip>
-        <FilterChip>Highly Rated</FilterChip>
-        <FilterChip>Popular Nearby</FilterChip>
-      </FilterChips>
+        <FilterChips>
+          <FilterChip $active>In stock</FilterChip>
+          <FilterChip>On sale</FilterChip>
+          <FilterChip>Under R50</FilterChip>
+          <FilterChip>Deliver today</FilterChip>
+          <FilterChip>Free delivery</FilterChip>
+          <FilterChip>Within 1 km</FilterChip>
+          <FilterChip>Highly rated</FilterChip>
+          <FilterChip>Popular nearby</FilterChip>
+        </FilterChips>
+      </ResultsHero>
 
-      <ProductsGrid>
-        {results.map((product, index) => (
-          <ProductCard
-            key={product.id || index}
-            product={product}
-            onClick={() => onProductClick && onProductClick(product)}
-            onAddToCart={() => onAddToCart && onAddToCart(product)}
-          />
-        ))}
-      </ProductsGrid>
+      <ProductsSurface>
+        <ProductsGrid>
+          {results.map((product, index) => (
+            <ProductCard
+              key={product.id || index}
+              product={product}
+              onClick={() => onProductClick && onProductClick(product)}
+              onAddToCart={() => onAddToCart && onAddToCart(product)}
+            />
+          ))}
+        </ProductsGrid>
+      </ProductsSurface>
 
       {hasMore && (
         <LoadMoreButton
           onClick={onLoadMore}
           disabled={loadingMore}
         >
-          {loadingMore ? 'Loading...' : 'Load More'}
+          {loadingMore ? 'Loading...' : 'Load more'}
         </LoadMoreButton>
       )}
 
@@ -261,4 +423,3 @@ export const SearchResults = ({
     </Container>
   );
 };
-

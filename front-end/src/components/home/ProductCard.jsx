@@ -3,34 +3,70 @@ import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
 const Card = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.lg};
+  position: relative;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.24), rgba(196, 184, 252, 0.2), rgba(255, 255, 255, 0.72)) border-box;
+  border: 1px solid transparent;
+  border-radius: 24px;
   overflow: hidden;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   animation: ${fadeIn} 0.3s ease-in;
-  box-shadow: ${props => props.theme.shadows.sm};
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
   display: flex;
   flex-direction: column;
   height: 100%;
+  isolation: isolate;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(126, 193, 246, 0.16), transparent 32%),
+      linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0));
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.md};
+    transform: translateY(-6px);
+    box-shadow: 0 28px 64px rgba(16, 24, 40, 0.14);
+    border-color: rgba(61, 129, 239, 0.34);
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+
+  &:hover img {
+    transform: scale(1.045);
   }
 
   &:active {
-    transform: translateY(0);
+    transform: translateY(-2px);
   }
 `;
 
 const ImageContainer = styled.div`
   position: relative;
   width: 100%;
-  /* Slightly reduce aspect ratio so more rows fit on screen */
-  padding-top: 85%;
-  background: ${props => props.theme.colors.background};
+  aspect-ratio: 1 / 0.9;
+  background: ${props => props.theme.colors.gradient.soft};
   overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(13, 28, 51, 0.02) 38%, rgba(13, 28, 51, 0.58) 100%),
+      linear-gradient(115deg, rgba(255,255,255,0.34) 0%, transparent 36%);
+    pointer-events: none;
+  }
 `;
 
 const Image = styled.img`
@@ -40,6 +76,7 @@ const Image = styled.img`
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   
   /* Handle broken images */
   &[src=""],
@@ -50,8 +87,8 @@ const Image = styled.img`
 
 const Badge = styled.div`
   position: absolute;
-  top: ${props => props.theme.spacing.xs};
-  left: ${props => props.theme.spacing.xs};
+  top: 12px;
+  left: 12px;
   background: ${props => {
     if (props.$variant === 'hot') return props.theme.colors.danger?.[500] || props.theme.colors.dangerBase;
     if (props.$variant === 'flash') return props.theme.colors.warningBase;
@@ -59,29 +96,54 @@ const Badge = styled.div`
     return props.theme.colors.primary;
   }};
   color: ${props => props.theme.colors.text.inverse};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.radii.sm};
+  padding: 7px 10px;
+  border-radius: 999px;
   ${props => props.theme.typography.caption}
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  z-index: 1;
+  letter-spacing: 0;
+  z-index: 2;
+  box-shadow: 0 12px 26px rgba(16, 24, 40, 0.18);
+`;
+
+const ImageMeta = styled.div`
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+  display: flex;
+  max-width: calc(100% - 24px);
+  gap: 6px;
+`;
+
+const ImagePill = styled.span`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.text.primary};
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-weight: 800;
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.14);
+  backdrop-filter: blur(10px);
 `;
 
 const Content = styled.div`
-  padding: ${props => props.theme.spacing.md};
+  position: relative;
+  z-index: 2;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: ${props => props.theme.spacing.xs};
+  gap: 8px;
 `;
 
 const Name = styled.h3`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
   margin: 0;
-  font-weight: 600;
-  line-height: 1.4;
+  font-weight: 800;
+  line-height: 1.32;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -92,25 +154,26 @@ const Name = styled.h3`
 
 const StoreName = styled.p`
   ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
+  color: ${props => props.theme.colors.primarySoftText};
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 800;
 `;
 
 const FurnitureInfo = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: ${props => props.theme.spacing.xs};
+  gap: 6px;
   align-items: center;
-  margin-top: ${props => props.theme.spacing.xs};
+  min-height: 28px;
 `;
 
 const ConditionBadge = styled.span`
   display: inline-flex;
   align-items: center;
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
+  padding: 5px 9px;
   background: ${props => {
     const condition = props.$condition?.toLowerCase();
     if (condition === 'new') return props.theme.colors.success[100];
@@ -127,11 +190,12 @@ const ConditionBadge = styled.span`
     if (condition === 'refurbished') return props.theme.colors.info[800];
     return props.theme.colors.text.secondary;
   }};
-  border-radius: ${props => props.theme.radii.sm};
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
   ${props => props.theme.typography.caption}
-  font-weight: 600;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0;
 `;
 
 const Dimensions = styled.span`
@@ -139,20 +203,27 @@ const Dimensions = styled.span`
   color: ${props => props.theme.colors.text.secondary};
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
+  min-width: 0;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.neutral[50]};
+  font-weight: 700;
+  white-space: nowrap;
 `;
 
 const PriceRow = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
+  gap: 8px;
+  flex-wrap: wrap;
   margin-top: auto;
 `;
 
 const Price = styled.span`
   ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
 const OriginalPrice = styled.span`
@@ -165,42 +236,42 @@ const DiscountBadge = styled.span`
   ${props => props.theme.typography.caption}
   background: ${props => props.theme.colors.danger?.[100] || props.theme.colors.dangerBase + '20'};
   color: ${props => props.theme.colors.dangerBase};
-  padding: ${props => props.theme.spacing.xs};
-  border-radius: ${props => props.theme.radii.sm};
-  font-weight: 600;
+  padding: 4px 7px;
+  border-radius: 999px;
+  font-weight: 800;
 `;
 
 const Footer = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: ${props => props.theme.spacing.xs};
-  padding-top: ${props => props.theme.spacing.xs};
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 10px;
   border-top: 1px solid ${props => props.theme.colors.border.light};
 `;
 
 const Rating = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
+  min-width: 0;
+  font-weight: 700;
 `;
 
 const CartButton = styled.button`
   background: ${props => props.$quantity > 0 
     ? props.theme.colors.primary 
-    : props.theme.colors.background};
+    : props.theme.colors.text.primary};
   color: ${props => props.$quantity > 0 
     ? props.theme.colors.text.inverse 
-    : props.theme.colors.primary};
-  border: ${props => props.$quantity > 0 
-    ? 'none' 
-    : `2px solid ${props.theme.colors.primary}`};
-  border-radius: ${props => props.theme.radii.md};
+    : props.theme.colors.text.inverse};
+  border: none;
+  border-radius: 999px;
   padding: ${props => props.theme.spacing.xs};
-  min-width: ${props => props.$quantity > 0 ? props.theme.spacing.xxl : props.theme.spacing.xl};
-  height: ${props => props.theme.spacing.xxl};
+  min-width: 44px;
+  height: 44px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   display: flex;
@@ -209,11 +280,12 @@ const CartButton = styled.button`
   gap: ${props => props.theme.spacing.xs};
   ${props => props.theme.typography.button}
   position: relative;
+  box-shadow: 0 16px 30px rgba(16, 24, 40, 0.18);
 
   &:hover {
-    background: ${props => props.quantity > 0 
+    background: ${props => props.$quantity > 0 
       ? props.theme.colors.primaryHover 
-      : props.theme.colors.primarySoftBg};
+      : props.theme.colors.primary};
     transform: scale(1.05);
   }
 
@@ -229,10 +301,12 @@ const CartButton = styled.button`
 `;
 
 const CartIcon = styled.span`
-  font-size: ${props => props.theme.spacing.lg};
+  font-size: 24px;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  transform: translateY(-1px);
 `;
 
 const QuantityControls = styled.div`
@@ -244,11 +318,11 @@ const QuantityControls = styled.div`
 `;
 
 const QuantityButton = styled.button`
-  background: ${props => props.theme.colors.background};
+  background: #ffffff;
   border: 1px solid ${props => props.theme.colors.border.default};
-  border-radius: ${props => props.theme.radii.sm};
-  width: ${props => props.theme.spacing.lg};
-  height: ${props => props.theme.spacing.lg};
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -277,14 +351,16 @@ const QuantityButton = styled.button`
 `;
 
 const CartQuantityWrapper = styled.div`
-  background: ${props => props.theme.colors.background};
-  border-radius: ${props => props.theme.radii.md};
-  padding: ${props => props.theme.spacing.xs};
-  min-width: ${props => props.theme.spacing.xxl};
-  height: ${props => props.theme.spacing.xxl};
+  background: ${props => props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 999px;
+  padding: 5px;
+  min-width: 98px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 14px 26px rgba(16, 24, 40, 0.08);
 `;
 
 const QuantityDisplay = styled.span`
@@ -301,12 +377,13 @@ const PlaceholderImage = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background: ${props => props.theme.colors.background};
+  background: ${props => props.theme.colors.gradient.soft};
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: ${props => props.theme.spacing.lg};
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 32px;
+  font-weight: 900;
 `;
 
 import API_BASE_URL from '@config/api';
@@ -316,11 +393,12 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
   const [quantity, setQuantity] = useState(0);
   const [cartItemId, setCartItemId] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
-
-  if (!product) return null;
+  const [imageError, setImageError] = useState(false);
 
   // Check if product is in cart
   useEffect(() => {
+    if (!product?.id) return undefined;
+
     const checkCart = async () => {
       // Check server cart first (source of truth)
       try {
@@ -383,7 +461,9 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
     return () => {
       window.removeEventListener('cartUpdated', handleCartUpdate);
     };
-  }, [product.id]);
+  }, [product?.id]);
+
+  if (!product) return null;
 
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
   const discountPercent = hasDiscount 
@@ -392,7 +472,7 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
 
   const imageUrl = product.image || product.images?.[0] || null;
   const displayPrice = typeof product.price === 'number' ? product.price.toFixed(2) : product.price;
-  const [imageError, setImageError] = useState(false);
+  const displayRating = typeof product.rating === 'number' ? product.rating.toFixed(1) : product.rating;
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -577,9 +657,9 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
   };
 
   const getBadgeText = () => {
-    if (variant === 'hot') return '🔥 Hot';
-    if (variant === 'flash') return '⚡ Flash';
-    if (variant === 'new') return '🆕 New';
+    if (variant === 'hot') return 'Hot';
+    if (variant === 'flash') return 'Flash';
+    if (variant === 'new') return 'New';
     if (hasDiscount && discountPercent) return `-${discountPercent}%`;
     return null;
   };
@@ -595,10 +675,16 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
             loading="lazy"
           />
         ) : (
-          <PlaceholderImage>🪑</PlaceholderImage>
+          <PlaceholderImage>F</PlaceholderImage>
         )}
         {getBadgeText() && (
           <Badge $variant={variant}>{getBadgeText()}</Badge>
+        )}
+        {(displayRating || product.condition) && (
+          <ImageMeta>
+            {displayRating && <ImagePill>{displayRating} rated</ImagePill>}
+            {!displayRating && product.condition && <ImagePill>{product.condition}</ImagePill>}
+          </ImageMeta>
         )}
       </ImageContainer>
       
@@ -616,7 +702,7 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
             )}
             {product.dimensions_cm && product.dimensions_cm.width && (
               <Dimensions>
-                📏 {product.dimensions_cm.width}×{product.dimensions_cm.depth}×{product.dimensions_cm.height}cm
+                {product.dimensions_cm.width} x {product.dimensions_cm.depth} x {product.dimensions_cm.height}cm
               </Dimensions>
             )}
           </FurnitureInfo>
@@ -633,11 +719,9 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
         </PriceRow>
 
         <Footer>
-          {product.rating && (
-            <Rating>
-              ⭐ {product.rating.toFixed(1)}
-            </Rating>
-          )}
+          <Rating>
+            {displayRating ? `Rated ${displayRating}` : 'Local find'}
+          </Rating>
           {quantity > 0 ? (
             <CartQuantityWrapper>
               <QuantityControls>
@@ -646,7 +730,7 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
                   disabled={isUpdating || quantity <= 1}
                   aria-label="Decrease quantity"
                 >
-                  −
+                  -
                 </QuantityButton>
                 <QuantityDisplay>{quantity}</QuantityDisplay>
                 <QuantityButton 
@@ -660,7 +744,7 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
             </CartQuantityWrapper>
           ) : (
             <CartButton $quantity={0} onClick={handleAddToCart} disabled={isUpdating}>
-              <CartIcon>🛒</CartIcon>
+              <CartIcon>+</CartIcon>
             </CartButton>
           )}
         </Footer>

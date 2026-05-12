@@ -2,29 +2,32 @@ import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
 const Container = styled.section`
-  padding: ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.surface};
-  margin: ${props => props.theme.spacing.xl} 0;
-  border-radius: ${props => props.theme.radii.lg};
+  padding: 24px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.2), rgba(196, 184, 252, 0.16), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 26px;
   animation: ${fadeIn} 0.3s ease-in;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
 `;
 
 const SectionTitle = styled.h3`
-  ${props => props.theme.typography.heading4}
   color: ${props => props.theme.colors.text.primary};
-  margin: 0 0 ${props => props.theme.spacing.md} 0;
-  font-weight: 600;
-  font-size: 16px;
+  margin: 0 0 16px;
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.15;
 `;
 
 const SummaryRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: ${props => props.theme.spacing.sm} 0;
+  gap: 16px;
+  padding: 9px 0;
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-size: 14px;
 `;
 
 const Label = styled.div`
@@ -32,73 +35,78 @@ const Label = styled.div`
   align-items: center;
   gap: ${props => props.theme.spacing.xs};
   color: ${props => props.theme.colors.text.secondary};
+  font-weight: 700;
 `;
 
 const InfoIcon = styled.span`
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.neutral[100]};
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 11px;
+  font-weight: 900;
   cursor: help;
-  color: ${props => props.theme.colors.text.tertiary};
 `;
 
 const Value = styled.div`
-  font-weight: 600;
+  font-weight: 900;
   color: ${props => props.theme.colors.text.primary};
 `;
 
 const DiscountValue = styled.div`
-  font-weight: 600;
+  font-weight: 900;
   color: ${props => props.theme.colors.successBase};
 `;
 
 const Divider = styled.div`
   height: 1px;
   background: ${props => props.theme.colors.border.light};
-  margin: ${props => props.theme.spacing.md} 0;
+  margin: 14px 0;
 `;
 
 const TotalRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: ${props => props.theme.spacing.md} 0;
-  ${props => props.theme.typography.heading3}
+  gap: 16px;
+  padding-top: 4px;
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 20px;
-  border-top: 2px solid ${props => props.theme.colors.border.default};
-  margin-top: ${props => props.theme.spacing.md};
+  font-weight: 900;
+  font-size: 24px;
 `;
 
 const SavingsBadge = styled.div`
-  margin-top: ${props => props.theme.spacing.sm};
-  padding: ${props => props.theme.spacing.sm};
-  background: ${props => props.theme.colors.successSoftBg};
-  border-radius: ${props => props.theme.radii.md};
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: ${props => props.theme.colors.success[100]};
+  border: 1px solid rgba(21, 161, 124, 0.16);
+  border-radius: 16px;
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.successBase};
-  font-weight: 600;
-  font-size: 12px;
+  font-weight: 900;
   text-align: center;
 `;
 
 export const CartSummary = ({ totals }) => {
   if (!totals) return null;
 
-  const savings = totals.discount || 0;
-
   return (
     <Container>
-      <SectionTitle>Summary</SectionTitle>
-      
+      <SectionTitle>Order Summary</SectionTitle>
+
       <SummaryRow>
-        <Label>Items Total</Label>
+        <Label>Items total</Label>
         <Value>R{totals.itemsTotal?.toFixed(2) || '0.00'}</Value>
       </SummaryRow>
 
       <SummaryRow>
         <Label>
-          Delivery Fee
-          <InfoIcon title="Delivery fee based on distance from store">ℹ️</InfoIcon>
+          Delivery fee
+          <InfoIcon title="Delivery fee based on distance from store">i</InfoIcon>
         </Label>
         <Value>R{totals.deliveryFee?.toFixed(2) || '0.00'}</Value>
       </SummaryRow>
@@ -106,8 +114,8 @@ export const CartSummary = ({ totals }) => {
       {totals.smallOrderFee > 0 && (
         <SummaryRow>
           <Label>
-            Small Order Fee
-            <InfoIcon title="Applied to orders under R50">ℹ️</InfoIcon>
+            Small order fee
+            <InfoIcon title="Applied to orders under R50">i</InfoIcon>
           </Label>
           <Value>R{totals.smallOrderFee?.toFixed(2) || '0.00'}</Value>
         </SummaryRow>
@@ -115,8 +123,8 @@ export const CartSummary = ({ totals }) => {
 
       <SummaryRow>
         <Label>
-          Service Fee
-          <InfoIcon title="Platform service fee (2% of order)">ℹ️</InfoIcon>
+          Service fee
+          <InfoIcon title="Platform service fee">i</InfoIcon>
         </Label>
         <Value>R{totals.serviceFee?.toFixed(2) || '0.00'}</Value>
       </SummaryRow>
@@ -127,9 +135,7 @@ export const CartSummary = ({ totals }) => {
             <Label>Discounts</Label>
             <DiscountValue>-R{totals.discount.toFixed(2)}</DiscountValue>
           </SummaryRow>
-          <SavingsBadge>
-            ✓ You saved R{totals.discount.toFixed(2)} on discounts
-          </SavingsBadge>
+          <SavingsBadge>You saved R{totals.discount.toFixed(2)} on discounts</SavingsBadge>
         </>
       )}
 
@@ -142,14 +148,3 @@ export const CartSummary = ({ totals }) => {
     </Container>
   );
 };
-
-
-
-
-
-
-
-
-
-
-

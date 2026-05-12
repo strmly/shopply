@@ -168,6 +168,10 @@ function convertToProductModel(generatedProduct) {
     brand: generatedProduct.brand,
     warranty: generatedProduct.warranty,
     features: generatedProduct.features || [],
+
+    // Assign to default seller store
+    storeId: 1,
+    storeName: 'Shopply Home Furniture',
   };
 }
 

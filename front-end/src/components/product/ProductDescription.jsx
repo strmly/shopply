@@ -3,7 +3,11 @@ import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
 const Container = styled.section`
-  padding: ${props => props.theme.spacing.xl};
+  padding: 26px;
+  background: #ffffff;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 24px;
+  box-shadow: 0 14px 32px rgba(16, 24, 40, 0.06);
   animation: ${fadeIn} 0.3s ease-in;
 `;
 
@@ -11,8 +15,8 @@ const SectionTitle = styled.h3`
   ${props => props.theme.typography.heading4}
   color: ${props => props.theme.colors.text.primary};
   margin: 0 0 ${props => props.theme.spacing.md} 0;
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: 900;
+  font-size: 18px;
 `;
 
 const DescriptionText = styled.div`
@@ -20,6 +24,7 @@ const DescriptionText = styled.div`
   color: ${props => props.theme.colors.text.primary};
   line-height: 1.6;
   font-size: 15px;
+  font-weight: 500;
   
   ${props => !props.$expanded && `
     display: -webkit-box;

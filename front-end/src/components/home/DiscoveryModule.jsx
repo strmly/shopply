@@ -3,7 +3,7 @@ import { fadeIn } from '../../theme/animations';
 import { ProductCard } from './ProductCard';
 
 const ModuleContainer = styled.section`
-  margin-bottom: ${props => props.theme.spacing.xl};
+  margin-bottom: 38px;
   animation: ${fadeIn} 0.5s ease-in;
 `;
 
@@ -11,8 +11,9 @@ const Header = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${props => props.theme.spacing.xs};
-  padding: 0 ${props => props.theme.spacing.xl};
-  margin-bottom: ${props => props.theme.spacing.md};
+  padding: 0 min(5vw, 48px);
+  margin: 0 auto ${props => props.theme.spacing.md};
+  max-width: 1180px;
 `;
 
 const HeaderRow = styled.div`
@@ -22,10 +23,10 @@ const HeaderRow = styled.div`
 `;
 
 const Title = styled.h2`
-  ${props => props.theme.typography.heading3}
+  ${props => props.theme.typography.heading2}
   color: ${props => props.theme.colors.text.primary};
   margin: 0;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.3;
 `;
 
@@ -43,7 +44,7 @@ const ViewAllLink = styled.button`
   color: ${props => props.theme.colors.primary};
   cursor: pointer;
   font-weight: 600;
-  padding: 0;
+  padding: 8px 0;
   transition: ${props => props.theme.transitions.swift};
   display: flex;
   align-items: center;
@@ -69,7 +70,7 @@ const ScrollContainer = styled.div`
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  padding: 0 ${props => props.theme.spacing.xl};
+  padding: 0 min(5vw, 48px);
   scroll-snap-type: x mandatory;
   
   &::-webkit-scrollbar {
@@ -79,15 +80,21 @@ const ScrollContainer = styled.div`
 
 const ProductsList = styled.div`
   display: flex;
-  gap: ${props => props.theme.spacing.md};
+  gap: 16px;
   width: max-content;
   padding-bottom: ${props => props.theme.spacing.xs};
+  margin: 0 auto;
+  max-width: 1180px;
 `;
 
 const ProductWrapper = styled.div`
-  width: ${props => props.theme.spacing.xxl * 10};
+  width: 260px;
   flex-shrink: 0;
   scroll-snap-align: start;
+
+  @media (max-width: 640px) {
+    width: 220px;
+  }
 `;
 
 export const DiscoveryModule = ({ 

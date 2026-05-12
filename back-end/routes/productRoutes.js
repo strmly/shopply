@@ -12,6 +12,7 @@ router.get('/flash-deals', (req, res, next) => productController.getFlashDeals(r
 router.get('/new-arrivals', (req, res, next) => productController.getNewArrivals(req, res, next));
 router.get('/recommended', (req, res, next) => productController.getRecommended(req, res, next));
 router.get('/bundles', (req, res, next) => productController.getBundles(req, res, next));
+router.get('/top-rated', (req, res, next) => productController.getTopRated(req, res, next));
 router.get('/fast-delivery', (req, res, next) => productController.getFastDeliveryProducts(req, res, next));
 router.get('/:id/related', (req, res, next) => productController.getRelatedProducts(req, res, next));
 router.get('/:id/frequently-bought-together', (req, res, next) => productController.getFrequentlyBoughtTogether(req, res, next));

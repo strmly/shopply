@@ -3,14 +3,17 @@ import styled from 'styled-components';
 import { ProductCard } from './ProductCard';
 
 const Container = styled.div`
-  padding: 0 ${props => props.theme.spacing.xl};
+  padding: 0 min(5vw, 48px);
   margin-bottom: ${props => props.theme.spacing.xl};
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
 `;
 
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: ${props => props.theme.spacing.sm};
+  gap: 16px;
 
   @media (min-width: ${props => props.theme.breakpoints.tablet}) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -22,27 +25,70 @@ const Grid = styled.div`
 `;
 
 const LoadMoreButton = styled.button`
-  width: 100%;
-  margin-top: ${props => props.theme.spacing.lg};
-  padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: min(100%, 420px);
+  min-height: 54px;
+  margin: 28px auto 0;
+  padding: 0 22px;
+  background:
+    linear-gradient(${props => props.theme.colors.text.primary}, ${props => props.theme.colors.text.primary}) padding-box,
+    linear-gradient(135deg, rgba(61, 129, 239, 0.48), rgba(245, 158, 11, 0.28), rgba(255,255,255,0.8)) border-box;
   color: ${props => props.theme.colors.text.inverse};
-  border: none;
-  border-radius: ${props => props.theme.radii.md};
+  border: 1px solid transparent;
+  border-radius: 999px;
   ${props => props.theme.typography.button}
-  font-weight: 700;
+  font-weight: 900;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
+  box-shadow:
+    0 18px 34px rgba(16, 24, 40, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+
+  &::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    transform: rotate(135deg) translateY(1px);
+    transition: ${props => props.theme.transitions.swift};
+  }
 
   &:hover {
-    background: ${props => props.theme.colors.primaryHover};
+    background:
+      linear-gradient(${props => props.theme.colors.primary}, ${props => props.theme.colors.primary}) padding-box,
+      linear-gradient(135deg, rgba(61, 129, 239, 0.5), rgba(245, 158, 11, 0.34), rgba(255,255,255,0.86)) border-box;
     transform: translateY(-2px);
+    box-shadow: 0 24px 48px rgba(16, 24, 40, 0.18);
+  }
+
+  &:hover::after {
+    transform: rotate(135deg) translate(-2px, 3px);
   }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+    box-shadow: 0 12px 24px rgba(16, 24, 40, 0.1);
+  }
+
+  &:disabled::after {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.35);
+    border-top-color: currentColor;
+    border-radius: 999px;
+    transform: none;
+    animation: loadSpin 0.8s linear infinite;
+  }
+
+  @keyframes loadSpin {
+    to { transform: rotate(360deg); }
   }
 `;
 

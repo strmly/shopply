@@ -2,40 +2,53 @@ import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
 const Container = styled.div`
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 22px min(5vw, 48px);
   animation: ${fadeIn} 0.2s ease-in;
-  max-height: 70vh;
+  max-height: 72vh;
   overflow-y: auto;
 `;
 
+const Panel = styled.div`
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.18), rgba(196, 184, 252, 0.14), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 26px;
+  padding: 18px;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
+`;
+
 const Section = styled.div`
-  margin-bottom: ${props => props.theme.spacing.lg};
+  margin-bottom: 22px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const SectionTitle = styled.h4`
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.text.secondary};
-  margin-bottom: ${props => props.theme.spacing.sm};
-  font-weight: 600;
-  font-size: 13px;
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.primarySoftText};
+  margin: 0 0 10px;
+  font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 `;
 
 const SuggestionsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.xs};
+  display: grid;
+  gap: 8px;
 `;
 
 const SuggestionItem = styled.button`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.surface};
-  border: none;
-  border-radius: ${props => props.theme.radii.md};
-  padding: ${props => props.theme.spacing.md};
+  gap: 12px;
+  background: ${props => props.theme.colors.neutral[50]};
+  border: 1px solid ${props => props.theme.colors.border.light};
+  border-radius: 18px;
+  padding: 12px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   text-align: left;
@@ -43,48 +56,47 @@ const SuggestionItem = styled.button`
 
   &:hover {
     background: ${props => props.theme.colors.primarySoftBg};
+    border-color: rgba(61, 129, 239, 0.28);
     transform: translateX(4px);
-  }
-
-  &:active {
-    transform: translateX(2px);
   }
 `;
 
 const SuggestionIcon = styled.div`
-  font-size: 20px;
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.md};
+  background: #ffffff;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 14px;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
   flex-shrink: 0;
 `;
 
 const SuggestionContent = styled.div`
   flex: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 2px;
+  min-width: 0;
 `;
 
 const SuggestionLabel = styled.span`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 500;
+  font-weight: 900;
 `;
 
 const SuggestionSecondary = styled.span`
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
-  font-size: 12px;
+  font-weight: 700;
 `;
 
 const Highlight = styled.span`
   color: ${props => props.theme.colors.primary};
-  font-weight: 600;
+  font-weight: 900;
 `;
 
 const highlightText = (text, query) => {
@@ -107,96 +119,40 @@ export const SearchAutocomplete = ({ suggestions, query, onSuggestionClick }) =>
 
   if (!hasAnySuggestions) return null;
 
+  const renderSection = (title, matches, fallbackIcon) => {
+    if (!matches || matches.length === 0) return null;
+
+    return (
+      <Section>
+        <SectionTitle>{title}</SectionTitle>
+        <SuggestionsList>
+          {matches.map((match, index) => (
+            <SuggestionItem
+              key={index}
+              onClick={() => onSuggestionClick(match)}
+            >
+              <SuggestionIcon>{match.icon || fallbackIcon}</SuggestionIcon>
+              <SuggestionContent>
+                <SuggestionLabel>{highlightText(match.label, query)}</SuggestionLabel>
+                {match.secondary && (
+                  <SuggestionSecondary>{match.secondary}</SuggestionSecondary>
+                )}
+              </SuggestionContent>
+            </SuggestionItem>
+          ))}
+        </SuggestionsList>
+      </Section>
+    );
+  };
+
   return (
     <Container>
-      {directMatches.length > 0 && (
-        <Section>
-          <SectionTitle>Products</SectionTitle>
-          <SuggestionsList>
-            {directMatches.map((match, index) => (
-              <SuggestionItem
-                key={index}
-                onClick={() => onSuggestionClick(match)}
-              >
-                <SuggestionIcon>{match.icon || '🛍️'}</SuggestionIcon>
-                <SuggestionContent>
-                  <SuggestionLabel>{highlightText(match.label, query)}</SuggestionLabel>
-                  {match.secondary && (
-                    <SuggestionSecondary>{match.secondary}</SuggestionSecondary>
-                  )}
-                </SuggestionContent>
-              </SuggestionItem>
-            ))}
-          </SuggestionsList>
-        </Section>
-      )}
-
-      {semanticMatches.length > 0 && (
-        <Section>
-          <SectionTitle>Categories</SectionTitle>
-          <SuggestionsList>
-            {semanticMatches.map((match, index) => (
-              <SuggestionItem
-                key={index}
-                onClick={() => onSuggestionClick(match)}
-              >
-                <SuggestionIcon>{match.icon || '📂'}</SuggestionIcon>
-                <SuggestionContent>
-                  <SuggestionLabel>{highlightText(match.label, query)}</SuggestionLabel>
-                  {match.secondary && (
-                    <SuggestionSecondary>{match.secondary}</SuggestionSecondary>
-                  )}
-                </SuggestionContent>
-              </SuggestionItem>
-            ))}
-          </SuggestionsList>
-        </Section>
-      )}
-
-      {storeMatches.length > 0 && (
-        <Section>
-          <SectionTitle>Stores</SectionTitle>
-          <SuggestionsList>
-            {storeMatches.map((match, index) => (
-              <SuggestionItem
-                key={index}
-                onClick={() => onSuggestionClick(match)}
-              >
-                <SuggestionIcon>{match.icon || '🏪'}</SuggestionIcon>
-                <SuggestionContent>
-                  <SuggestionLabel>{highlightText(match.label, query)}</SuggestionLabel>
-                  {match.secondary && (
-                    <SuggestionSecondary>{match.secondary}</SuggestionSecondary>
-                  )}
-                </SuggestionContent>
-              </SuggestionItem>
-            ))}
-          </SuggestionsList>
-        </Section>
-      )}
-
-      {contextualMatches && contextualMatches.length > 0 && (
-        <Section>
-          <SectionTitle>💡 Discover</SectionTitle>
-          <SuggestionsList>
-            {contextualMatches.map((match, index) => (
-              <SuggestionItem
-                key={index}
-                onClick={() => onSuggestionClick(match)}
-              >
-                <SuggestionIcon>{match.icon || '💡'}</SuggestionIcon>
-                <SuggestionContent>
-                  <SuggestionLabel>{highlightText(match.label, query)}</SuggestionLabel>
-                  {match.secondary && (
-                    <SuggestionSecondary>{match.secondary}</SuggestionSecondary>
-                  )}
-                </SuggestionContent>
-              </SuggestionItem>
-            ))}
-          </SuggestionsList>
-        </Section>
-      )}
+      <Panel>
+        {renderSection('Products', directMatches, 'P')}
+        {renderSection('Categories', semanticMatches, 'C')}
+        {renderSection('Stores', storeMatches, 'S')}
+        {renderSection('Discover', contextualMatches, 'D')}
+      </Panel>
     </Container>
   );
 };
-

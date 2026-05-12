@@ -3,16 +3,19 @@ import { fadeIn } from '../../theme/animations';
 import { CartItemCard } from './CartItemCard';
 
 const Container = styled.section`
-  margin: ${props => props.theme.spacing.xl} 0;
   animation: ${fadeIn} 0.3s ease-in;
+  display: grid;
+  gap: 14px;
 `;
 
 const StoreHeader = styled.div`
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.lg};
-  margin-bottom: ${props => props.theme.spacing.md};
-  border: 2px solid ${props => props.theme.colors.border.light};
+  padding: 18px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.22), rgba(196, 184, 252, 0.18), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 24px;
+  box-shadow: 0 16px 34px rgba(16, 24, 40, 0.07);
 `;
 
 const StoreInfo = styled.div`
@@ -20,96 +23,110 @@ const StoreInfo = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: ${props => props.theme.spacing.md};
+
+  @media (max-width: 560px) {
+    align-items: flex-start;
+  }
 `;
 
 const StoreDetails = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.md};
+  gap: 14px;
+  min-width: 0;
   flex: 1;
 `;
 
 const StoreLogo = styled.div`
-  width: 48px;
-  height: 48px;
-  border-radius: ${props => props.theme.radii.md};
-  background: ${props => props.theme.colors.primarySoftBg};
+  width: 50px;
+  height: 50px;
+  border-radius: 18px;
+  background: ${props => props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 22px;
+  font-weight: 900;
   flex-shrink: 0;
 `;
 
 const StoreText = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 `;
 
 const StoreName = styled.div`
   ${props => props.theme.typography.body1}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 16px;
+  font-weight: 900;
+  font-size: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const StoreMeta = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.sm};
+  gap: 7px;
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
-  font-size: 12px;
+  font-weight: 700;
   flex-wrap: wrap;
 `;
 
+const MetaPill = styled.span`
+  background: ${props => props.theme.colors.neutral[50]};
+  border: 1px solid ${props => props.theme.colors.border.light};
+  border-radius: 999px;
+  padding: 5px 8px;
+`;
+
 const ViewStoreButton = styled.button`
-  background: transparent;
+  background: ${props => props.theme.colors.text.primary};
   border: none;
-  color: ${props => props.theme.colors.primary};
-  ${props => props.theme.typography.body2}
-  font-weight: 600;
+  color: ${props => props.theme.colors.text.inverse};
+  border-radius: 999px;
+  padding: 10px 14px;
+  ${props => props.theme.typography.caption}
+  font-weight: 900;
   cursor: pointer;
-  padding: ${props => props.theme.spacing.xs};
   transition: ${props => props.theme.transitions.swift};
-  font-size: 13px;
   white-space: nowrap;
+  box-shadow: 0 14px 28px rgba(16, 24, 40, 0.14);
 
   &:hover {
-    opacity: 0.8;
+    background: ${props => props.theme.colors.primary};
+    transform: translateY(-1px);
   }
 `;
 
 const ItemsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
-  padding: 0 ${props => props.theme.spacing.xl};
+  display: grid;
+  gap: 14px;
 `;
 
-export const StoreGrouping = ({ storeGroup, onUpdateQuantity, onRemoveItem, location }) => {
+export const StoreGrouping = ({ storeGroup, onUpdateQuantity, onRemoveItem }) => {
   return (
     <Container>
       <StoreHeader>
         <StoreInfo>
           <StoreDetails>
-            <StoreLogo>🏪</StoreLogo>
+            <StoreLogo>S</StoreLogo>
             <StoreText>
               <StoreName>{storeGroup.storeName}</StoreName>
               <StoreMeta>
-                <span>⭐ 4.6</span>
-                <span>•</span>
-                <span>{storeGroup.distance?.toFixed(1) || 0}km away</span>
-                <span>•</span>
-                <span>{storeGroup.eta || 'Delivers Today'}</span>
-                <span>•</span>
-                <span>Fee: R{storeGroup.deliveryFee?.toFixed(2) || '0.00'}</span>
+                <MetaPill>4.6 rated</MetaPill>
+                <MetaPill>{storeGroup.distance?.toFixed(1) || 0}km away</MetaPill>
+                <MetaPill>{storeGroup.eta || 'Delivers today'}</MetaPill>
+                <MetaPill>Fee R{storeGroup.deliveryFee?.toFixed(2) || '0.00'}</MetaPill>
               </StoreMeta>
             </StoreText>
           </StoreDetails>
-          <ViewStoreButton>View Store</ViewStoreButton>
+          <ViewStoreButton>View store</ViewStoreButton>
         </StoreInfo>
       </StoreHeader>
 
@@ -126,14 +143,3 @@ export const StoreGrouping = ({ storeGroup, onUpdateQuantity, onRemoveItem, loca
     </Container>
   );
 };
-
-
-
-
-
-
-
-
-
-
-

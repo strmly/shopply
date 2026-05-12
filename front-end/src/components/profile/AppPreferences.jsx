@@ -2,70 +2,67 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { fadeIn } from '../../theme/animations';
 
-const Container = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.lg};
-  padding: ${props => props.theme.spacing.md};
-  border: 1px solid ${props => props.theme.colors.border.light};
+const Container = styled.section`
+  background: #ffffff;
+  border-radius: 26px;
+  padding: 20px;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  box-shadow: 0 16px 36px rgba(16, 24, 40, 0.06);
   animation: ${fadeIn} 0.3s ease-in;
 `;
 
 const Title = styled.h3`
-  ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: ${props => props.theme.spacing.md};
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.1;
+  margin: 0 0 14px;
 `;
 
 const List = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.xs};
+  display: grid;
+  gap: 8px;
 `;
 
 const ListItem = styled.button`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.background};
+  padding: 14px;
+  background: ${props => props.theme.colors.neutral[50]};
   border: 1px solid ${props => props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.md};
+  border-radius: 16px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   text-align: left;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
+    border-color: rgba(61, 129, 239, 0.28);
     background: ${props => props.theme.colors.primarySoftBg};
+    transform: translateX(3px);
   }
 `;
 
 const Label = styled.div`
-  ${props => props.theme.typography.body1}
+  ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 900;
 `;
 
 const Arrow = styled.span`
-  color: ${props => props.theme.colors.text.tertiary};
-  font-size: 14px;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
 `;
 
 const Subtext = styled.div`
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
-  font-size: 12px;
-  margin-top: 2px;
+  font-weight: 700;
+  margin-top: 3px;
 `;
 
 const LabelColumn = styled.div`
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 2px;
 `;
 
@@ -80,20 +77,20 @@ export const AppPreferences = () => {
           <LabelColumn>
             <Label>Language</Label>
           </LabelColumn>
-          <Arrow>→</Arrow>
+          <Arrow>&gt;</Arrow>
         </ListItem>
         <ListItem onClick={() => navigate('/account/theme')}>
           <LabelColumn>
             <Label>Theme</Label>
           </LabelColumn>
-          <Arrow>→</Arrow>
+          <Arrow>&gt;</Arrow>
         </ListItem>
         <ListItem onClick={() => navigate('/account/notifications')}>
           <LabelColumn>
             <Label>Notifications</Label>
             <Subtext>Order updates, deals, and reminders</Subtext>
           </LabelColumn>
-          <Arrow>→</Arrow>
+          <Arrow>&gt;</Arrow>
         </ListItem>
       </List>
     </Container>

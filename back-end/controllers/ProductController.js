@@ -120,6 +120,23 @@ export class ProductController {
   }
 
   /**
+   * Get top-rated products
+   */
+  async getTopRated(req, res, next) {
+    try {
+      const { limit } = req.query;
+      const products = await ProductService.getTopRated(parseInt(limit) || 10);
+      res.json({
+        success: true,
+        data: products.map(p => p.toJSON()),
+        count: products.length,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Get bundles (products with discounts or special offers)
    */
   async getBundles(req, res, next) {

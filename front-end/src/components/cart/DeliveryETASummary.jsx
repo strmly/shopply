@@ -2,61 +2,58 @@ import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
 const Container = styled.section`
-  padding: ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.background};
-  margin: ${props => props.theme.spacing.md} 0;
-  border-radius: ${props => props.theme.radii.lg};
-  border: 2px solid ${props => props.theme.colors.border.light};
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 24px;
   animation: ${fadeIn} 0.3s ease-in;
+  box-shadow: 0 14px 32px rgba(16, 24, 40, 0.06);
 `;
 
-const InfoRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: ${props => props.theme.spacing.md};
-  margin-bottom: ${props => props.theme.spacing.sm};
+const InfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 
-  &:last-child {
-    margin-bottom: 0;
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
   }
 `;
 
-const InfoLabel = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.sm};
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  font-size: 14px;
+const InfoTile = styled.div`
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  background: ${props => props.theme.colors.neutral[50]};
+  border: 1px solid ${props => props.theme.colors.border.light};
+  border-radius: 18px;
 `;
 
-const InfoIcon = styled.span`
-  font-size: 20px;
+const InfoLabel = styled.div`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.text.secondary};
+  font-weight: 800;
+  text-transform: uppercase;
 `;
 
 const InfoValue = styled.div`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  font-size: 14px;
-  text-align: right;
+  font-weight: 900;
 `;
 
 const OptimizeButton = styled.button`
   width: 100%;
-  margin-top: ${props => props.theme.spacing.md};
-  padding: ${props => props.theme.spacing.sm};
+  margin-top: 12px;
+  padding: 12px;
   background: ${props => props.theme.colors.primarySoftBg};
-  border: 2px solid ${props => props.theme.colors.primary};
-  color: ${props => props.theme.colors.primary};
-  border-radius: ${props => props.theme.radii.md};
+  border: 1px solid rgba(61, 129, 239, 0.28);
+  color: ${props => props.theme.colors.primarySoftText};
+  border-radius: 999px;
   ${props => props.theme.typography.body2}
-  font-weight: 600;
+  font-weight: 900;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
-  font-size: 14px;
 
   &:hover {
     background: ${props => props.theme.colors.primary};
@@ -64,11 +61,10 @@ const OptimizeButton = styled.button`
   }
 `;
 
-export const DeliveryETASummary = ({ cart, deliveryMethod }) => {
+export const DeliveryETASummary = ({ cart }) => {
   const isMultiStore = cart.storeGroups && cart.storeGroups.length > 1;
   const deliveryFee = cart.totals?.deliveryFee || 0;
-  
-  // Calculate ETA range for multi-store
+
   let etaText = 'Today, 4-6 PM';
   if (isMultiStore && cart.storeGroups) {
     const etas = cart.storeGroups.map(g => g.eta).filter(Boolean);
@@ -85,45 +81,18 @@ export const DeliveryETASummary = ({ cart, deliveryMethod }) => {
 
   return (
     <Container>
-      <InfoRow>
-        <InfoLabel>
-          <InfoIcon>🚚</InfoIcon>
-          {isMultiStore ? 'Multi-store delivery ETA:' : 'Delivery ETA:'}
-        </InfoLabel>
-        <InfoValue>{etaText}</InfoValue>
-      </InfoRow>
-      
-      <InfoRow>
-        <InfoLabel>
-          <InfoIcon>💸</InfoIcon>
-          Delivery Fee:
-        </InfoLabel>
-        <InfoValue>
-          R{deliveryFee.toFixed(2)}
-          {isMultiStore && (
-            <span style={{ fontSize: '12px', color: 'gray', marginLeft: '4px' }}>
-              (consolidated)
-            </span>
-          )}
-        </InfoValue>
-      </InfoRow>
+      <InfoGrid>
+        <InfoTile>
+          <InfoLabel>{isMultiStore ? 'Multi-store ETA' : 'Delivery ETA'}</InfoLabel>
+          <InfoValue>{etaText}</InfoValue>
+        </InfoTile>
+        <InfoTile>
+          <InfoLabel>Delivery fee</InfoLabel>
+          <InfoValue>R{deliveryFee.toFixed(2)}{isMultiStore ? ' consolidated' : ''}</InfoValue>
+        </InfoTile>
+      </InfoGrid>
 
-      {isMultiStore && (
-        <OptimizeButton>
-          Optimize Delivery
-        </OptimizeButton>
-      )}
+      {isMultiStore && <OptimizeButton>Optimize delivery</OptimizeButton>}
     </Container>
   );
 };
-
-
-
-
-
-
-
-
-
-
-

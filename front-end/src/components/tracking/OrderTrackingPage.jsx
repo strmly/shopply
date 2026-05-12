@@ -11,8 +11,6 @@ import { OrderContentsPreview } from './OrderContentsPreview';
 import { StoreInformationBlocks } from './StoreInformationBlocks';
 import { FulfillmentTimeline } from './FulfillmentTimeline';
 import { IssueNotifications } from './IssueNotifications';
-import { ContactOptions } from './ContactOptions';
-import { TrackingFooter } from './TrackingFooter';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -164,15 +162,6 @@ export const OrderTrackingPage = ({ location }) => {
           />
         )}
         
-        <ContactOptions 
-          courier={tracking.courier}
-          storeGroups={tracking.storeGroups}
-          orderId={orderId}
-        />
-        
-        <TrackingFooter 
-          orderId={orderId}
-        />
       </Content>
     </Container>
   );

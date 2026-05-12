@@ -4,10 +4,11 @@ import { AddressQuickActionCard } from '../address';
 import { PaymentMethodQuickActionCard } from '../payment';
 
 const Container = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.lg};
-  padding: ${props => props.theme.spacing.md};
-  border: 1px solid ${props => props.theme.colors.border.light};
+  background: #ffffff;
+  border-radius: 26px;
+  padding: 20px;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  box-shadow: 0 16px 36px rgba(16, 24, 40, 0.06);
   animation: ${fadeIn} 0.3s ease-in;
   display: flex;
   flex-direction: column;
@@ -17,8 +18,9 @@ const Container = styled.div`
 const Title = styled.h3`
   ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 18px;
+  font-weight: 900;
+  font-size: 22px;
+  margin: 0;
 `;
 
 const List = styled.div`

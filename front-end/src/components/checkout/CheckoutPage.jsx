@@ -149,7 +149,12 @@ export const CheckoutPage = ({ location, onClose }) => {
     }
 
     setErrors(newErrors);
-    setIsValid(Object.keys(newErrors).length === 0 && cart && cart.items && cart.items.length > 0);
+    const hasItems = cart && (
+      (cart.items && cart.items.length > 0) ||
+      (cart.storeGroups && cart.storeGroups.length > 0) ||
+      cart.itemCount > 0
+    );
+    setIsValid(Object.keys(newErrors).length === 0 && hasItems);
   };
 
   const handlePlaceOrder = async () => {
@@ -237,7 +242,7 @@ export const CheckoutPage = ({ location, onClose }) => {
     );
   }
 
-  if (!cart || !cart.items || cart.items.length === 0) {
+  if (!cart || ((!cart.items || cart.items.length === 0) && (!cart.storeGroups || cart.storeGroups.length === 0))) {
     return (
       <Container>
         <CheckoutHeader onClose={onClose} />

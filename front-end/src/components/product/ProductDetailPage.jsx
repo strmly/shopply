@@ -21,13 +21,51 @@ import { ComplementaryEssentials } from './ComplementaryEssentials';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
+  background:
+    linear-gradient(180deg, #ffffff 0%, #ffffff 52%, #F8FAFC 100%);
   animation: ${fadeIn} 0.3s ease-in;
   padding-bottom: 100px; /* Space for sticky bar */
 `;
 
 const Content = styled.div`
   max-width: 100%;
+`;
+
+const HeroSection = styled.section`
+  max-width: 1180px;
+  margin: 0 auto 24px;
+  padding: 20px min(5vw, 48px) 0;
+`;
+
+const HeroShell = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+  gap: 28px;
+  align-items: start;
+
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+`;
+
+const HeroInfo = styled.div`
+  position: sticky;
+  top: 86px;
+  display: grid;
+  gap: 18px;
+
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    position: static;
+  }
+`;
+
+const DetailSections = styled.div`
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 min(5vw, 48px);
+  display: grid;
+  gap: 18px;
 `;
 
 const LoadingContainer = styled.div`
@@ -331,48 +369,56 @@ export const ProductDetailPage = ({ location }) => {
       />
       
       <Content>
-        <MediaGallery product={product} />
-        
-        <ProductSummary product={product} location={currentLocation} />
-        
-        <PricingBlock product={product} location={currentLocation} />
-        
-        <HyperlocalAvailability product={product} location={currentLocation} />
-        
-        {availableStores.length > 1 && (
-          <MultiStoreSelector
-            stores={availableStores}
-            selectedStore={selectedStore}
-            onSelectStore={setSelectedStore}
-            location={currentLocation}
-          />
-        )}
-        
-        <SellerModule product={product} location={currentLocation} />
-        
-        {product.variants && product.variants.length > 0 && (
-          <VariantsSelector
-            variants={product.variants}
-            selectedVariant={selectedVariant}
-            onSelectVariant={setSelectedVariant}
-          />
-        )}
-        
-        <QuantitySelector
-          quantity={quantity}
-          onQuantityChange={setQuantity}
-          maxQuantity={product.stockQuantity || 10}
-          stock={product.stock}
-          stockQuantity={product.stockQuantity}
-        />
-        
-        <ProductDescription product={product} />
-        
-        <ProductSpecs product={product} />
-        
-        <ProductReviews productId={product.id} location={currentLocation} />
-        
-        <LocalQA productId={product.id} location={currentLocation} />
+        <HeroSection>
+          <HeroShell>
+            <MediaGallery product={product} />
+
+            <HeroInfo>
+              <ProductSummary product={product} location={currentLocation} />
+
+              <PricingBlock product={product} location={currentLocation} />
+
+              <HyperlocalAvailability product={product} location={currentLocation} />
+
+              {availableStores.length > 1 && (
+                <MultiStoreSelector
+                  stores={availableStores}
+                  selectedStore={selectedStore}
+                  onSelectStore={setSelectedStore}
+                  location={currentLocation}
+                />
+              )}
+
+              <SellerModule product={product} location={currentLocation} />
+
+              {product.variants && product.variants.length > 0 && (
+                <VariantsSelector
+                  variants={product.variants}
+                  selectedVariant={selectedVariant}
+                  onSelectVariant={setSelectedVariant}
+                />
+              )}
+
+              <QuantitySelector
+                quantity={quantity}
+                onQuantityChange={setQuantity}
+                maxQuantity={product.stockQuantity || 10}
+                stock={product.stock}
+                stockQuantity={product.stockQuantity}
+              />
+            </HeroInfo>
+          </HeroShell>
+        </HeroSection>
+
+        <DetailSections>
+          <ProductDescription product={product} />
+
+          <ProductSpecs product={product} />
+
+          <ProductReviews productId={product.id} location={currentLocation} />
+
+          <LocalQA productId={product.id} location={currentLocation} />
+        </DetailSections>
         
         {frequentlyBoughtTogether.length > 0 && (
           <FrequentlyBoughtTogether

@@ -18,6 +18,7 @@ import {
   LegalListPage,
 } from './components/profile';
 import { CartPage } from './components/cart/CartPage';
+import { CheckoutPage } from './components/checkout/CheckoutPage';
 import { NotificationDetailPage } from './components/notifications/NotificationDetailPage';
 import { ProductDetailPage } from './components/product/ProductDetailPage';
 import {
@@ -29,7 +30,7 @@ import {
   RecommendedPage,
   FastDeliveryPage,
 } from './components/category';
-import { CommunityBundlePage, CurateBundlePage } from './components/community';
+import { CommunityBundlePage, CurateBundlePage, TrendingPage } from './components/community';
 import { SellerOnboarding, OrdersManagement, SellerDashboard, AnalyticsPage, StoreFrontPage, StoreHoursPage } from './components/seller';
 import { ProductListPage, ProductEditor } from './components/seller/products';
 import { OrderDetails } from './components/seller/orders';
@@ -186,6 +187,12 @@ const App = () => {
     return { suburb: 'Sandton', city: 'Johannesburg' };
   };
 
+  const handleLocationChange = (newLocation) => {
+    setLocation(newLocation);
+    localStorage.setItem('userLocation', JSON.stringify(newLocation));
+    localStorage.setItem('shopply_location', JSON.stringify(newLocation));
+  };
+
   const handleOnboardingComplete = (locationData) => {
     setIsOnboardingComplete(true);
     if (locationData) {
@@ -227,7 +234,7 @@ const App = () => {
     <>
       <ToastContainer />
       <Routes>
-        <Route path="/" element={<HomeScreen location={location} />} />
+        <Route path="/" element={<HomeScreen location={location} onLocationChange={handleLocationChange} />} />
         <Route path="/profile" element={<ProfilePage location={location} />} />
         <Route path="/account/edit-profile" element={<EditProfilePage />} />
         <Route path="/account/change-password" element={<ChangePasswordPage />} />
@@ -256,6 +263,7 @@ const App = () => {
         <Route path="/reviews" element={<ReviewsPage location={location} />} />
         <Route path="/vouchers" element={<VouchersWalletPage />} />
         <Route path="/cart" element={<CartPage location={location} />} />
+        <Route path="/checkout" element={<CheckoutPage location={location} />} />
         <Route path="/product/:id" element={<ProductDetailPage location={location} />} />
         <Route path="/notifications/:id" element={<NotificationDetailPage location={location} />} />
         <Route path="/tracking/:orderId" element={<OrderTrackingPage location={location} />} />
@@ -266,6 +274,7 @@ const App = () => {
         <Route path="/bundles" element={<BundlesPage location={location} />} />
         <Route path="/recommended" element={<RecommendedPage location={location} />} />
         <Route path="/fast-delivery" element={<FastDeliveryPage location={location} />} />
+        <Route path="/trending" element={<TrendingPage location={location} />} />
         <Route path="/community/bundle/:bundleType" element={<CommunityBundlePage location={location} />} />
         <Route path="/community/bundle/:bundleType/curate" element={<CurateBundlePage location={location} />} />
         <Route path="/seller/onboarding" element={<SellerOnboarding location={location} />} />

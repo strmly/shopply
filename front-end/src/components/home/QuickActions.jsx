@@ -1,118 +1,115 @@
 import styled from 'styled-components';
-import { fadeIn } from '../../theme/animations';
 
 const Container = styled.div`
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  margin-bottom: ${props => props.theme.spacing.lg};
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  padding: 0 min(5vw, 48px);
+  margin: -36px auto ${props => props.theme.spacing.xl};
+  position: relative;
+  z-index: 2;
 `;
 
 const ActionsList = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: ${props => props.theme.spacing.md};
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
   width: 100%;
-  max-width: 900px;
-  
-  /* Ensure even spacing on all screen sizes */
-  @media (max-width: 479px) {
-    gap: ${props => props.theme.spacing.sm};
-  }
-  
-  @media (min-width: 480px) and (max-width: 767px) {
-    gap: ${props => props.theme.spacing.md};
-  }
-  
-  @media (min-width: 768px) {
-    gap: ${props => props.theme.spacing.lg};
+  max-width: 1180px;
+  margin: 0 auto;
+
+  @media (max-width: 760px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 `;
 
 const ActionItem = styled.button`
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  justify-content: center;
-  gap: ${props => props.theme.spacing.xs};
-  background: ${props => props.theme.colors.background};
-  border: 2px solid ${props => props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.lg};
-  padding: ${props => props.theme.spacing.md};
-  width: ${props => props.theme.spacing.xxl * 2};
-  min-width: ${props => props.theme.spacing.xxl * 2};
+  gap: 12px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,255,255,0.88)) padding-box,
+    linear-gradient(140deg, ${props => props.$accent}44, rgba(196,184,252,0.18), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 22px;
+  padding: 16px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
-  flex-shrink: 0;
+  box-shadow: 0 18px 38px rgba(16, 24, 40, 0.09);
+  min-width: 0;
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.theme.colors.primarySoftBg};
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.sm};
+    border-color: ${props => props.$accent || props.theme.colors.primary};
+    transform: translateY(-5px);
+    box-shadow: 0 26px 54px rgba(16, 24, 40, 0.14);
   }
 
   &:active {
     transform: translateY(0);
   }
-  
-  /* Responsive sizing */
-  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
-    width: ${props => props.theme.spacing.xxl * 2.25};
-    min-width: ${props => props.theme.spacing.xxl * 2.25};
-  }
-  
-  @media (min-width: ${props => props.theme.breakpoints.desktop}) {
-    width: ${props => props.theme.spacing.xxl * 2.5};
-    min-width: ${props => props.theme.spacing.xxl * 2.5};
-  }
 `;
 
 const ActionIcon = styled.div`
-  font-size: ${props => props.theme.spacing.lg};
-  margin-bottom: ${props => props.theme.spacing.xs};
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  background: ${props => props.$color};
+  border: 1px solid rgba(255,255,255,0.72);
+  color: ${props => props.$accent || props.theme.colors.primary};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  letter-spacing: 0;
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.08);
+`;
+
+const ActionText = styled.div`
+  min-width: 0;
+  text-align: left;
 `;
 
 const ActionLabel = styled.span`
-  ${props => props.theme.typography.caption}
+  ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  text-align: center;
+  font-weight: 900;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const ActionHint = styled.span`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.text.secondary};
+  font-weight: 800;
 `;
 
 const QUICK_ACTIONS = [
-  // Furniture room quick links
-  { icon: '🛋️', label: 'Living Room', route: '/category/living' },
-  { icon: '🛏️', label: 'Bedroom', route: '/category/bedroom' },
-  
-  // Furniture discovery shortcuts
-  { icon: '🔥', label: 'Trending', route: '/hot' },
-  { icon: '💰', label: 'Deals', route: '/deals' },
-  { icon: '📦', label: 'Bundles', route: '/bundles' },
-  { icon: '⚡', label: 'Fast Delivery', route: '/fast-delivery' },
-  { icon: '🆕', label: 'New Arrivals', route: '/new' },
-  { icon: '🌳', label: 'Outdoor', route: '/category/outdoor' },
+  { icon: 'L', label: 'Living Room', hint: 'Sofas and tables', route: '/category/living', color: '#E8F1FF', accent: '#3D81EF' },
+  { icon: 'B', label: 'Bedroom', hint: 'Beds and storage', route: '/category/bedroom', color: '#F3F0FE', accent: '#7C3AED' },
+  { icon: '%', label: 'Deals', hint: 'Limited offers', route: '/deals', color: '#FEF7E3', accent: '#B35A05' },
+  { icon: 'N', label: 'New Arrivals', hint: 'Fresh drops', route: '/new', color: '#DBF8EE', accent: '#118264' },
 ];
 
 export const QuickActions = ({ onActionClick }) => {
   return (
     <Container>
       <ActionsList>
-        {QUICK_ACTIONS.map((action, index) => (
+        {QUICK_ACTIONS.map((action) => (
           <ActionItem
-            key={index}
+            key={action.label}
+            $accent={action.accent}
             onClick={() => onActionClick && onActionClick(action)}
           >
-            <ActionIcon>{action.icon}</ActionIcon>
-            <ActionLabel>{action.label}</ActionLabel>
+            <ActionIcon $color={action.color} $accent={action.accent}>
+              {action.icon}
+            </ActionIcon>
+            <ActionText>
+              <ActionLabel>{action.label}</ActionLabel>
+              <ActionHint>{action.hint}</ActionHint>
+            </ActionText>
           </ActionItem>
         ))}
       </ActionsList>
     </Container>
   );
 };
-

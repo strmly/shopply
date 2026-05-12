@@ -220,6 +220,16 @@ class ProductServiceClass {
   }
 
   /**
+   * Get top-rated products
+   */
+  async getTopRated(limit = 10) {
+    return this.products
+      .filter(p => p.rating >= 4.0 && p.stock !== 'out')
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.reviewCount || 0) - (a.reviewCount || 0))
+      .slice(0, limit);
+  }
+
+  /**
    * Get recommended products
    */
   async getRecommendedProducts(userId = null, limit = 10) {

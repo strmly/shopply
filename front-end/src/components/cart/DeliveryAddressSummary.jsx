@@ -2,11 +2,12 @@ import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
 const Container = styled.section`
-  padding: ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.surface};
-  margin: ${props => props.theme.spacing.md} 0;
-  border-radius: ${props => props.theme.radii.lg};
+  padding: 18px;
+  background: ${props => props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 24px;
   animation: ${fadeIn} 0.3s ease-in;
+  box-shadow: 0 14px 32px rgba(16, 24, 40, 0.06);
 `;
 
 const AddressRow = styled.div`
@@ -19,50 +20,62 @@ const AddressRow = styled.div`
 const AddressInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.md};
+  gap: 14px;
+  min-width: 0;
   flex: 1;
 `;
 
 const AddressIcon = styled.span`
-  font-size: 24px;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${props => props.theme.colors.primary};
+  font-weight: 900;
   flex-shrink: 0;
 `;
 
 const AddressText = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
 `;
 
 const AddressLabel = styled.div`
   ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 12px;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
+  text-transform: uppercase;
 `;
 
 const AddressValue = styled.div`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const ChangeButton = styled.button`
-  background: transparent;
-  border: 2px solid ${props => props.theme.colors.primary};
-  color: ${props => props.theme.colors.primary};
-  border-radius: ${props => props.theme.radii.md};
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  ${props => props.theme.typography.body2}
-  font-weight: 600;
+  background: ${props => props.theme.colors.text.primary};
+  border: none;
+  color: ${props => props.theme.colors.text.inverse};
+  border-radius: 999px;
+  padding: 11px 15px;
+  ${props => props.theme.typography.caption}
+  font-weight: 900;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
-  font-size: 14px;
   white-space: nowrap;
+  box-shadow: 0 14px 28px rgba(16, 24, 40, 0.14);
 
   &:hover {
-    background: ${props => props.theme.colors.primarySoftBg};
+    background: ${props => props.theme.colors.primary};
     transform: translateY(-1px);
   }
 `;
@@ -73,13 +86,13 @@ export const DeliveryAddressSummary = ({ address, onChange }) => {
       <Container>
         <AddressRow>
           <AddressInfo>
-            <AddressIcon>📍</AddressIcon>
+            <AddressIcon>A</AddressIcon>
             <AddressText>
               <AddressLabel>No delivery address set</AddressLabel>
               <AddressValue>Add address to continue</AddressValue>
             </AddressText>
           </AddressInfo>
-          <ChangeButton onClick={onChange}>Add Address</ChangeButton>
+          <ChangeButton onClick={onChange}>Add address</ChangeButton>
         </AddressRow>
       </Container>
     );
@@ -89,9 +102,9 @@ export const DeliveryAddressSummary = ({ address, onChange }) => {
     <Container>
       <AddressRow>
         <AddressInfo>
-          <AddressIcon>📍</AddressIcon>
+          <AddressIcon>A</AddressIcon>
           <AddressText>
-            <AddressLabel>Delivering to:</AddressLabel>
+            <AddressLabel>Delivering to</AddressLabel>
             <AddressValue>{address.address || `${address.suburb}, ${address.city}`}</AddressValue>
           </AddressText>
         </AddressInfo>
@@ -100,14 +113,3 @@ export const DeliveryAddressSummary = ({ address, onChange }) => {
     </Container>
   );
 };
-
-
-
-
-
-
-
-
-
-
-

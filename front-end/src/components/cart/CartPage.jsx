@@ -18,13 +18,46 @@ import { VoucherSelector } from '../vouchers/VoucherSelector';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
+  background:
+    linear-gradient(180deg, #ffffff 0%, #ffffff 54%, #F8FAFC 100%);
   animation: ${fadeIn} 0.3s ease-in;
-  padding-bottom: 180px; /* Space for sticky checkout bar and bottom nav */
+  padding-bottom: 190px; /* Space for sticky checkout bar and bottom nav */
 `;
 
 const Content = styled.div`
-  max-width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px min(5vw, 48px) 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
+  gap: 24px;
+  align-items: start;
+
+  @media (max-width: ${props => props.theme.breakpoints.desktop}) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const CartMain = styled.div`
+  min-width: 0;
+  display: grid;
+  gap: 18px;
+`;
+
+const CartAside = styled.aside`
+  position: sticky;
+  top: 88px;
+  display: grid;
+  gap: 16px;
+
+  @media (max-width: ${props => props.theme.breakpoints.desktop}) {
+    position: static;
+  }
+`;
+
+const DirectItems = styled.div`
+  display: grid;
+  gap: 14px;
 `;
 
 const LoadingContainer = styled.div`
@@ -381,17 +414,8 @@ export const CartPage = ({ location, onClose }) => {
   };
 
   const handleCheckout = () => {
-    if (!deliveryAddress) {
-      alert('Please add a delivery address');
-      return;
-    }
-    if (!paymentMethod) {
-      alert('Please select a payment method');
-      return;
-    }
-    // Navigate to checkout page with voucher if selected
-    navigate('/checkout', { 
-      state: { voucherId: selectedVoucherId } 
+    navigate('/checkout', {
+      state: { voucherId: selectedVoucherId }
     });
   };
 
@@ -404,7 +428,8 @@ export const CartPage = ({ location, onClose }) => {
     );
   }
 
-  if (!cart || !cart.items || cart.items.length === 0) {
+  const cartIsEmpty = !cart || ((!cart.items || cart.items.length === 0) && (!cart.storeGroups || cart.storeGroups.length === 0) && !cart.itemCount);
+  if (cartIsEmpty) {
     return (
       <Container>
         <CartHeader itemCount={0} onClose={onClose} />
@@ -419,68 +444,71 @@ export const CartPage = ({ location, onClose }) => {
       <CartHeader itemCount={cart.itemCount || cart.items.length} onClose={onClose} />
       
       <Content>
-        <DeliveryAddressSummary
-          address={deliveryAddress}
-          onChange={() => console.log('Change address')}
-        />
-        
-        <DeliveryETASummary
-          cart={cart}
-          deliveryMethod={deliveryMethod}
-        />
-        
-        {cart.storeGroups && cart.storeGroups.length > 0 && cart.storeGroups.map((storeGroup, index) => (
-          <StoreGrouping
-            key={storeGroup.storeId || index}
-            storeGroup={storeGroup}
-            onUpdateQuantity={handleUpdateQuantity}
-            onRemoveItem={handleRemoveItem}
-            location={location}
+        <CartMain>
+          <DeliveryAddressSummary
+            address={deliveryAddress}
+            onChange={() => console.log('Change address')}
           />
-        ))}
-        
-        {/* Fallback: if no storeGroups but items exist, show items directly */}
-        {(!cart.storeGroups || cart.storeGroups.length === 0) && cart.items && cart.items.length > 0 && (
-          <div style={{ padding: '0 24px', marginTop: '24px' }}>
-            {cart.items.map((item) => (
-              <CartItemCard
-                key={item.id}
-                item={item}
-                onUpdateQuantity={handleUpdateQuantity}
-                onRemove={handleRemoveItem}
-              />
-            ))}
-          </div>
-        )}
-        
-        {cart.suggestions && cart.suggestions.length > 0 && (
-          <OptimizationAlerts
-            suggestions={cart.suggestions}
-            onAction={(action, data) => console.log('Action:', action, data)}
+
+          <DeliveryETASummary
+            cart={cart}
+            deliveryMethod={deliveryMethod}
           />
-        )}
-        
-        <CartSummary totals={cart.totals} />
-        
-        <PromoCodeInput
-          promoCode={cart.promoCode}
-          onApply={handleApplyPromo}
-          onRemove={handleRemovePromo}
-        />
-        
-        <VoucherSelector
-          selectedVoucherId={selectedVoucherId}
-          onVoucherSelect={handleVoucherSelect}
-          onVoucherRemove={handleVoucherRemove}
-          cartTotal={cart.totals?.subtotal || 0}
-        />
-        
-        <PaymentDeliverySelectors
-          deliveryMethod={deliveryMethod}
-          paymentMethod={paymentMethod}
-          onDeliveryMethodChange={handleSetDeliveryMethod}
-          onPaymentMethodChange={handleSetPaymentMethod}
-        />
+
+          {cart.storeGroups && cart.storeGroups.length > 0 && cart.storeGroups.map((storeGroup, index) => (
+            <StoreGrouping
+              key={storeGroup.storeId || index}
+              storeGroup={storeGroup}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
+              location={location}
+            />
+          ))}
+
+          {(!cart.storeGroups || cart.storeGroups.length === 0) && cart.items && cart.items.length > 0 && (
+            <DirectItems>
+              {cart.items.map((item) => (
+                <CartItemCard
+                  key={item.id}
+                  item={item}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  onRemove={handleRemoveItem}
+                />
+              ))}
+            </DirectItems>
+          )}
+
+          {cart.suggestions && cart.suggestions.length > 0 && (
+            <OptimizationAlerts
+              suggestions={cart.suggestions}
+              onAction={(action, data) => console.log('Action:', action, data)}
+            />
+          )}
+        </CartMain>
+
+        <CartAside>
+          <CartSummary totals={cart.totals} />
+
+          <PromoCodeInput
+            promoCode={cart.promoCode}
+            onApply={handleApplyPromo}
+            onRemove={handleRemovePromo}
+          />
+
+          <VoucherSelector
+            selectedVoucherId={selectedVoucherId}
+            onVoucherSelect={handleVoucherSelect}
+            onVoucherRemove={handleVoucherRemove}
+            cartTotal={cart.totals?.subtotal || 0}
+          />
+
+          <PaymentDeliverySelectors
+            deliveryMethod={deliveryMethod}
+            paymentMethod={paymentMethod}
+            onDeliveryMethodChange={handleSetDeliveryMethod}
+            onPaymentMethodChange={handleSetPaymentMethod}
+          />
+        </CartAside>
       </Content>
       
       <CheckoutBar

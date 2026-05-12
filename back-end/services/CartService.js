@@ -90,7 +90,8 @@ class CartServiceClass {
    */
   removeItem(userId, itemId) {
     const cart = this.getCart(userId);
-    cart.items = cart.items.filter(item => item.id !== itemId);
+    const numericId = parseInt(itemId);
+    cart.items = cart.items.filter(item => item.id !== numericId);
     cart.updatedAt = new Date();
     return this.calculateCartTotals(cart);
   }

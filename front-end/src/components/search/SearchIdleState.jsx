@@ -3,90 +3,237 @@ import { fadeIn } from '../../theme/animations';
 import { ProductCard } from '../home/ProductCard';
 
 const Container = styled.div`
-  padding: ${props => props.theme.spacing.xl};
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px min(5vw, 48px);
   animation: ${fadeIn} 0.3s ease-in;
 `;
 
-const Section = styled.div`
-  margin-bottom: ${props => props.theme.spacing.xl};
+const HeroIntro = styled.section`
+  margin-bottom: 28px;
+  padding: 28px;
+  background:
+    linear-gradient(115deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.92) 44%, rgba(241,247,255,0.82) 100%);
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 28px;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
+`;
+
+const Eyebrow = styled.div`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+`;
+
+const HeroTitle = styled.h2`
+  color: ${props => props.theme.colors.text.primary};
+  margin: 0;
+  font-size: clamp(30px, 6vw, 56px);
+  line-height: 0.98;
+  font-weight: 900;
+  letter-spacing: 0;
+`;
+
+const HeroCopy = styled.p`
+  ${props => props.theme.typography.body1}
+  color: ${props => props.theme.colors.text.secondary};
+  margin: 14px 0 0;
+  max-width: 620px;
+  font-weight: 500;
+`;
+
+const Section = styled.section`
+  margin-bottom: 30px;
+`;
+
+const FlashDealsPanel = styled.section`
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background:
+    linear-gradient(115deg, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.93) 48%, rgba(254,247,227,0.92) 100%) padding-box,
+    linear-gradient(140deg, rgba(245, 158, 11, 0.28), rgba(61, 129, 239, 0.14), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  box-shadow: 0 22px 50px rgba(16, 24, 40, 0.09);
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -34px;
+    top: -42px;
+    width: 132px;
+    height: 132px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.12);
+    pointer-events: none;
+  }
+
+  @media (max-width: 680px) {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+`;
+
+const DealIcon = styled.div`
+  position: relative;
+  z-index: 1;
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: ${props => props.theme.colors.warning[100]};
+  border: 1px solid rgba(245, 158, 11, 0.24);
+  color: ${props => props.theme.colors.warning[600]};
+  font-size: 26px;
+  font-weight: 900;
+  box-shadow: 0 16px 32px rgba(245, 158, 11, 0.15);
+`;
+
+const DealCopy = styled.div`
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+`;
+
+const DealEyebrow = styled.div`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.warning[600]};
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+`;
+
+const DealTitle = styled.h3`
+  color: ${props => props.theme.colors.text.primary};
+  margin: 0;
+  font-size: clamp(22px, 4vw, 32px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
+`;
+
+const DealText = styled.p`
+  ${props => props.theme.typography.body2}
+  color: ${props => props.theme.colors.text.secondary};
+  margin: 8px 0 0;
+  font-weight: 600;
+`;
+
+const DealButton = styled.button`
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.text.primary};
+  color: ${props => props.theme.colors.text.inverse};
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+  transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 16px 30px rgba(16, 24, 40, 0.16);
+
+  &:hover {
+    background: ${props => props.theme.colors.warning[600]};
+    transform: translateY(-1px);
+  }
+
+  @media (max-width: 680px) {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 `;
 
 const SectionTitle = styled.h3`
-  ${props => props.theme.typography.heading4}
   color: ${props => props.theme.colors.text.primary};
-  margin-bottom: ${props => props.theme.spacing.md};
-  font-weight: 600;
-  font-size: 16px;
+  margin: 0 0 14px;
+  font-weight: 900;
+  font-size: 22px;
 `;
 
 const RecentSearchesList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.sm};
+  display: grid;
+  gap: 10px;
 `;
 
 const RecentSearchItem = styled.button`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: ${props => props.theme.colors.surface};
-  border: none;
-  border-radius: ${props => props.theme.radii.md};
-  padding: ${props => props.theme.spacing.md};
+  background: #ffffff;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 18px;
+  padding: 14px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   text-align: left;
   animation: ${fadeIn} 0.3s ease-in;
   animation-fill-mode: both;
+  box-shadow: 0 12px 26px rgba(16, 24, 40, 0.05);
 
   &:hover {
     background: ${props => props.theme.colors.primarySoftBg};
+    border-color: rgba(61, 129, 239, 0.28);
     transform: translateX(4px);
   }
-
-  &:nth-child(1) { animation-delay: 0.04s; }
-  &:nth-child(2) { animation-delay: 0.08s; }
-  &:nth-child(3) { animation-delay: 0.12s; }
-  &:nth-child(4) { animation-delay: 0.16s; }
-  &:nth-child(5) { animation-delay: 0.20s; }
 `;
 
 const RecentSearchContent = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.sm};
+  gap: 10px;
   flex: 1;
+  min-width: 0;
 `;
 
-const ClockIcon = styled.span`
-  font-size: 16px;
-  opacity: 0.6;
+const SmallIcon = styled.span`
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  flex-shrink: 0;
 `;
 
 const RecentSearchText = styled.span`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 500;
+  font-weight: 900;
 `;
 
 const Badge = styled.span`
   ${props => props.theme.typography.caption}
   background: ${props => props.theme.colors.primarySoftBg};
-  color: ${props => props.theme.colors.primary};
-  padding: 2px 6px;
-  border-radius: ${props => props.theme.radii.xs};
-  font-size: 10px;
-  font-weight: 600;
+  color: ${props => props.theme.colors.primarySoftText};
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-weight: 900;
   margin-left: ${props => props.theme.spacing.xs};
 `;
 
 const RemoveButton = styled.span`
-  background: transparent;
-  border: none;
   color: ${props => props.theme.colors.text.tertiary};
   cursor: pointer;
   padding: ${props => props.theme.spacing.xs};
   font-size: 18px;
+  font-weight: 900;
   transition: ${props => props.theme.transitions.swift};
   display: inline-flex;
   align-items: center;
@@ -97,128 +244,299 @@ const RemoveButton = styled.span`
   }
 `;
 
-const TrendingChips = styled.div`
+const Chips = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: ${props => props.theme.spacing.sm};
+  gap: 10px;
 `;
 
-const TrendingChip = styled.button`
-  display: flex;
+const Chip = styled.button`
+  display: inline-flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  background: ${props => props.theme.colors.surface};
-  border: 2px solid ${props => props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.pill};
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
+  gap: 8px;
+  background: ${props => props.$strong ? props.theme.colors.gradient.soft : '#ffffff'};
+  border: 1px solid ${props => props.$strong ? 'rgba(61, 129, 239, 0.28)' : props.theme.colors.border.default};
+  border-radius: 999px;
+  padding: 11px 14px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   ${props => props.theme.typography.body2}
-  font-weight: 500;
+  color: ${props => props.$strong ? props.theme.colors.primarySoftText : props.theme.colors.text.primary};
+  font-weight: 900;
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.05);
 
   &:hover {
     border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.theme.colors.primarySoftBg};
-    transform: scale(1.02);
+    color: ${props => props.theme.colors.primary};
+    transform: translateY(-2px);
   }
 `;
 
-const TrendingIcon = styled.span`
-  font-size: 14px;
+const TrendingPanel = styled.section`
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 30px;
+  padding: 22px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94) 55%, rgba(241,247,255,0.9)) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.24), rgba(196, 184, 252, 0.16), rgba(255,255,255,0.82)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  box-shadow: 0 22px 50px rgba(16, 24, 40, 0.08);
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -48px;
+    bottom: -56px;
+    width: 150px;
+    height: 150px;
+    border-radius: 999px;
+    background: rgba(61, 129, 239, 0.08);
+    pointer-events: none;
+  }
 `;
 
-const TrendingText = styled.span`
+const TrendingHeader = styled.div`
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  @media (max-width: 560px) {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+`;
+
+const TrendingTitleBlock = styled.div`
+  display: grid;
+  gap: 6px;
+`;
+
+const TrendingEyebrow = styled.div`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
+  text-transform: uppercase;
+`;
+
+const TrendingTitle = styled.h3`
   color: ${props => props.theme.colors.text.primary};
+  margin: 0;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
-const TrendingCount = styled.span`
+const TrendingHint = styled.div`
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
-  font-size: 11px;
+  background: #ffffff;
+  border: 1px solid rgba(228, 231, 236, 0.82);
+  border-radius: 999px;
+  padding: 8px 11px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 10px 20px rgba(16, 24, 40, 0.04);
+`;
+
+const TrendingGrid = styled.div`
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const TrendCard = styled.button`
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 86px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(228, 231, 236, 0.86);
+  border-radius: 20px;
+  cursor: pointer;
+  text-align: left;
+  transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 14px 30px rgba(16, 24, 40, 0.05);
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: rgba(61, 129, 239, 0.3);
+    box-shadow: 0 22px 44px rgba(16, 24, 40, 0.1);
+  }
+`;
+
+const TrendRank = styled.span`
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+`;
+
+const TrendContent = styled.span`
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+`;
+
+const TrendName = styled.span`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 15px;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const TrendMeta = styled.span`
+  ${props => props.theme.typography.caption}
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: rgba(248, 250, 252, 0.95);
+  color: ${props => props.theme.colors.text.secondary};
+  border: 1px solid rgba(228, 231, 236, 0.78);
+  font-weight: 900;
 `;
 
 const RepeatPurchasesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: ${props => props.theme.spacing.md};
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 `;
 
 const SmartShortcutsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: ${props => props.theme.spacing.sm};
-`;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 
-const ShortcutChip = styled.button`
-  display: flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  background: ${props => props.theme.colors.primarySoftBg};
-  border: 2px solid ${props => props.theme.colors.primary};
-  border-radius: ${props => props.theme.radii.md};
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  ${props => props.theme.typography.body2}
-  font-weight: 600;
-  color: ${props => props.theme.colors.primary};
-
-  &:hover {
-    background: ${props => props.theme.colors.primary};
-    color: ${props => props.theme.colors.text.inverse};
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.sm};
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
   }
 `;
 
 const QuickCategoriesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: ${props => props.theme.spacing.md};
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (min-width: ${props => props.theme.breakpoints.tablet}) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 `;
 
 const CategoryChip = styled.button`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  background: ${props => props.theme.colors.surface};
-  border: 2px solid ${props => props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.md};
-  padding: ${props => props.theme.spacing.md};
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  background:
+    ${props => props.$featured
+      ? 'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(236,254,255,0.92)) padding-box'
+      : 'linear-gradient(#ffffff, #ffffff) padding-box'},
+    linear-gradient(140deg, ${props => props.$accent || 'rgba(61, 129, 239, 0.16)'}, rgba(196, 184, 252, 0.12), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  padding: 16px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 14px 30px rgba(16, 24, 40, 0.06);
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -28px;
+    top: -34px;
+    width: 88px;
+    height: 88px;
+    border-radius: 999px;
+    background: ${props => props.$featured ? 'rgba(14, 116, 144, 0.1)' : 'rgba(61, 129, 239, 0.06)'};
+    pointer-events: none;
+  }
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.theme.colors.primarySoftBg};
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.sm};
+    transform: translateY(-3px);
+    box-shadow: 0 20px 42px rgba(16, 24, 40, 0.1);
   }
 `;
 
 const CategoryIcon = styled.div`
-  font-size: 24px;
-  margin-bottom: ${props => props.theme.spacing.xs};
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: ${props => props.$color || props.theme.colors.gradient.soft};
+  color: ${props => props.$accent || props.theme.colors.primarySoftText};
+  border: 1px solid rgba(255,255,255,0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+`;
+
+const CategoryText = styled.div`
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
 `;
 
 const CategoryLabel = styled.span`
-  ${props => props.theme.typography.caption}
+  ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  text-align: center;
-  font-size: 12px;
+  font-weight: 900;
+  text-align: left;
+`;
+
+const CategoryDescription = styled.span`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.text.secondary};
+  font-weight: 800;
+  text-align: left;
 `;
 
 const QUICK_CATEGORIES = [
-  { icon: '🛒', label: 'Groceries' },
-  { icon: '🏠', label: 'Home & Kitchen' },
-  { icon: '🍗', label: 'Braai' },
-  { icon: '🥬', label: 'Fruits & Veg' },
-  { icon: '👶', label: 'Baby & Kids' },
-  { icon: '📱', label: 'Electronics' },
-  { icon: '💊', label: 'Health' },
-  { icon: '👕', label: 'Fashion' },
+  { icon: 'L', label: 'Living', description: 'Sofas and tables', room: 'living', color: '#E8F1FF', accent: '#3D81EF' },
+  { icon: 'B', label: 'Bedroom', description: 'Beds and storage', room: 'bedroom', color: '#F3F0FE', accent: '#7C3AED' },
+  { icon: 'D', label: 'Dining', description: 'Tables and chairs', room: 'dining', color: '#ECFDF3', accent: '#15803D' },
+  { icon: 'O', label: 'Office', description: 'Desks and shelving', room: 'office', color: '#FFF7ED', accent: '#C2410C' },
+  { icon: 'G', label: 'Outdoor', description: 'Patio and garden', room: 'outdoor', color: '#F0FDF4', accent: '#16A34A' },
+  { icon: 'K', label: 'Kids', description: 'Playful essentials', room: 'kids', color: '#FEF3C7', accent: '#B45309' },
+  { icon: 'S', label: 'Storage', description: 'Organized living', room: 'storage', color: '#EEF2FF', accent: '#4F46E5' },
+  { icon: 'A', label: 'All Rooms', description: 'Every local find', room: 'all', color: '#ECFEFF', accent: '#0E7490', featured: true },
 ];
 
 export const SearchIdleState = ({
@@ -236,9 +554,39 @@ export const SearchIdleState = ({
 }) => {
   return (
     <Container>
+      <HeroIntro>
+        <Eyebrow>Search in {location?.suburb || 'your area'}</Eyebrow>
+        <HeroTitle>Find the right piece, faster.</HeroTitle>
+        <HeroCopy>
+          Search nearby stock, trusted stores, repeat buys, and fast local delivery in one polished flow.
+        </HeroCopy>
+      </HeroIntro>
+
+      <FlashDealsPanel>
+        <DealIcon>%</DealIcon>
+        <DealCopy>
+          <DealEyebrow>Limited offers</DealEyebrow>
+          <DealTitle>Flash Deals near you</DealTitle>
+          <DealText>
+            Jump straight into local markdowns, fast movers, and limited-time finds.
+          </DealText>
+        </DealCopy>
+        <DealButton
+          type="button"
+          onClick={() => onShortcutClick && onShortcutClick({
+            label: 'Flash Deals',
+            query: 'deals',
+            filter: { onSale: true },
+            icon: '%',
+          })}
+        >
+          Browse deals
+        </DealButton>
+      </FlashDealsPanel>
+
       {recentSearches.length > 0 && (
         <Section>
-          <SectionTitle>Recent Searches</SectionTitle>
+          <SectionTitle>Recent searches</SectionTitle>
           <RecentSearchesList>
             {recentSearches.map((search, index) => (
               <RecentSearchItem
@@ -246,7 +594,7 @@ export const SearchIdleState = ({
                 onClick={() => onRecentSearchClick(search)}
               >
                 <RecentSearchContent>
-                  <ClockIcon>🕐</ClockIcon>
+                  <SmallIcon>R</SmallIcon>
                   <RecentSearchText>{search}</RecentSearchText>
                   <Badge>Bought last week</Badge>
                 </RecentSearchContent>
@@ -256,7 +604,7 @@ export const SearchIdleState = ({
                     onRemoveRecentSearch(search);
                   }}
                 >
-                  ×
+                  x
                 </RemoveButton>
               </RecentSearchItem>
             ))}
@@ -265,28 +613,38 @@ export const SearchIdleState = ({
       )}
 
       {trendingSearches.length > 0 && (
-        <Section>
-          <SectionTitle>🔥 Trending Near You</SectionTitle>
-          <TrendingChips>
+        <TrendingPanel>
+          <TrendingHeader>
+            <TrendingTitleBlock>
+              <TrendingEyebrow>Trending in {location?.suburb || 'your area'}</TrendingEyebrow>
+              <TrendingTitle>What locals are finding now</TrendingTitle>
+            </TrendingTitleBlock>
+            <TrendingHint>Live nearby searches</TrendingHint>
+          </TrendingHeader>
+          <TrendingGrid>
             {trendingSearches.map((trend, index) => (
-              <TrendingChip
+              <TrendCard
                 key={index}
                 onClick={() => onTrendingSearchClick(trend.query)}
               >
-                <TrendingIcon>🔥</TrendingIcon>
-                <TrendingText>{trend.query}</TrendingText>
-                {trend.count && trend.today && (
-                  <TrendingCount>+{trend.count} today in {location?.suburb || 'your area'}</TrendingCount>
-                )}
-              </TrendingChip>
+                <TrendRank>{index + 1}</TrendRank>
+                <TrendContent>
+                  <TrendName>{trend.query}</TrendName>
+                  <TrendMeta>
+                    {trend.count && trend.today
+                      ? `+${trend.count} today`
+                      : 'Rising nearby'}
+                  </TrendMeta>
+                </TrendContent>
+              </TrendCard>
             ))}
-          </TrendingChips>
-        </Section>
+          </TrendingGrid>
+        </TrendingPanel>
       )}
 
       {repeatPurchases.length > 0 && (
         <Section>
-          <SectionTitle>🔄 Repeat Purchases</SectionTitle>
+          <SectionTitle>Repeat purchases</SectionTitle>
           <RepeatPurchasesGrid>
             {repeatPurchases.slice(0, 4).map((product, index) => (
               <ProductCard
@@ -301,31 +659,39 @@ export const SearchIdleState = ({
 
       {smartShortcuts.length > 0 && (
         <Section>
-          <SectionTitle>⚡ Smart Shortcuts</SectionTitle>
+          <SectionTitle>Smart shortcuts</SectionTitle>
           <SmartShortcutsGrid>
             {smartShortcuts.map((shortcut, index) => (
-              <ShortcutChip
+              <Chip
                 key={index}
+                $strong
                 onClick={() => onShortcutClick && onShortcutClick(shortcut)}
               >
-                <span>{shortcut.icon}</span>
+                <span>{shortcut.icon || 'S'}</span>
                 <span>{shortcut.label}</span>
-              </ShortcutChip>
+              </Chip>
             ))}
           </SmartShortcutsGrid>
         </Section>
       )}
 
       <Section>
-        <SectionTitle>Quick Categories</SectionTitle>
+        <SectionTitle>Shop by room</SectionTitle>
         <QuickCategoriesGrid>
           {QUICK_CATEGORIES.map((category, index) => (
             <CategoryChip
               key={index}
+              $accent={category.accent}
+              $featured={category.featured}
               onClick={() => onCategoryClick && onCategoryClick(category)}
             >
-              <CategoryIcon>{category.icon}</CategoryIcon>
-              <CategoryLabel>{category.label}</CategoryLabel>
+              <CategoryIcon $color={category.color} $accent={category.accent}>
+                {category.icon}
+              </CategoryIcon>
+              <CategoryText>
+                <CategoryLabel>{category.label}</CategoryLabel>
+                <CategoryDescription>{category.description}</CategoryDescription>
+              </CategoryText>
             </CategoryChip>
           ))}
         </QuickCategoriesGrid>

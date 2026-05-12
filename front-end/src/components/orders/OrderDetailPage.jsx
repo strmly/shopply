@@ -68,19 +68,125 @@ const SectionTitle = styled.h3`
 `;
 
 const StatusSection = styled(Section)`
-  text-align: center;
-  padding: ${props => props.theme.spacing.xl};
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94) 58%, rgba(241,247,255,0.9)) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.24), rgba(228, 231, 236, 0.86), rgba(245, 158, 11, 0.14)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  box-shadow: 0 22px 50px rgba(16, 24, 40, 0.08);
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -48px;
+    top: -54px;
+    width: 150px;
+    height: 150px;
+    border-radius: 999px;
+    background: rgba(61, 129, 239, 0.07);
+    pointer-events: none;
+  }
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+
+  > div:last-child {
+    grid-column: 1 / -1;
+    position: relative;
+    z-index: 1;
+    margin-top: 0 !important;
+    width: 100% !important;
+    height: 8px !important;
+    background: rgba(228, 231, 236, 0.78) !important;
+    border-radius: 999px !important;
+    overflow: hidden !important;
+    box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.06);
+  }
+
+  > div:last-child > div {
+    border-radius: inherit;
+  }
 `;
 
 const StatusIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: ${props => props.theme.spacing.md};
+  position: relative;
+  z-index: 1;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  font-size: 0;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.82);
+
+  &::before {
+    content: 'OS';
+    font-size: 16px;
+  }
 `;
 
 const StatusText = styled.div`
   ${props => props.theme.typography.body1}
   color: ${props => props.theme.colors.text.secondary};
   margin-top: ${props => props.theme.spacing.sm};
+  font-weight: 700;
+`;
+
+const StatusContent = styled.div`
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+`;
+
+const StatusEyebrow = styled.div`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+`;
+
+const StatusHeading = styled.h2`
+  color: ${props => props.theme.colors.text.primary};
+  margin: 0;
+  font-size: clamp(22px, 5vw, 34px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
+`;
+
+const ProgressTrack = styled.div`
+  margin-top: 16px;
+  width: 100%;
+  height: 8px;
+  background: rgba(228, 231, 236, 0.78);
+  border-radius: 999px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.06);
+`;
+
+const ProgressFill = styled.div`
+  width: ${props => props.$progress}%;
+  height: 100%;
+  border-radius: inherit;
+  background: ${props => {
+    if (props.$color === 'green') return props.theme.colors.successBase;
+    if (props.$color === 'amber') return props.theme.colors.warningBase;
+    return props.theme.colors.primary;
+  }};
+  transition: width 0.5s ease;
 `;
 
 const ItemsList = styled.div`
@@ -341,6 +447,7 @@ export const OrderDetailPage = ({ location }) => {
   const statusMetadata = order.statusMetadata || {};
   const storeGroups = order.storeGroups || [];
   const primaryStore = storeGroups[0] || {};
+  const statusLabel = order.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   return (
     <Container>
@@ -356,7 +463,7 @@ export const OrderDetailPage = ({ location }) => {
           isUrgent={statusMetadata.isUrgent}
           icon={statusMetadata.icon}
         >
-          {order.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          {statusLabel}
         </StatusBadge>
         {statusMetadata.subtext && (
           <StatusText>{statusMetadata.subtext}</StatusText>

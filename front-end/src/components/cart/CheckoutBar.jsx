@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes, css } from 'styled-components';
-import { fadeIn } from '../../theme/animations';
 
 const slideUp = keyframes`
   from {
@@ -13,28 +12,29 @@ const slideUp = keyframes`
 
 const pulse = keyframes`
   0%, 100% {
-    opacity: 1;
     transform: scale(1);
   }
   50% {
-    opacity: 0.9;
-    transform: scale(1.02);
+    transform: scale(1.025);
   }
 `;
 
 const Bar = styled.div`
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
-  background: ${props => props.theme.colors.background};
-  border-top: 1px solid ${props => props.theme.colors.border.light};
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  padding-bottom: calc(${props => props.theme.spacing.md} + env(safe-area-inset-bottom));
-  z-index: 1000;
-  box-shadow: ${props => props.theme.shadows.lg};
-  backdrop-filter: blur(10px);
+  bottom: 86px;
+  background: rgba(255, 255, 255, 0.88);
+  border-top: 1px solid rgba(228, 231, 236, 0.78);
+  padding: 12px min(5vw, 48px);
+  z-index: 999;
+  box-shadow: 0 -18px 44px rgba(16, 24, 40, 0.1);
+  backdrop-filter: blur(18px);
   animation: ${slideUp} 0.3s ease-out;
+
+  @media (max-width: 560px) {
+    bottom: 84px;
+  }
 `;
 
 const BarContent = styled.div`
@@ -42,52 +42,49 @@ const BarContent = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: ${props => props.theme.spacing.md};
-  max-width: 600px;
+  max-width: 760px;
   margin: 0 auto;
 `;
 
 const TotalSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  gap: 3px;
+  min-width: 0;
   flex: 1;
 `;
 
 const TotalPrice = styled.div`
-  ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 22px;
-  line-height: 1.2;
+  font-weight: 900;
+  font-size: 25px;
+  line-height: 1.05;
 `;
 
 const ETAText = styled.div`
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
-  font-size: 11px;
+  font-weight: 700;
 `;
 
 const CheckoutButton = styled.button`
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  background: ${props => {
-    if (props.disabled) return props.theme.colors.surface;
-    return props.theme.colors.primary;
-  }};
+  padding: 15px 22px;
+  background: ${props => props.disabled ? props.theme.colors.neutral[200] : props.theme.colors.text.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
-  border-radius: ${props => props.theme.radii.md};
+  border-radius: 999px;
   ${props => props.theme.typography.button}
-  font-weight: 700;
-  font-size: 16px;
+  font-weight: 900;
+  font-size: 15px;
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: ${props => props.theme.transitions.swift};
-  min-width: 140px;
-  animation: ${props => props.pulse ? css`${pulse} 2s ease-in-out infinite` : 'none'};
+  min-width: 150px;
+  box-shadow: ${props => props.disabled ? 'none' : '0 18px 34px rgba(16, 24, 40, 0.18)'};
+  animation: ${props => props.$pulse ? css`${pulse} 2s ease-in-out infinite` : 'none'};
 
   &:hover:not(:disabled) {
-    background: ${props => props.theme.colors.primaryHover};
-    transform: translateY(-1px);
-    box-shadow: ${props => props.theme.shadows.md};
+    background: ${props => props.theme.colors.primary};
+    transform: translateY(-2px);
+    box-shadow: 0 22px 42px rgba(16, 24, 40, 0.2);
   }
 
   &:active:not(:disabled) {
@@ -98,22 +95,18 @@ const CheckoutButton = styled.button`
 const WarningText = styled.div`
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.warningBase};
-  font-weight: 600;
-  font-size: 11px;
-  margin-top: 4px;
+  font-weight: 800;
 `;
 
 export const CheckoutBar = ({ total, eta, deliveryAddress, paymentMethod, onCheckout }) => {
   const navigate = useNavigate();
-  const isReady = deliveryAddress && paymentMethod;
+  const isReady = !!deliveryAddress;
   const missingItems = [];
   if (!deliveryAddress) missingItems.push('delivery address');
-  if (!paymentMethod) missingItems.push('payment method');
 
   const getButtonText = () => {
-    if (!deliveryAddress) return 'Add Address';
-    if (!paymentMethod) return 'Select Payment';
-    return 'Checkout →';
+    if (!deliveryAddress) return 'Add address';
+    return 'Checkout';
   };
 
   const handleCheckout = () => {
@@ -136,10 +129,10 @@ export const CheckoutBar = ({ total, eta, deliveryAddress, paymentMethod, onChec
             </WarningText>
           )}
         </TotalSection>
-        
+
         <CheckoutButton
           disabled={!isReady}
-          pulse={isReady}
+          $pulse={isReady}
           onClick={handleCheckout}
         >
           {getButtonText()}
@@ -148,4 +141,3 @@ export const CheckoutBar = ({ total, eta, deliveryAddress, paymentMethod, onChec
     </Bar>
   );
 };
-

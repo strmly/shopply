@@ -5,77 +5,167 @@ import { API_BASE_URL } from '../../config/api.js';
 
 const NavContainer = styled.nav`
   position: fixed;
-  bottom: 0;
   left: 0;
   right: 0;
-  background: ${props => props.theme.colors.surface};
-  border-top: 1px solid ${props => props.theme.colors.border?.default || props.theme.colors.border?.light || props.theme.colors.neutral[100]};
-  padding: ${props => props.theme.spacing.xs} 0;
+  bottom: 0;
   z-index: 1000;
-  box-shadow: ${props => props.theme.shadows.lg};
+  padding: 0 min(4vw, 32px) calc(10px + env(safe-area-inset-bottom));
+  pointer-events: none;
+`;
+
+const NavShell = styled.div`
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px;
+  background:
+    linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92)) padding-box,
+    linear-gradient(135deg, rgba(61, 129, 239, 0.22), rgba(196, 184, 252, 0.18), rgba(255,255,255,0.72)) border-box;
+  border: 1px solid transparent;
+  border-radius: 26px;
+  box-shadow: 0 -8px 40px rgba(16, 24, 40, 0.13);
+  backdrop-filter: blur(18px);
+  pointer-events: auto;
 `;
 
 const NavList = styled.ul`
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
+  gap: 6px;
   list-style: none;
   margin: 0;
   padding: 0;
-  max-width: 100%;
 `;
 
 const NavItem = styled.li`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  min-width: 0;
+`;
+
+const NavButton = styled.button`
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  grid-template-rows: 24px auto;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: ${props => props.theme.spacing.xs};
-  transition: ${props => props.theme.transitions.swift};
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 6px;
+  border: 1px solid ${props => props.$active ? 'rgba(61, 129, 239, 0.22)' : 'transparent'};
+  border-radius: 20px;
+  background: ${props => props.$active
+    ? props.theme.colors.gradient.soft
+    : 'transparent'};
   color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.secondary};
+  cursor: pointer;
+  transition: ${props => props.theme.transitions.swift};
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 7px;
+    width: 28px;
+    height: 3px;
+    border-radius: 999px;
+    background: ${props => props.theme.colors.primary};
+    opacity: ${props => props.$active ? 1 : 0};
+    transform: translateY(${props => props.$active ? '0' : '-3px'});
+    transition: ${props => props.theme.transitions.swift};
+  }
+
+  &:hover {
+    color: ${props => props.theme.colors.primary};
+    background: ${props => props.$active ? props.theme.colors.gradient.soft : 'rgba(232, 241, 255, 0.65)'};
+    transform: translateY(-2px);
+  }
 
   &:active {
-    transform: scale(0.95);
+    transform: translateY(0) scale(0.97);
   }
 `;
 
-const Icon = styled.div`
-  font-size: ${props => props.theme.spacing.lg};
-  margin-bottom: ${props => props.theme.spacing.xs};
-  display: flex;
+const IconWrap = styled.span`
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  color: inherit;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+  }
 `;
 
 const CartBadge = styled.span`
   position: absolute;
-  top: calc(-1 * ${props => props.theme.spacing.xs});
-  right: calc(-1 * ${props => props.theme.spacing.md});
-  min-width: ${props => props.theme.spacing.xl};
-  height: ${props => props.theme.spacing.xl};
-  padding: 0 ${props => props.theme.spacing.xs};
-  background: ${props => props.theme.colors.card?.default || props.theme.colors.background};
-  border-radius: ${props => props.theme.radii.md};
-  border: 2px solid ${props => props.theme.colors.dangerBase};
+  top: -9px;
+  right: -13px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: ${props => props.theme.colors.dangerBase};
+  border: 2px solid #ffffff;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
   ${props => props.theme.typography.caption}
-  font-weight: 700;
-  color: ${props => props.theme.colors.dangerBase};
+  font-size: 10px;
+  font-weight: 900;
+  color: ${props => props.theme.colors.text.inverse};
   line-height: 1;
-  z-index: 10;
-  box-shadow: ${props => props.theme.shadows.sm};
+  box-shadow: 0 10px 18px rgba(198, 40, 80, 0.28);
 `;
 
 const Label = styled.span`
   ${props => props.theme.typography.caption}
-  font-weight: ${props => props.$active ? 600 : 500};
-  color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.secondary};
+  width: 100%;
+  color: inherit;
+  font-weight: ${props => props.$active ? 900 : 700};
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
+
+const HomeIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M3 10.8 12 3l9 7.8" />
+    <path d="M5.5 9.5V21h13V9.5" />
+    <path d="M9.5 21v-6h5v6" />
+  </svg>
+);
+
+const SearchIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="10.8" cy="10.8" r="6.8" />
+    <path d="m16 16 5 5" />
+  </svg>
+);
+
+const CartIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M4 5h2l2 11h10l2-8H7" />
+    <circle cx="10" cy="20" r="1.4" />
+    <circle cx="18" cy="20" r="1.4" />
+  </svg>
+);
+
+const ProfileIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="8" r="4" />
+    <path d="M4.5 21c1.2-4.2 4-6.2 7.5-6.2s6.3 2 7.5 6.2" />
+  </svg>
+);
 
 export const BottomNavigation = ({ currentPath, onSearchClick }) => {
   const navigate = useNavigate();
@@ -84,17 +174,15 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
   const [cartCount, setCartCount] = useState(0);
 
   const navItems = [
-    { path: '/', icon: '🏠', label: 'Home' },
-    { path: '/search', icon: '🔍', label: 'Search' },
-    { path: '/cart', icon: '🛒', label: 'Cart' },
-    { path: '/profile', icon: '👤', label: 'Profile' },
+    { path: '/', icon: HomeIcon, label: 'Home' },
+    { path: '/search', icon: SearchIcon, label: 'Search' },
+    { path: '/cart', icon: CartIcon, label: 'Cart' },
+    { path: '/profile', icon: ProfileIcon, label: 'Profile' },
   ];
 
-  // Load cart count and listen for updates
   useEffect(() => {
     const loadCartCount = () => {
       try {
-        // Calculate from cart array (most reliable)
         const cartStr = localStorage.getItem('shopply_cart');
         let calculatedCount = 0;
 
@@ -102,32 +190,24 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
           const cart = JSON.parse(cartStr);
           if (Array.isArray(cart) && cart.length > 0) {
             calculatedCount = cart.reduce((sum, item) => {
-              const quantity = typeof item.quantity === 'number' 
-                ? item.quantity 
+              const quantity = typeof item.quantity === 'number'
+                ? item.quantity
                 : parseInt(item.quantity, 10) || 1;
               return sum + quantity;
             }, 0);
           }
         }
-        
+
         setCartCount(calculatedCount);
-        
-        // Also update stored count
-        if (calculatedCount > 0) {
-          localStorage.setItem('shopply_cart_count', calculatedCount.toString());
-        } else {
-          localStorage.setItem('shopply_cart_count', '0');
-        }
+        localStorage.setItem('shopply_cart_count', calculatedCount.toString());
       } catch (error) {
         console.error('Error loading cart count:', error);
         setCartCount(0);
       }
     };
 
-    // Load immediately
     loadCartCount();
 
-    // Also try to sync with server cart periodically
     const syncWithServer = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/cart?userId=default`);
@@ -139,87 +219,67 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
             localStorage.setItem('shopply_cart_count', serverCount.toString());
           }
         }
-      } catch (error) {
-        // Silently fail - use localStorage count
+      } catch {
+        // Local storage remains the fallback source.
       }
     };
 
-    // Sync with server every 5 seconds
     const serverSyncInterval = setInterval(syncWithServer, 5000);
-    syncWithServer(); // Also sync immediately
+    syncWithServer();
 
-    // Listen for cart updates
-    const handleCartUpdate = () => {
-      loadCartCount();
-    };
-
-    window.addEventListener('cartUpdated', handleCartUpdate);
-    window.addEventListener('storage', handleCartUpdate);
+    window.addEventListener('cartUpdated', loadCartCount);
+    window.addEventListener('storage', loadCartCount);
 
     return () => {
-      window.removeEventListener('cartUpdated', handleCartUpdate);
-      window.removeEventListener('storage', handleCartUpdate);
+      window.removeEventListener('cartUpdated', loadCartCount);
+      window.removeEventListener('storage', loadCartCount);
       clearInterval(serverSyncInterval);
     };
   }, []);
 
-  const ProfileIcon = ({ active }) => (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ color: active ? 'inherit' : 'inherit' }}
-    >
-      <path
-        d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
-        fill="currentColor"
-      />
-      <path
-        d="M12 14C7.58172 14 4 16.6863 4 20V22H20V20C20 16.6863 16.4183 14 12 14Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
+  const isActive = (itemPath) => {
+    if (itemPath === '/') return activePath === '/';
+    return activePath === itemPath || activePath.startsWith(`${itemPath}/`);
+  };
 
   const handleClick = (item) => {
     if (item.path === '/search' && onSearchClick) {
       onSearchClick();
-    } else {
-      navigate(item.path);
+      return;
     }
+    navigate(item.path);
   };
 
   return (
-    <NavContainer>
-      <NavList>
-        {navItems.map((item) => (
-          <NavItem
-            key={item.path}
-            $active={activePath === item.path}
-            onClick={() => handleClick(item)}
-          >
-            <Icon>
-              {item.path === '/profile' ? (
-                <ProfileIcon active={activePath === item.path} />
-              ) : item.path === '/cart' ? (
-                <>
-                  {item.icon}
-                  {cartCount > 0 && (
-                    <CartBadge>
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </CartBadge>
-                  )}
-                </>
-              ) : (
-                item.icon
-              )}
-            </Icon>
-            <Label $active={activePath === item.path}>{item.label}</Label>
-          </NavItem>
-        ))}
-      </NavList>
+    <NavContainer aria-label="Primary navigation">
+      <NavShell>
+        <NavList>
+          {navItems.map((item) => {
+            const active = isActive(item.path);
+            const ItemIcon = item.icon;
+
+            return (
+              <NavItem key={item.path}>
+                <NavButton
+                  type="button"
+                  $active={active}
+                  onClick={() => handleClick(item)}
+                  aria-current={active ? 'page' : undefined}
+                  aria-label={item.label}
+                >
+                  <IconWrap>
+                    <ItemIcon />
+                    {item.path === '/cart' && cartCount > 0 && (
+                      <CartBadge>{cartCount > 99 ? '99+' : cartCount}</CartBadge>
+                    )}
+                  </IconWrap>
+                  <Label $active={active}>{item.label}</Label>
+                </NavButton>
+              </NavItem>
+            );
+          })}
+        </NavList>
+      </NavShell>
     </NavContainer>
   );
 };

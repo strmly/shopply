@@ -33,7 +33,7 @@ export class PaymentMethodService {
    */
   async getPaymentMethodsByUserId(userId) {
     const userPaymentMethods = this.paymentMethods.filter(
-      pm => pm.userId === parseInt(userId)
+      pm => String(pm.userId) === String(userId)
     );
     
     // Sort: default first, then by updatedAt (most recent)
@@ -55,7 +55,7 @@ export class PaymentMethodService {
    */
   async getDefaultPaymentMethod(userId) {
     return this.paymentMethods.find(
-      pm => pm.userId === parseInt(userId) && pm.isDefault
+      pm => String(pm.userId) === String(userId) && pm.isDefault
     );
   }
 
@@ -245,7 +245,7 @@ export class PaymentMethodService {
     // Prevent deleting if it's the only payment method for the user
     if (userId) {
       const userPaymentMethods = this.paymentMethods.filter(
-        pm => pm.userId === parseInt(userId)
+        pm => String(pm.userId) === String(userId)
       );
       
       if (userPaymentMethods.length === 1 && userPaymentMethods[0].id === paymentMethod.id) {
@@ -266,13 +266,13 @@ export class PaymentMethodService {
       return null;
     }
 
-    if (paymentMethod.userId !== parseInt(userId)) {
+    if (String(paymentMethod.userId) !== String(userId)) {
       throw new Error('Payment method does not belong to user');
     }
 
     // Unset other defaults for this user
     this.paymentMethods.forEach(pm => {
-      if (pm.userId === parseInt(userId) && pm.id !== paymentMethod.id) {
+      if (String(pm.userId) === String(userId) && pm.id !== paymentMethod.id) {
         pm.isDefault = false;
         pm.updatedAt = new Date();
       }

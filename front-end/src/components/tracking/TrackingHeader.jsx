@@ -1,94 +1,90 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { fadeIn } from '../../theme/animations';
 
 const Header = styled.header`
   position: sticky;
   top: 0;
-  background: ${props => props.theme.colors.background};
   z-index: 1000;
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
+  padding: 12px min(5vw, 48px);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.86)),
+    radial-gradient(circle at 14% 0%, rgba(61, 129, 239, 0.08), transparent 28%),
+    radial-gradient(circle at 88% 0%, rgba(245, 158, 11, 0.07), transparent 26%);
+  border-bottom: 1px solid rgba(228, 231, 236, 0.72);
+  box-shadow: ${props => props.$scrolled ? '0 16px 40px rgba(16, 24, 40, 0.1)' : '0 10px 28px rgba(16, 24, 40, 0.06)'};
+  backdrop-filter: blur(18px);
   transition: ${props => props.theme.transitions.swift};
-  box-shadow: ${props => props.$scrolled ? props.theme.shadows.sm : 'none'};
-  backdrop-filter: blur(10px);
 `;
 
 const HeaderContent = styled.div`
-  display: flex;
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  gap: ${props => props.theme.spacing.md};
+  gap: 12px;
+  padding: 8px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.86), rgba(255,255,255,0.72)) padding-box,
+    linear-gradient(135deg, rgba(61, 129, 239, 0.18), rgba(228, 231, 236, 0.82), rgba(245, 158, 11, 0.12)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
 `;
 
-const BackButton = styled.button`
-  background: ${props => props.theme.colors.surface};
-  border: none;
-  border-radius: ${props => props.theme.radii.circle};
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+const RoundButton = styled.button`
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(228, 231, 236, 0.9);
+  background: #ffffff;
+  color: ${props => props.theme.colors.text.primary};
+  display: grid;
+  place-items: center;
   cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
   font-size: 20px;
-  box-shadow: ${props => props.theme.shadows.xs};
+  font-weight: 900;
+  transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.08);
 
   &:hover {
     background: ${props => props.theme.colors.primarySoftBg};
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(0.95);
+    color: ${props => props.theme.colors.primary};
+    transform: translateY(-1px);
   }
 `;
 
 const TitleSection = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+`;
+
+const Eyebrow = styled.div`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
+  text-transform: uppercase;
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
   margin: 0;
-  font-weight: 700;
-  font-size: 20px;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
 const OrderId = styled.div`
   ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.tertiary};
-  font-size: 11px;
-`;
-
-const HelpButton = styled.button`
-  background: ${props => props.theme.colors.surface};
-  border: none;
-  border-radius: ${props => props.theme.radii.circle};
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  font-size: 18px;
-  box-shadow: ${props => props.theme.shadows.xs};
-
-  &:hover {
-    background: ${props => props.theme.colors.primarySoftBg};
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
+  color: ${props => props.theme.colors.text.secondary};
+  background: #ffffff;
+  border: 1px solid rgba(228, 231, 236, 0.82);
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-weight: 900;
 `;
 
 export const TrackingHeader = ({ orderId, onClose }) => {
@@ -108,26 +104,14 @@ export const TrackingHeader = ({ orderId, onClose }) => {
   return (
     <Header $scrolled={scrolled}>
       <HeaderContent>
-        <BackButton onClick={onClose}>←</BackButton>
-        
+        <RoundButton onClick={onClose} aria-label="Go back">&lt;</RoundButton>
         <TitleSection>
+          <Eyebrow>Live tracking</Eyebrow>
           <Title>Order Status</Title>
           {shortOrderId && <OrderId>{shortOrderId}</OrderId>}
         </TitleSection>
-        
-        <HelpButton onClick={() => alert('Help & Support')}>?</HelpButton>
+        <RoundButton onClick={() => alert('Help & Support')} aria-label="Help">?</RoundButton>
       </HeaderContent>
     </Header>
   );
 };
-
-
-
-
-
-
-
-
-
-
-

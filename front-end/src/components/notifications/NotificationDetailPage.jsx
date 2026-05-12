@@ -3,259 +3,346 @@ import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { BottomNavigation } from '../home/BottomNavigation';
+import API_BASE_URL from '@config/api';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
+  background:
+    linear-gradient(180deg, #ffffff 0%, #ffffff 52%, #F8FAFC 100%);
   animation: ${fadeIn} 0.3s ease-in;
   padding-bottom: 100px;
 `;
 
-const Content = styled.div`
-  max-width: 100%;
-`;
-
-const Header = styled.div`
+const Header = styled.header`
   position: sticky;
   top: 0;
-  background: ${props => props.theme.colors.surface};
-  border-bottom: 1px solid ${props => props.theme.colors.border.default};
   z-index: 100;
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
+  padding: 12px min(5vw, 48px);
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(228, 231, 236, 0.72);
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.07);
+  backdrop-filter: blur(18px);
+`;
+
+const HeaderInner = styled.div`
+  max-width: 1180px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.md};
-  box-shadow: ${props => props.theme.shadows.sm};
+  gap: 12px;
 `;
 
 const BackButton = styled.button`
-  background: transparent;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  padding: ${props => props.theme.spacing.xs};
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(228, 231, 236, 0.9);
+  background: #ffffff;
   color: ${props => props.theme.colors.text.primary};
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 900;
   transition: ${props => props.theme.transitions.swift};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: ${props => props.theme.radii.md};
-  
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.08);
+
   &:hover {
     background: ${props => props.theme.colors.primarySoftBg};
-    transform: scale(1.05);
+    color: ${props => props.theme.colors.primary};
+    transform: translateY(-1px);
   }
-  
-  &:active {
-    transform: scale(0.95);
-  }
+`;
+
+const HeaderCopy = styled.div`
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+`;
+
+const HeaderEyebrow = styled.div`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
+  text-transform: uppercase;
 `;
 
 const HeaderTitle = styled.h1`
-  ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
   margin: 0;
-  flex: 1;
+  font-size: 21px;
+  line-height: 1.1;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  padding: ${props => props.theme.spacing.xxl};
-  color: ${props => props.theme.colors.text.secondary};
+const Content = styled.main`
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 28px min(5vw, 48px);
 `;
 
-const ErrorContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  padding: ${props => props.theme.spacing.xxl};
+const StateCard = styled.div`
+  min-height: 420px;
+  display: grid;
+  place-items: center;
   text-align: center;
+  padding: 42px 24px;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.2), rgba(228, 231, 236, 0.86), rgba(245, 158, 11, 0.14)) border-box;
+  border: 1px solid transparent;
+  border-radius: 30px;
+  box-shadow: 0 24px 58px rgba(16, 24, 40, 0.09);
 `;
 
-const ErrorIcon = styled.div`
-  font-size: 64px;
-  margin-bottom: ${props => props.theme.spacing.lg};
-  opacity: 0.5;
+const StateStack = styled.div`
+  display: grid;
+  justify-items: center;
+  gap: 12px;
 `;
 
-const ErrorTitle = styled.h2`
-  ${props => props.theme.typography.heading2}
+const StateIcon = styled.div`
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  border-radius: 26px;
+  background: ${props => props.$tone === 'warning' ? props.theme.colors.status.warningLight : props.theme.colors.gradient.soft};
+  color: ${props => props.$tone === 'warning' ? props.theme.colors.warningBase : props.theme.colors.primary};
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  font-size: 24px;
+  font-weight: 900;
+  box-shadow: 0 18px 34px rgba(61, 129, 239, 0.14);
+`;
+
+const StateTitle = styled.h2`
   color: ${props => props.theme.colors.text.primary};
-  margin: 0 0 ${props => props.theme.spacing.sm} 0;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 900;
 `;
 
-const ErrorMessage = styled.p`
+const StateMessage = styled.p`
   ${props => props.theme.typography.body1}
   color: ${props => props.theme.colors.text.secondary};
-  margin: 0 0 ${props => props.theme.spacing.lg} 0;
+  max-width: 460px;
+  margin: 0;
 `;
 
 const RetryButton = styled.button`
-  ${props => props.theme.typography.button}
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
-  background: ${props => props.theme.colors.primary};
-  color: white;
-  border: none;
-  border-radius: ${props => props.theme.radii.md};
+  margin-top: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.text.primary};
+  color: ${props => props.theme.colors.text.inverse};
   cursor: pointer;
+  font-weight: 900;
   transition: ${props => props.theme.transitions.swift};
-  
+  box-shadow: 0 16px 30px rgba(16, 24, 40, 0.16);
+
   &:hover {
-    background: ${props => props.theme.colors.primaryHover};
+    background: ${props => props.theme.colors.primary};
     transform: translateY(-1px);
-    box-shadow: ${props => props.theme.shadows.md};
-  }
-  
-  &:active {
-    transform: translateY(0);
   }
 `;
 
-const NotificationCard = styled.div`
-  background: ${props => props.theme.colors.surface};
-  margin: ${props => props.theme.spacing.lg};
-  border-radius: ${props => props.theme.radii.lg};
+const NotificationCard = styled.article`
   overflow: hidden;
-  box-shadow: ${props => props.theme.shadows.md};
-  border: 1px solid ${props => props.theme.colors.border.default};
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96)) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.24), rgba(228, 231, 236, 0.86), rgba(245, 158, 11, 0.16)) border-box;
+  border: 1px solid transparent;
+  border-radius: 32px;
+  box-shadow:
+    0 28px 70px rgba(16, 24, 40, 0.11),
+    inset 0 1px 0 rgba(255,255,255,0.9);
 `;
 
-const NotificationHeader = styled.div`
-  padding: ${props => props.theme.spacing.xl};
+const NotificationHero = styled.div`
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  padding: 28px;
+  background:
+    linear-gradient(135deg, rgba(61, 129, 239, 0.08), rgba(255,255,255,0) 48%, rgba(245, 158, 11, 0.09)),
+    #ffffff;
+  border-bottom: 1px solid rgba(228, 231, 236, 0.72);
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: -52px;
+    top: -62px;
+    width: 168px;
+    height: 168px;
+    border-radius: 999px;
+    background: rgba(61, 129, 239, 0.07);
+    pointer-events: none;
+  }
+
+  @media (max-width: 620px) {
+    grid-template-columns: 1fr;
+    padding: 22px;
+  }
+`;
+
+const TypeMark = styled.div`
+  position: relative;
+  z-index: 1;
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
   background: ${props => {
-    if (props.type === 'order') return props.theme.colors.status.successLight;
-    if (props.type === 'promotion') return props.theme.colors.status.warningLight;
-    if (props.type === 'system') return props.theme.colors.status.infoLight;
-    return props.theme.colors.primarySoftBg;
+    if (props.$type === 'order') return props.theme.colors.status.successLight;
+    if (props.$type === 'promotion') return props.theme.colors.status.warningLight;
+    if (props.$type === 'system') return props.theme.colors.status.infoLight;
+    return props.theme.colors.gradient.soft;
   }};
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
-`;
-
-const TypeBadge = styled.div`
-  display: inline-flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.radii.md};
-  ${props => props.theme.typography.caption}
-  font-weight: 600;
-  margin-bottom: ${props => props.theme.spacing.md};
-  background: ${props => {
-    if (props.type === 'order') return props.theme.colors.status.success;
-    if (props.type === 'promotion') return props.theme.colors.warningBase;
-    if (props.type === 'system') return props.theme.colors.info[500];
+  color: ${props => {
+    if (props.$type === 'order') return props.theme.colors.status.success;
+    if (props.$type === 'promotion') return props.theme.colors.warningBase;
+    if (props.$type === 'system') return props.theme.colors.info[500];
     return props.theme.colors.primary;
   }};
-  color: white;
+  border: 1px solid rgba(255,255,255,0.8);
+  font-size: 19px;
+  font-weight: 900;
+  box-shadow: 0 18px 34px rgba(16, 24, 40, 0.08);
 `;
 
-const NotificationTitle = styled.h1`
-  ${props => props.theme.typography.heading2}
+const HeroCopy = styled.div`
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+`;
+
+const TopLine = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+`;
+
+const TypeBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.primarySoftBg};
+  color: ${props => props.theme.colors.primarySoftText};
+  border: 1px solid rgba(61, 129, 239, 0.22);
+  font-size: 12px;
+  font-weight: 900;
+`;
+
+const ReadStatus = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: ${props => props.$read ? props.theme.colors.status.successLight : props.theme.colors.status.warningLight};
+  color: ${props => props.$read ? props.theme.colors.status.success : props.theme.colors.warningBase};
+  border: 1px solid rgba(228, 231, 236, 0.78);
+  font-size: 12px;
+  font-weight: 900;
+`;
+
+const NotificationTitle = styled.h2`
   color: ${props => props.theme.colors.text.primary};
-  margin: 0 0 ${props => props.theme.spacing.sm} 0;
+  margin: 0;
+  font-size: clamp(30px, 6vw, 52px);
+  line-height: 0.98;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
 const NotificationMeta = styled.div`
   display: flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.md};
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+`;
+
+const MetaPill = styled.span`
   ${props => props.theme.typography.caption}
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(228, 231, 236, 0.86);
   color: ${props => props.theme.colors.text.secondary};
-  margin-top: ${props => props.theme.spacing.sm};
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
 `;
 
 const NotificationBody = styled.div`
-  padding: ${props => props.theme.spacing.xl};
+  padding: 28px;
+
+  @media (max-width: 620px) {
+    padding: 22px;
+  }
+`;
+
+const MessagePanel = styled.div`
+  padding: 22px;
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid rgba(228, 231, 236, 0.76);
+  box-shadow: 0 14px 30px rgba(16, 24, 40, 0.04);
 `;
 
 const NotificationMessage = styled.div`
   ${props => props.theme.typography.body1}
   color: ${props => props.theme.colors.text.primary};
-  line-height: 1.6;
+  line-height: 1.65;
   white-space: pre-wrap;
-  margin-bottom: ${props => props.theme.spacing.lg};
-`;
-
-const MetadataSection = styled.div`
-  margin-top: ${props => props.theme.spacing.xl};
-  padding-top: ${props => props.theme.spacing.lg};
-  border-top: 1px solid ${props => props.theme.colors.border.light};
-`;
-
-const MetadataTitle = styled.h3`
-  ${props => props.theme.typography.body2}
   font-weight: 600;
-  color: ${props => props.theme.colors.text.primary};
-  margin: 0 0 ${props => props.theme.spacing.md} 0;
-`;
-
-const MetadataContent = styled.pre`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
-  background: ${props => props.theme.colors.background};
-  padding: ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.radii.md};
-  border: 1px solid ${props => props.theme.colors.border.light};
-  overflow-x: auto;
-  margin: 0;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 `;
 
 const ActionButton = styled.button`
-  ${props => props.theme.typography.button}
   width: 100%;
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
-  background: ${props => props.theme.colors.primary};
-  color: white;
-  border: none;
-  border-radius: ${props => props.theme.radii.md};
+  min-height: 54px;
+  margin-top: 22px;
+  padding: 0 20px;
+  background:
+    linear-gradient(${props => props.theme.colors.text.primary}, ${props => props.theme.colors.text.primary}) padding-box,
+    linear-gradient(135deg, rgba(61, 129, 239, 0.48), rgba(245, 158, 11, 0.24), rgba(255,255,255,0.84)) border-box;
+  color: ${props => props.theme.colors.text.inverse};
+  border: 1px solid transparent;
+  border-radius: 999px;
   cursor: pointer;
+  font-size: 15px;
+  font-weight: 900;
   transition: ${props => props.theme.transitions.swift};
-  margin-top: ${props => props.theme.spacing.lg};
-  
+  box-shadow: 0 18px 34px rgba(16, 24, 40, 0.16);
+
   &:hover {
-    background: ${props => props.theme.colors.primaryHover};
-    transform: translateY(-1px);
-    box-shadow: ${props => props.theme.shadows.md};
-  }
-  
-  &:active {
-    transform: translateY(0);
+    background:
+      linear-gradient(${props => props.theme.colors.primary}, ${props => props.theme.colors.primary}) padding-box,
+      linear-gradient(135deg, rgba(61, 129, 239, 0.5), rgba(245, 158, 11, 0.3), rgba(255,255,255,0.86)) border-box;
+    transform: translateY(-2px);
+    box-shadow: 0 24px 48px rgba(16, 24, 40, 0.18);
   }
 `;
 
-const ReadStatus = styled.div`
-  display: inline-flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.radii.sm};
-  ${props => props.theme.typography.caption}
-  font-weight: 600;
-  background: ${props => props.$read 
-    ? props.theme.colors.status.successLight 
-    : props.theme.colors.status.warningLight};
-  color: ${props => props.$read 
-    ? props.theme.colors.status.success 
-    : props.theme.colors.warningBase};
-`;
-
-const getTypeIcon = (type) => {
-  const icons = {
-    order: '📦',
-    promotion: '🎉',
-    system: '⚙️',
-    info: 'ℹ️',
+const getTypeInitial = (type) => {
+  const labels = {
+    order: 'O',
+    promotion: 'P',
+    system: 'S',
+    info: 'I',
   };
-  return icons[type] || '🔔';
+  return labels[type] || 'N';
 };
 
 const getTypeLabel = (type) => {
@@ -294,8 +381,6 @@ const formatRelativeTime = (dateString) => {
   return formatDate(dateString);
 };
 
-import API_BASE_URL from '@config/api';
-
 export const NotificationDetailPage = ({ location }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -313,14 +398,13 @@ export const NotificationDetailPage = ({ location }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch(`${API_BASE_URL}/notifications/${id}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setNotification(data.data);
-        
-        // Mark as read if not already read
+
         if (!data.data.read) {
           await markAsRead(id);
         }
@@ -340,7 +424,6 @@ export const NotificationDetailPage = ({ location }) => {
       await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
         method: 'PUT',
       });
-      // Update local state
       setNotification(prev => prev ? { ...prev, read: true } : null);
     } catch (err) {
       console.error('Error marking notification as read:', err);
@@ -348,13 +431,11 @@ export const NotificationDetailPage = ({ location }) => {
   };
 
   const handleActionClick = () => {
-    // For order notifications, prefer navigating to tracking by orderId in metadata
     if (notification?.type === 'order' && notification?.metadata?.orderId) {
       navigate(`/tracking/${notification.metadata.orderId}`);
       return;
     }
 
-    // Fallback: use the actionUrl if present
     if (notification?.actionUrl) {
       navigate(notification.actionUrl);
     }
@@ -364,13 +445,23 @@ export const NotificationDetailPage = ({ location }) => {
     return (
       <Container>
         <Header>
-          <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>Notification</HeaderTitle>
+          <HeaderInner>
+            <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
+            <HeaderCopy>
+              <HeaderEyebrow>Shopply</HeaderEyebrow>
+              <HeaderTitle>Notification</HeaderTitle>
+            </HeaderCopy>
+          </HeaderInner>
         </Header>
-        <LoadingContainer>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
-          <div>Loading notification...</div>
-        </LoadingContainer>
+        <Content>
+          <StateCard>
+            <StateStack>
+              <StateIcon>N</StateIcon>
+              <StateTitle>Loading notification</StateTitle>
+              <StateMessage>Fetching the latest details for this update.</StateMessage>
+            </StateStack>
+          </StateCard>
+        </Content>
         <BottomNavigation currentPath="/notifications" />
       </Container>
     );
@@ -380,17 +471,26 @@ export const NotificationDetailPage = ({ location }) => {
     return (
       <Container>
         <Header>
-          <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>Notification</HeaderTitle>
+          <HeaderInner>
+            <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
+            <HeaderCopy>
+              <HeaderEyebrow>Shopply</HeaderEyebrow>
+              <HeaderTitle>Notification</HeaderTitle>
+            </HeaderCopy>
+          </HeaderInner>
         </Header>
-        <ErrorContainer>
-          <ErrorIcon>⚠️</ErrorIcon>
-          <ErrorTitle>Notification Not Found</ErrorTitle>
-          <ErrorMessage>
-            {error || 'The notification you are looking for does not exist or has been deleted.'}
-          </ErrorMessage>
-          <RetryButton onClick={loadNotification}>Try Again</RetryButton>
-        </ErrorContainer>
+        <Content>
+          <StateCard>
+            <StateStack>
+              <StateIcon $tone="warning">!</StateIcon>
+              <StateTitle>Notification Not Found</StateTitle>
+              <StateMessage>
+                {error || 'The notification you are looking for does not exist or has been deleted.'}
+              </StateMessage>
+              <RetryButton onClick={loadNotification}>Try Again</RetryButton>
+            </StateStack>
+          </StateCard>
+        </Content>
         <BottomNavigation currentPath="/notifications" />
       </Container>
     );
@@ -399,40 +499,39 @@ export const NotificationDetailPage = ({ location }) => {
   return (
     <Container>
       <Header>
-        <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>Notification Details</HeaderTitle>
+        <HeaderInner>
+          <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
+          <HeaderCopy>
+            <HeaderEyebrow>Shopply</HeaderEyebrow>
+            <HeaderTitle>Notification Details</HeaderTitle>
+          </HeaderCopy>
+        </HeaderInner>
       </Header>
-      
+
       <Content>
         <NotificationCard>
-          <NotificationHeader type={notification.type}>
-            <TypeBadge type={notification.type}>
-              {getTypeIcon(notification.type)} {getTypeLabel(notification.type)}
-            </TypeBadge>
-            <NotificationTitle>{notification.title}</NotificationTitle>
-            <NotificationMeta>
-              <ReadStatus $read={notification.read}>
-                {notification.read ? '✓ Read' : '● Unread'}
-              </ReadStatus>
-              <span>•</span>
-              <span>{formatRelativeTime(notification.createdAt)}</span>
-              <span>•</span>
-              <span>{formatDate(notification.createdAt)}</span>
-            </NotificationMeta>
-          </NotificationHeader>
-          
+          <NotificationHero>
+            <TypeMark $type={notification.type}>{getTypeInitial(notification.type)}</TypeMark>
+            <HeroCopy>
+              <TopLine>
+                <TypeBadge>{getTypeLabel(notification.type)}</TypeBadge>
+                <ReadStatus $read={notification.read}>
+                  {notification.read ? 'Read' : 'Unread'}
+                </ReadStatus>
+              </TopLine>
+              <NotificationTitle>{notification.title}</NotificationTitle>
+              <NotificationMeta>
+                <MetaPill>{formatRelativeTime(notification.createdAt)}</MetaPill>
+                <MetaPill>{formatDate(notification.createdAt)}</MetaPill>
+              </NotificationMeta>
+            </HeroCopy>
+          </NotificationHero>
+
           <NotificationBody>
-            <NotificationMessage>{notification.message}</NotificationMessage>
-            
-            {notification.metadata && Object.keys(notification.metadata).length > 0 && (
-              <MetadataSection>
-                <MetadataTitle>Additional Information</MetadataTitle>
-                <MetadataContent>
-                  {JSON.stringify(notification.metadata, null, 2)}
-                </MetadataContent>
-              </MetadataSection>
-            )}
-            
+            <MessagePanel>
+              <NotificationMessage>{notification.message}</NotificationMessage>
+            </MessagePanel>
+
             {notification.actionUrl && (
               <ActionButton onClick={handleActionClick}>
                 {notification.type === 'order' ? 'View Order' :
@@ -443,10 +542,8 @@ export const NotificationDetailPage = ({ location }) => {
           </NotificationBody>
         </NotificationCard>
       </Content>
-      
+
       <BottomNavigation currentPath="/notifications" />
     </Container>
   );
 };
-
-

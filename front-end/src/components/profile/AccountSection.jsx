@@ -1,28 +1,28 @@
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
-const Container = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.lg};
-  padding: ${props => props.theme.spacing.md};
-  border: 1px solid ${props => props.theme.colors.border.light};
+const Container = styled.section`
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.18), rgba(196, 184, 252, 0.14), rgba(255,255,255,0.8)) border-box;
+  border: 1px solid transparent;
+  border-radius: 26px;
+  padding: 20px;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
   animation: ${fadeIn} 0.3s ease-in;
 `;
 
 const Title = styled.h3`
-  ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 18px;
-  margin-bottom: ${props => props.theme.spacing.md};
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.1;
+  margin: 0 0 14px;
 `;
 
 const List = styled.div`
-  display: flex;
-  flex-direction: column;
-  border-radius: ${props => props.theme.radii.md};
-  overflow: hidden;
-  border: 1px solid ${props => props.theme.colors.border.light};
+  display: grid;
+  gap: 8px;
 `;
 
 const ListItem = styled.button`
@@ -30,56 +30,53 @@ const ListItem = styled.button`
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: ${props => props.theme.spacing.lg} ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.background};
-  border: none;
-  border-bottom: 1px solid ${props => props.theme.colors.border.subtle};
+  padding: 14px;
+  background: ${props => props.theme.colors.neutral[50]};
+  border: 1px solid ${props => props.theme.colors.border.light};
+  border-radius: 16px;
   cursor: pointer;
   text-align: left;
-  -webkit-tap-highlight-color: transparent;
+  transition: ${props => props.theme.transitions.swift};
 
-  &:last-child {
-    border-bottom: none;
+  &:hover {
+    border-color: rgba(61, 129, 239, 0.28);
+    background: ${props => props.theme.colors.primarySoftBg};
+    transform: translateX(3px);
   }
 
   &:focus-visible {
     outline: 2px solid ${props => props.theme.colors.primary};
-    outline-offset: -2px;
-  }
-
-  &:active {
-    background: ${props => props.theme.colors.neutral[50]};
+    outline-offset: 2px;
   }
 `;
 
 const Label = styled.div`
-  ${props => props.theme.typography.body1}
+  ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 900;
 `;
 
 const Arrow = styled.span`
-  color: ${props => props.theme.colors.text.tertiary};
-  font-size: 14px;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
 `;
 
-export const AccountSection = ({ user, navigate }) => {
+export const AccountSection = ({ navigate }) => {
   return (
     <Container>
       <Title>Account</Title>
       <List>
         <ListItem onClick={() => navigate('/account/edit-profile')}>
           <Label>Edit Profile</Label>
-          <Arrow>→</Arrow>
+          <Arrow>&gt;</Arrow>
         </ListItem>
         <ListItem onClick={() => navigate('/account/change-password')}>
           <Label>Change Password</Label>
-          <Arrow>→</Arrow>
+          <Arrow>&gt;</Arrow>
         </ListItem>
         <ListItem onClick={() => navigate('/account/notifications')}>
           <Label>Notification Settings</Label>
-          <Arrow>→</Arrow>
+          <Arrow>&gt;</Arrow>
         </ListItem>
       </List>
     </Container>
