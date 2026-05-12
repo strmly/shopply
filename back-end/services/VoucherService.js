@@ -32,7 +32,7 @@ class VoucherServiceClass {
         userId: 'default',
         code: 'WELCOME50',
         title: 'Welcome Bonus',
-        description: 'R50 off your first order - Welcome to Shopply!',
+        description: 'R50 off your first order - Welcome to Tsenga!',
         value: 50,
         type: 'fixed',
         minPurchase: 100,

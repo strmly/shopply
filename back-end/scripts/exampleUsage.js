@@ -63,7 +63,7 @@ async function example3_MongoDB() {
       downloadImages: false,
       saveJSON: true,
       seedMongo: true,
-      mongoConnection: 'mongodb://localhost:27017/shopply_furniture',
+      mongoConnection: 'mongodb://localhost:27017/tsenga_furniture',
       seedPostgres: false
     });
     

@@ -114,7 +114,7 @@ const InfoRow = styled.div`
 
 const ActionButton = styled.button`
   padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   border-radius: ${props => props.theme.radii.md};
@@ -285,7 +285,7 @@ const StickyActionBar = styled.div`
 const PrimaryActionButton = styled.button`
   width: 100%;
   padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   border-radius: ${props => props.theme.radii.md};

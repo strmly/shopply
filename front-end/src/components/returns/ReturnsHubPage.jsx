@@ -85,7 +85,7 @@ const Tab = styled.button`
 
 const TabBadge = styled.span`
   margin-left: ${props => props.theme.spacing.xs};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border-radius: ${props => props.theme.radii.pill};
   padding: 2px 6px;

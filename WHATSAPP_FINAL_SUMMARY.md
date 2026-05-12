@@ -2,7 +2,7 @@
 
 ## ✅ What You Have: Elite-Grade WhatsApp Channel
 
-Your Shopply platform now has a **world-class WhatsApp implementation** with both the complete feature set AND elite enterprise upgrades.
+Your Tsenga platform now has a **world-class WhatsApp implementation** with both the complete feature set AND elite enterprise upgrades.
 
 ---
 
@@ -236,7 +236,7 @@ Would you like to be notified?
 ## 📁 Complete File Structure
 
 ```
-shopply/
+tsenga/
 ├── back-end/
 │   ├── config/
 │   │   ├── whatsapp.js              ✅ Basic config
@@ -611,5 +611,5 @@ This implementation represents:
 
 ---
 
-Built with ❤️ for Shopply | Elite-Grade | December 2024
+Built with ❤️ for Tsenga | Elite-Grade | December 2024
 

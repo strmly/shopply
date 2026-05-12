@@ -123,6 +123,32 @@ class CartControllerClass {
   });
 
   /**
+   * Update quantity by productId (no server item ID needed)
+   */
+  updateByProduct = asyncHandler(async (req, res) => {
+    const userId = req.query.userId || req.body.userId || 'default';
+    const { productId } = req.params;
+    const { quantity, variant } = req.body;
+    try {
+      const cart = CartService.updateByProduct(userId, productId, parseInt(quantity) || 1, variant || null);
+      res.json({ success: true, data: cart, message: 'Quantity updated' });
+    } catch (error) {
+      res.status(400).json({ success: false, message: error.message });
+    }
+  });
+
+  /**
+   * Remove item by productId
+   */
+  removeByProduct = asyncHandler(async (req, res) => {
+    const userId = req.query.userId || 'default';
+    const { productId } = req.params;
+    const variant = req.query.variant ? JSON.parse(req.query.variant) : null;
+    const cart = CartService.removeByProduct(userId, productId, variant);
+    res.json({ success: true, data: cart, message: 'Item removed' });
+  });
+
+  /**
    * Clear cart
    */
   clearCart = asyncHandler(async (req, res) => {

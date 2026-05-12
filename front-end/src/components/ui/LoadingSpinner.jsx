@@ -22,7 +22,7 @@ export const Spinner = styled.div`
 export const PulseDot = styled.div`
   width: ${props => props.size || '12px'};
   height: ${props => props.size || '12px'};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   border-radius: 50%;
   animation: ${pulse} 1.5s ease-in-out infinite;
 `;

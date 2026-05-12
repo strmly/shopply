@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { API_BASE_URL } from '../../config/api.js';
+import { AuthModal } from '../auth';
+import { isSignedIn } from '../../utils/authState';
 
 const NavContainer = styled.nav`
   position: fixed;
@@ -67,7 +69,7 @@ const NavButton = styled.button`
     width: 28px;
     height: 3px;
     border-radius: 999px;
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     opacity: ${props => props.$active ? 1 : 0};
     transform: translateY(${props => props.$active ? '0' : '-3px'});
     transition: ${props => props.theme.transitions.swift};
@@ -172,6 +174,8 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
   const location = useLocation();
   const activePath = currentPath || location.pathname;
   const [cartCount, setCartCount] = useState(0);
+  const [profileSignedIn, setProfileSignedIn] = useState(() => isSignedIn());
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const navItems = [
     { path: '/', icon: HomeIcon, label: 'Home' },
@@ -183,7 +187,7 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
   useEffect(() => {
     const loadCartCount = () => {
       try {
-        const cartStr = localStorage.getItem('shopply_cart');
+        const cartStr = localStorage.getItem('tsenga_cart');
         let calculatedCount = 0;
 
         if (cartStr) {
@@ -199,7 +203,7 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
         }
 
         setCartCount(calculatedCount);
-        localStorage.setItem('shopply_cart_count', calculatedCount.toString());
+        localStorage.setItem('tsenga_cart_count', calculatedCount.toString());
       } catch (error) {
         console.error('Error loading cart count:', error);
         setCartCount(0);
@@ -216,7 +220,7 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
           const serverCount = data.data.itemCount || 0;
           if (serverCount > 0) {
             setCartCount(serverCount);
-            localStorage.setItem('shopply_cart_count', serverCount.toString());
+            localStorage.setItem('tsenga_cart_count', serverCount.toString());
           }
         }
       } catch {
@@ -237,6 +241,18 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const syncAuthState = () => setProfileSignedIn(isSignedIn());
+
+    syncAuthState();
+    window.addEventListener('authChanged', syncAuthState);
+    window.addEventListener('storage', syncAuthState);
+    return () => {
+      window.removeEventListener('authChanged', syncAuthState);
+      window.removeEventListener('storage', syncAuthState);
+    };
+  }, []);
+
   const isActive = (itemPath) => {
     if (itemPath === '/') return activePath === '/';
     return activePath === itemPath || activePath.startsWith(`${itemPath}/`);
@@ -247,39 +263,55 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
       onSearchClick();
       return;
     }
+
+    if (item.path === '/profile' && !profileSignedIn) {
+      setShowAuthModal(true);
+      return;
+    }
+
     navigate(item.path);
   };
 
   return (
-    <NavContainer aria-label="Primary navigation">
-      <NavShell>
-        <NavList>
-          {navItems.map((item) => {
-            const active = isActive(item.path);
-            const ItemIcon = item.icon;
+    <>
+      <NavContainer aria-label="Primary navigation">
+        <NavShell>
+          <NavList>
+            {navItems.map((item) => {
+              const active = isActive(item.path);
+              const ItemIcon = item.icon;
 
-            return (
-              <NavItem key={item.path}>
-                <NavButton
-                  type="button"
-                  $active={active}
-                  onClick={() => handleClick(item)}
-                  aria-current={active ? 'page' : undefined}
-                  aria-label={item.label}
-                >
-                  <IconWrap>
-                    <ItemIcon />
-                    {item.path === '/cart' && cartCount > 0 && (
-                      <CartBadge>{cartCount > 99 ? '99+' : cartCount}</CartBadge>
-                    )}
-                  </IconWrap>
-                  <Label $active={active}>{item.label}</Label>
-                </NavButton>
-              </NavItem>
-            );
-          })}
-        </NavList>
-      </NavShell>
-    </NavContainer>
+              return (
+                <NavItem key={item.path}>
+                  <NavButton
+                    type="button"
+                    $active={active}
+                    onClick={() => handleClick(item)}
+                    aria-current={active ? 'page' : undefined}
+                    aria-label={item.label}
+                  >
+                    <IconWrap>
+                      <ItemIcon />
+                      {item.path === '/cart' && cartCount > 0 && (
+                        <CartBadge>{cartCount > 99 ? '99+' : cartCount}</CartBadge>
+                      )}
+                    </IconWrap>
+                    <Label $active={active}>{item.label}</Label>
+                  </NavButton>
+                </NavItem>
+              );
+            })}
+          </NavList>
+        </NavShell>
+      </NavContainer>
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          setProfileSignedIn(true);
+          navigate('/profile');
+        }}
+      />
+    </>
   );
 };

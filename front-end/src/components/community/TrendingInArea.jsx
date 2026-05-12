@@ -6,7 +6,7 @@ import { ProductCard } from '../home/ProductCard';
 import API_BASE_URL from '@config/api';
 
 const Section = styled.section`
-  margin: 0 min(5vw, 48px) 34px;
+  margin: 0 clamp(14px, 5vw, 48px) 34px;
   animation: ${fadeIn} 0.4s ease-in;
 `;
 
@@ -20,6 +20,11 @@ const Shell = styled.div`
   border: 1px solid transparent;
   border-radius: 30px;
   box-shadow: 0 24px 58px rgba(16, 24, 40, 0.09);
+
+  @media (max-width: 520px) {
+    padding: 16px;
+    border-radius: 24px;
+  }
 
   &::after {
     content: '';
@@ -60,6 +65,13 @@ const HeaderIcon = styled.div`
   font-size: 22px;
   font-weight: 900;
   box-shadow: 0 16px 32px rgba(61, 129, 239, 0.14);
+
+  @media (max-width: 520px) {
+    width: 48px;
+    height: 48px;
+    border-radius: 17px;
+    font-size: 18px;
+  }
 `;
 
 const HeaderCopy = styled.div`
@@ -96,6 +108,7 @@ const HeaderActions = styled.div`
 
   @media (max-width: 680px) {
     grid-column: 1 / -1;
+    flex-wrap: wrap;
   }
 `;
 
@@ -127,7 +140,7 @@ const Grid = styled.div`
   }
 
   @media (max-width: 480px) {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     gap: 10px;
   }
 `;
@@ -182,6 +195,11 @@ const LoadingGrid = styled.div`
   @media (max-width: 860px) {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 `;
 
 const SkeletonCard = styled.div`
@@ -205,7 +223,7 @@ const ViewAllBtn = styled.button`
   padding: 0 14px;
   border: 0;
   border-radius: 999px;
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   cursor: pointer;
   font-size: 13px;
@@ -215,7 +233,7 @@ const ViewAllBtn = styled.button`
   white-space: nowrap;
 
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-1px);
   }
 `;

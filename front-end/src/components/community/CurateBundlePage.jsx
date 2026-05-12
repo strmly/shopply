@@ -172,7 +172,7 @@ const CuratedBadge = styled.div`
   position: absolute;
   top: ${props => props.theme.spacing.xs};
   right: ${props => props.theme.spacing.xs};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   padding: 4px 8px;
   border-radius: ${props => props.theme.radii.sm};

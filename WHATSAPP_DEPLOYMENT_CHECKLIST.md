@@ -520,5 +520,5 @@ Once all checkboxes are ticked, you're ready to:
 
 ---
 
-Built for Shopply | Deployment Ready | 2024
+Built for Tsenga | Deployment Ready | 2024
 

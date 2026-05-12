@@ -88,7 +88,7 @@ const Bar = styled.div`
 
 const BarFill = styled.div`
   height: 100%;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   width: ${props => props.percentage}%;
   transition: width 0.3s ease;
 `;

@@ -176,7 +176,7 @@ const FullscreenButton = styled.button`
 const MarkPickedUpButton = styled.button`
   width: 100%;
   padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   border-radius: ${props => props.theme.radii.md};

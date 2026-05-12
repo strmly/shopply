@@ -98,7 +98,7 @@ const ErrorText = styled.div`
 `;
 
 export const PaymentMethodSelector = ({ paymentMethod, onPaymentMethodChange, error }) => {
-  const savedCard = localStorage.getItem('shopply_saved_card');
+  const savedCard = localStorage.getItem('tsenga_saved_card');
   const cardNumber = savedCard ? JSON.parse(savedCard).last4 : null;
 
   return (

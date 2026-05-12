@@ -260,7 +260,7 @@ const ResetButton = styled.button`
 
 const ApplyButton = styled.button`
   flex: 2;
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   border: none;
   border-radius: 999px;
   padding: ${props => props.theme.spacing.md};
@@ -271,7 +271,7 @@ const ApplyButton = styled.button`
   transition: ${props => props.theme.transitions.swift};
 
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-1px);
     box-shadow: ${props => props.theme.shadows.md};
   }

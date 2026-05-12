@@ -109,7 +109,7 @@ const RefreshButton = styled.button`
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   box-shadow: ${props => props.theme.shadows.lg};

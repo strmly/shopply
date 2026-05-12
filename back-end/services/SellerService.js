@@ -215,7 +215,7 @@ class SellerServiceClass {
       },
       storeSetup: {
         name: 'Demo Store',
-        description: 'A demo store for testing the Shopply platform',
+        description: 'A demo store for testing the Tsenga platform',
         logo: null,
         hours: {
           monday: { open: '08:00', close: '18:00', closed: false },

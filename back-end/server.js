@@ -67,7 +67,7 @@ redisClient.connect().then(() => {
 // Health check route
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Welcome to Shopply API',
+    message: 'Welcome to Tsenga API',
     version: appConfig.apiVersion,
     environment: appConfig.env,
   });
@@ -88,13 +88,31 @@ app.get('/api/debug/products', (req, res) => {
     productCount: ProductService.products.length,
     nextId: ProductService.nextId,
     sampleProducts: ProductService.products.slice(0, 3).map(p => ({
-      id: p.id,
-      name: p.name,
-      price: p.price,
-      room: p.room,
-      category: p.category,
+      id: p.id, idType: typeof p.id, name: p.name, price: p.price,
     })),
   });
+});
+
+// Debug endpoint for flash deals pipeline
+app.get('/api/debug/flash-deals', async (req, res) => {
+  try {
+    const { PromotionService } = await import('./services/PromotionService.js');
+    const result = await PromotionService.getPromotions({ type: 'flash', activeOnly: true, limit: 100 });
+    const active = result.promotions.filter(p => p.isCurrentlyActive());
+    const sampleProductIds = active.slice(0, 5).flatMap(p => p.productIds);
+    const lookups = sampleProductIds.map(pid => {
+      const found = ProductService.products.find(p => p.id === pid || String(p.id) === String(pid));
+      return { pid, pidType: typeof pid, found: !!found, foundId: found?.id, foundIdType: typeof found?.id };
+    });
+    res.json({
+      totalProducts: ProductService.products.length,
+      flashPromotions: active.length,
+      sampleLookups: lookups,
+      firstProductIds: ProductService.products.slice(0, 5).map(p => ({ id: p.id, type: typeof p.id })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
 });
 
 // API Routes

@@ -62,7 +62,7 @@ const AddressValue = styled.div`
 `;
 
 const ChangeButton = styled.button`
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   border: none;
   color: ${props => props.theme.colors.text.inverse};
   border-radius: 999px;
@@ -75,7 +75,7 @@ const ChangeButton = styled.button`
   box-shadow: 0 14px 28px rgba(16, 24, 40, 0.14);
 
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-1px);
   }
 `;

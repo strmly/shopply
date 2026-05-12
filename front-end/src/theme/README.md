@@ -1,6 +1,6 @@
 # Theme System
 
-This directory contains the theme configuration for the Shopply application. The theme is available to all components via styled-components' `ThemeProvider`.
+This directory contains the theme configuration for the Tsenga application. The theme is available to all components via styled-components' `ThemeProvider`.
 
 ## Usage
 

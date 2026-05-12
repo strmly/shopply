@@ -90,7 +90,7 @@ seeder.runComplete({
   downloadImages: false,
   saveJSON: true,
   seedMongo: true,                                          // Enable MongoDB
-  mongoConnection: 'mongodb://localhost:27017/shopply',     // Your connection string
+  mongoConnection: 'mongodb://localhost:27017/tsenga',     // Your connection string
   seedPostgres: false,
 }).catch(err => {
   console.error('Fatal error:', err);
@@ -115,7 +115,7 @@ seeder.runComplete({
   postgresConfig: {
     user: 'your_username',
     host: 'localhost',
-    database: 'shopply',
+    database: 'tsenga',
     password: 'your_password',
     port: 5432
   }
@@ -340,7 +340,7 @@ After seeding:
 
 ## 🤝 Integration
 
-To use these products in your existing Shopply app:
+To use these products in your existing Tsenga app:
 
 1. Update your Product model to match the schema
 2. Modify `seedFurniture1000.js` to use your existing database connection

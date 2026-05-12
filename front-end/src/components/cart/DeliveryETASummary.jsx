@@ -56,7 +56,7 @@ const OptimizeButton = styled.button`
   transition: ${props => props.theme.transitions.swift};
 
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     color: ${props => props.theme.colors.text.inverse};
   }
 `;

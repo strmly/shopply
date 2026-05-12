@@ -1,8 +1,8 @@
-# Shopply Hyperlocal System Implementation
+# Tsenga Hyperlocal System Implementation
 
 ## Overview
 
-This document describes the complete hyperlocal system implementation for Shopply, using Uber H3 geospatial indexing to provide truly local product discovery with automatic radius expansion.
+This document describes the complete hyperlocal system implementation for Tsenga, using Uber H3 geospatial indexing to provide truly local product discovery with automatic radius expansion.
 
 ---
 
@@ -703,7 +703,7 @@ Even with locality priority:
 
 ## 📄 License
 
-This implementation is part of the Shopply platform.
+This implementation is part of the Tsenga platform.
 
 ---
 

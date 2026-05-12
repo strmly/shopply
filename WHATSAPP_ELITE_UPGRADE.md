@@ -559,5 +559,5 @@ Your WhatsApp channel now has:
 
 Ready to deploy? Follow `WHATSAPP_DEPLOYMENT_CHECKLIST.md` with these new features enabled!
 
-Built for Shopply | Elite Upgrade | 2024
+Built for Tsenga | Elite Upgrade | 2024
 

@@ -9,6 +9,12 @@ const Indicator = styled.div`
   right: ${props => props.theme.spacing.md};
   z-index: 999;
   animation: ${fadeIn} 0.3s ease-in;
+
+  @media (max-width: 640px) {
+    top: auto;
+    right: 12px;
+    bottom: 92px;
+  }
 `;
 
 const ModeBadge = styled.button`
@@ -45,12 +51,12 @@ const Icon = styled.span`
 export const ModeIndicator = ({ onToggle }) => {
   const navigate = useNavigate();
   const [mode, setMode] = useState(() => {
-    return localStorage.getItem('shopply_user_mode') || 'buyer';
+    return localStorage.getItem('tsenga_user_mode') || 'buyer';
   });
 
   useEffect(() => {
     const handleStorageChange = () => {
-      const newMode = localStorage.getItem('shopply_user_mode') || 'buyer';
+      const newMode = localStorage.getItem('tsenga_user_mode') || 'buyer';
       setMode(newMode);
     };
 

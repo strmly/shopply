@@ -91,7 +91,7 @@ const ViewStoreButton = styled.button`
   width: 100%;
   margin-top: ${props => props.theme.spacing.md};
   padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: ${props => props.theme.radii.md};

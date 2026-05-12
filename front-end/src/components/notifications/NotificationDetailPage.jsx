@@ -136,7 +136,7 @@ const RetryButton = styled.button`
   padding: 0 18px;
   border: 0;
   border-radius: 999px;
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   cursor: pointer;
   font-weight: 900;
@@ -144,7 +144,7 @@ const RetryButton = styled.button`
   box-shadow: 0 16px 30px rgba(16, 24, 40, 0.16);
 
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-1px);
   }
 `;
@@ -448,7 +448,7 @@ export const NotificationDetailPage = ({ location }) => {
           <HeaderInner>
             <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
             <HeaderCopy>
-              <HeaderEyebrow>Shopply</HeaderEyebrow>
+              <HeaderEyebrow>Tsenga</HeaderEyebrow>
               <HeaderTitle>Notification</HeaderTitle>
             </HeaderCopy>
           </HeaderInner>
@@ -474,7 +474,7 @@ export const NotificationDetailPage = ({ location }) => {
           <HeaderInner>
             <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
             <HeaderCopy>
-              <HeaderEyebrow>Shopply</HeaderEyebrow>
+              <HeaderEyebrow>Tsenga</HeaderEyebrow>
               <HeaderTitle>Notification</HeaderTitle>
             </HeaderCopy>
           </HeaderInner>
@@ -502,7 +502,7 @@ export const NotificationDetailPage = ({ location }) => {
         <HeaderInner>
           <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
           <HeaderCopy>
-            <HeaderEyebrow>Shopply</HeaderEyebrow>
+            <HeaderEyebrow>Tsenga</HeaderEyebrow>
             <HeaderTitle>Notification Details</HeaderTitle>
           </HeaderCopy>
         </HeaderInner>

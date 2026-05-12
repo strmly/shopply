@@ -1,4 +1,4 @@
-# 🎯 Shopply Hyperlocal System - Complete Implementation
+# 🎯 Tsenga Hyperlocal System - Complete Implementation
 
 ## 🎉 What You Got
 

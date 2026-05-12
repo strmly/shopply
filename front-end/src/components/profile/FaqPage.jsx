@@ -118,7 +118,7 @@ const FooterButton = styled.button`
   padding: 8px 16px;
   border-radius: ${props => props.theme.radii.pill};
   border: none;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   cursor: pointer;
   ${props => props.theme.typography.button}

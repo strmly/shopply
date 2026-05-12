@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tsenga">
+  <defs>
+    <linearGradient id="tsengaGradient" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#427FD4"/>
+      <stop offset="0.35" stop-color="#3D81EF"/>
+      <stop offset="0.7" stop-color="#7EC1F6"/>
+      <stop offset="1" stop-color="#C4B8FC"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="18" fill="url(#tsengaGradient)"/>
+  <path d="M18 17h28v8H36v24h-8V25H18z" fill="#fff"/>
+</svg>

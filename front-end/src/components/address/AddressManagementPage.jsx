@@ -62,7 +62,7 @@ const Title = styled.h1`
 
 const AddButton = styled.button`
   padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: ${props => props.theme.radii.md};
@@ -126,7 +126,7 @@ const EmptyText = styled.p`
 
 const EmptyButton = styled.button`
   padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: ${props => props.theme.radii.md};

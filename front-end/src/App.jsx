@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { OnboardingFlow } from './components/onboarding/OnboardingFlow';
 import { HomeScreen } from './components/HomeScreen';
 import { 
   ProfilePage, 
@@ -50,161 +49,57 @@ import { ReviewsPage } from './components/reviews';
 import { VouchersWalletPage } from './components/vouchers';
 import ToastContainer from './components/ui/Toast';
 
+const DEFAULT_LOCATION = {
+  lat: -26.1076,
+  lng: 28.0567,
+  suburb: 'Sandton',
+  city: 'Johannesburg',
+  province: 'Gauteng',
+};
+
 const App = () => {
-  const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [location, setLocation] = useState(null);
-  const routerLocation = useLocation();
+  const routerLocation = useLocation(); // still used for seller route detection in layout
 
   useEffect(() => {
-    // Check if onboarding is complete (stored in localStorage)
-    const onboardingComplete = localStorage.getItem('onboardingComplete');
-    const savedLocation = localStorage.getItem('userLocation');
-    const savedShopplyLocation = localStorage.getItem('shopply_location');
-    
-    if (onboardingComplete === 'true') {
-      setIsOnboardingComplete(true);
-    }
-    
-    // Try to load saved location
-    let loadedLocation = null;
+    const savedLocation = localStorage.getItem('userLocation') || localStorage.getItem('tsenga_location');
+    let loaded = null;
     if (savedLocation) {
-      try {
-        loadedLocation = JSON.parse(savedLocation);
-        setLocation(loadedLocation);
-      } catch (e) {
-        console.error('Error parsing saved location:', e);
-      }
-    } else if (savedShopplyLocation) {
-      // Fallback to shopply_location if userLocation doesn't exist
-      try {
-        loadedLocation = JSON.parse(savedShopplyLocation);
-        setLocation(loadedLocation);
-      } catch (e) {
-        console.error('Error parsing shopply_location:', e);
-      }
+      try { loaded = JSON.parse(savedLocation); } catch {}
     }
-    
-    // Auto-detect location if none is saved (even if onboarding is complete)
-    if (!loadedLocation && navigator.geolocation) {
+
+    if (loaded) {
+      setLocation(loaded);
+    } else if (navigator.geolocation) {
       detectUserLocation();
-    } else if (!loadedLocation) {
-      // No geolocation support, set default location
-      const defaultLocation = {
-        lat: -26.1076,
-        lng: 28.0567,
-        suburb: 'Sandton',
-        city: 'Johannesburg',
-      };
-      setLocation(defaultLocation);
-      localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
-      localStorage.setItem('shopply_location', JSON.stringify(defaultLocation));
+    } else {
+      setLocation(DEFAULT_LOCATION);
+      localStorage.setItem('userLocation', JSON.stringify(DEFAULT_LOCATION));
+      localStorage.setItem('tsenga_location', JSON.stringify(DEFAULT_LOCATION));
     }
   }, []);
 
   const detectUserLocation = () => {
-    if (!navigator.geolocation) {
-      // No geolocation support, set default location
-      const defaultLocation = {
-        lat: -26.1076,
-        lng: 28.0567,
-        suburb: 'Sandton',
-        city: 'Johannesburg',
-      };
-      setLocation(defaultLocation);
-      localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
-      localStorage.setItem('shopply_location', JSON.stringify(defaultLocation));
-      return;
-    }
-
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const detectedLocation = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-
-        // Reverse geocode to get suburb and city
-        // For now, use a simple approximation based on coordinates
-        // In production, use a geocoding service like Google Maps Geocoding API
-        const suburb = await reverseGeocode(detectedLocation.lat, detectedLocation.lng);
-        
-        const locationData = {
-          ...detectedLocation,
-          suburb: suburb.suburb || 'Sandton',
-          city: suburb.city || 'Johannesburg',
-        };
-
-        setLocation(locationData);
-        localStorage.setItem('userLocation', JSON.stringify(locationData));
-        localStorage.setItem('shopply_location', JSON.stringify(locationData));
+      (position) => {
+        const loc = { lat: position.coords.latitude, lng: position.coords.longitude, suburb: 'Sandton', city: 'Johannesburg' };
+        setLocation(loc);
+        localStorage.setItem('userLocation', JSON.stringify(loc));
+        localStorage.setItem('tsenga_location', JSON.stringify(loc));
       },
-      (error) => {
-        console.error('Geolocation error:', error);
-        // On error, set default location
-        const defaultLocation = {
-          lat: -26.1076,
-          lng: 28.0567,
-          suburb: 'Sandton',
-          city: 'Johannesburg',
-        };
-        setLocation(defaultLocation);
-        localStorage.setItem('userLocation', JSON.stringify(defaultLocation));
-        localStorage.setItem('shopply_location', JSON.stringify(defaultLocation));
+      () => {
+        setLocation(DEFAULT_LOCATION);
+        localStorage.setItem('userLocation', JSON.stringify(DEFAULT_LOCATION));
+        localStorage.setItem('tsenga_location', JSON.stringify(DEFAULT_LOCATION));
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000, // 5 minutes
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
     );
-  };
-
-  // Simple reverse geocoding approximation
-  // In production, replace with actual geocoding service
-  const reverseGeocode = async (lat, lng) => {
-    // For Johannesburg area, approximate suburbs based on coordinates
-    // This is a simplified version - in production use a proper geocoding API
-    
-    // Johannesburg area bounds (approximate)
-    if (lat >= -26.3 && lat <= -25.9 && lng >= 27.9 && lng <= 28.2) {
-      // Sandton area
-      if (lat >= -26.15 && lat <= -26.05 && lng >= 28.0 && lng <= 28.1) {
-        return { suburb: 'Sandton', city: 'Johannesburg' };
-      }
-      // Rosebank area
-      if (lat >= -26.15 && lat <= -26.12 && lng >= 28.03 && lng <= 28.05) {
-        return { suburb: 'Rosebank', city: 'Johannesburg' };
-      }
-      // Melville area
-      if (lat >= -26.19 && lat <= -26.17 && lng >= 28.0 && lng <= 28.02) {
-        return { suburb: 'Melville', city: 'Johannesburg' };
-      }
-      // Default to Sandton for Johannesburg area
-      return { suburb: 'Sandton', city: 'Johannesburg' };
-    }
-    
-    // Default fallback
-    return { suburb: 'Sandton', city: 'Johannesburg' };
   };
 
   const handleLocationChange = (newLocation) => {
     setLocation(newLocation);
     localStorage.setItem('userLocation', JSON.stringify(newLocation));
-    localStorage.setItem('shopply_location', JSON.stringify(newLocation));
-  };
-
-  const handleOnboardingComplete = (locationData) => {
-    setIsOnboardingComplete(true);
-    if (locationData) {
-      setLocation(locationData);
-      localStorage.setItem('userLocation', JSON.stringify(locationData));
-    }
-    localStorage.setItem('onboardingComplete', 'true');
-  };
-
-  const handleBrowseAsGuest = () => {
-    setIsOnboardingComplete(true);
-    localStorage.setItem('onboardingComplete', 'true');
+    localStorage.setItem('tsenga_location', JSON.stringify(newLocation));
   };
 
   // Initialize default seller store ID for guest access
@@ -216,19 +111,6 @@ const App = () => {
       localStorage.setItem('sellerOnboardingId', '1');
     }
   }, []);
-
-  // Check if current route is a seller route
-  const isSellerRoute = routerLocation.pathname.startsWith('/seller');
-
-  // Allow seller routes without onboarding, but require onboarding for other routes
-  if (!isOnboardingComplete && !isSellerRoute) {
-    return (
-      <OnboardingFlow
-        onComplete={handleOnboardingComplete}
-        onBrowseAsGuest={handleBrowseAsGuest}
-      />
-    );
-  }
 
   return (
     <>

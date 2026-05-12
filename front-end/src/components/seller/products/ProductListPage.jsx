@@ -50,7 +50,7 @@ const SkeletonProductRow = styled(SkeletonCard)`
 
 const LoadMoreButton = styled.button`
   padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   border-radius: ${props => props.theme.radii.md};

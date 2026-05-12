@@ -18,7 +18,7 @@ export const whatsappConfig = {
 
   // Webhook Configuration
   webhook: {
-    verifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'shopply_verify_token_2024',
+    verifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'tsenga_verify_token_2024',
     secret: process.env.WHATSAPP_WEBHOOK_SECRET,
   },
 
@@ -37,18 +37,18 @@ export const whatsappConfig = {
 
   // Message Templates (pre-approved by WhatsApp)
   templates: {
-    otp: 'shopply_otp',
-    orderConfirmation: 'shopply_order_confirmed',
-    orderPaid: 'shopply_order_paid',
-    orderPreparing: 'shopply_order_preparing',
-    orderReady: 'shopply_order_ready',
-    courierAssigned: 'shopply_courier_assigned',
-    outForDelivery: 'shopply_out_for_delivery',
-    delivered: 'shopply_delivered',
-    refundApproved: 'shopply_refund_approved',
-    refundPaid: 'shopply_refund_paid',
-    lowStock: 'shopply_low_stock_alert',
-    promoStarting: 'shopply_promo_starting',
+    otp: 'tsenga_otp',
+    orderConfirmation: 'tsenga_order_confirmed',
+    orderPaid: 'tsenga_order_paid',
+    orderPreparing: 'tsenga_order_preparing',
+    orderReady: 'tsenga_order_ready',
+    courierAssigned: 'tsenga_courier_assigned',
+    outForDelivery: 'tsenga_out_for_delivery',
+    delivered: 'tsenga_delivered',
+    refundApproved: 'tsenga_refund_approved',
+    refundPaid: 'tsenga_refund_paid',
+    lowStock: 'tsenga_low_stock_alert',
+    promoStarting: 'tsenga_promo_starting',
   },
 
   // Conversation Settings

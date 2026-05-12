@@ -27,7 +27,7 @@ const Title = styled.h2`
 
 const AskButton = styled.button`
   padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: ${props => props.theme.radii.md};

@@ -173,7 +173,7 @@ export const whatsappAdvancedConfig = {
       'analytics_charts',
       'complex_reports',
     ],
-    baseUrl: process.env.APP_URL || 'https://shopply.app',
+    baseUrl: process.env.APP_URL || 'https://tsenga.app',
   },
 
   /**
@@ -210,20 +210,20 @@ export const whatsappAdvancedConfig = {
    */
   enhancedTemplates: {
     buyer: {
-      otp: 'shopply_otp_v2',
-      orderConfirmed: 'shopply_order_confirmed_v2',
-      orderPreparing: 'shopply_order_preparing_v2',
-      courierAssigned: 'shopply_courier_assigned_v2',
-      outForDelivery: 'shopply_out_for_delivery_v2',
-      delivered: 'shopply_delivered_v2',
-      refundInitiated: 'shopply_refund_initiated',
-      refundApproved: 'shopply_refund_approved_v2',
+      otp: 'tsenga_otp_v2',
+      orderConfirmed: 'tsenga_order_confirmed_v2',
+      orderPreparing: 'tsenga_order_preparing_v2',
+      courierAssigned: 'tsenga_courier_assigned_v2',
+      outForDelivery: 'tsenga_out_for_delivery_v2',
+      delivered: 'tsenga_delivered_v2',
+      refundInitiated: 'tsenga_refund_initiated',
+      refundApproved: 'tsenga_refund_approved_v2',
     },
     seller: {
-      newOrder: 'shopply_seller_new_order',
-      orderOverdue: 'shopply_seller_order_overdue',
-      lowStock: 'shopply_seller_low_stock_v2',
-      payoutProcessed: 'shopply_seller_payout',
+      newOrder: 'tsenga_seller_new_order',
+      orderOverdue: 'tsenga_seller_order_overdue',
+      lowStock: 'tsenga_seller_low_stock_v2',
+      payoutProcessed: 'tsenga_seller_payout',
     },
   },
 

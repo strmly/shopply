@@ -29,6 +29,24 @@ class UserServiceClass {
   }
 
   /**
+   * Get user by mobile number
+   */
+  async getUserByMobile(mobile) {
+    const normalizedMobile = String(mobile || '').replace(/[^\d+]/g, '');
+    return this.users.find(user => (
+      String(user.mobile || '').replace(/[^\d+]/g, '') === normalizedMobile
+    ));
+  }
+
+  /**
+   * Get user by email address
+   */
+  async getUserByEmail(email) {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    return this.users.find(user => String(user.email || '').trim().toLowerCase() === normalizedEmail);
+  }
+
+  /**
    * Create a new user
    */
   async createUser(userData) {

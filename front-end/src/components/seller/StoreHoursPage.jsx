@@ -273,7 +273,7 @@ export const StoreHoursPage = () => {
         <Header>
           <Title>Store hours</Title>
           <Subtitle>
-            Control when your store appears as open in Shopply search, checkout, and tracking.
+            Control when your store appears as open in Tsenga search, checkout, and tracking.
           </Subtitle>
         </Header>
 

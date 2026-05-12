@@ -126,7 +126,7 @@ export const ProfileHeader = ({ user, location }) => {
     <Container>
       <Avatar>{initials}</Avatar>
       <Info>
-        <Eyebrow><DotMark />Your Shopply profile</Eyebrow>
+        <Eyebrow><DotMark />Your Tsenga profile</Eyebrow>
         <Name>{userName}</Name>
         <Email>{userEmail}</Email>
         <Location>

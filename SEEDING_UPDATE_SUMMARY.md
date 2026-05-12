@@ -168,7 +168,7 @@ console.log(`Found ${sofas.length} sofas`);
 ## 📁 File Structure
 
 ```
-shopply/
+tsenga/
 ├── back-end/
 │   ├── scripts/
 │   │   ├── generateProducts.js          ⭐ NEW

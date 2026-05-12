@@ -66,7 +66,7 @@ const Badge = styled.div`
   position: absolute;
   top: ${props => props.theme.spacing.sm};
   right: ${props => props.theme.spacing.sm};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border-radius: ${props => props.theme.radii.circle};
   min-width: 20px;

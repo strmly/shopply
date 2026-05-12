@@ -6,13 +6,17 @@ import { useTheme } from '../../hooks/useTheme';
 const CarouselContainer = styled.div`
   position: relative;
   width: 100%;
-  min-height: 430px;
+  min-height: clamp(430px, 48vw, 520px);
   overflow: hidden;
   margin-bottom: ${props => props.theme.spacing.xl};
   background: #ffffff;
 
-  @media (max-width: 640px) {
-    min-height: 580px;
+  @media (max-width: 760px) {
+    min-height: 680px;
+  }
+
+  @media (max-width: 420px) {
+    min-height: 650px;
   }
 `;
 
@@ -25,20 +29,20 @@ const Slide = styled.div`
   background-size: cover;
   background-position: center;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
   align-items: center;
-  gap: 32px;
-  padding: 52px min(7vw, 88px);
+  gap: clamp(18px, 4vw, 32px);
+  padding: 52px clamp(14px, 7vw, 88px);
   opacity: ${props => props.$active ? 1 : 0};
   transform: translateX(${props => props.$active ? '0' : props.$direction === 'next' ? '18px' : '-18px'});
   transition: opacity 0.45s ease-out, transform 0.45s ease-out;
   cursor: pointer;
   pointer-events: ${props => props.$active ? 'auto' : 'none'};
 
-  @media (max-width: 640px) {
+  @media (max-width: 760px) {
     grid-template-columns: 1fr;
     align-content: start;
-    padding: 28px 20px 76px;
+    padding: 28px clamp(14px, 5vw, 24px) 76px;
     gap: 22px;
   }
 `;
@@ -46,6 +50,7 @@ const Slide = styled.div`
 const SlideContent = styled.div`
   color: ${props => props.theme.colors.text.primary};
   max-width: 620px;
+  min-width: 0;
 `;
 
 const Eyebrow = styled.div`
@@ -61,6 +66,11 @@ const Eyebrow = styled.div`
   ${props => props.theme.typography.caption}
   font-weight: 800;
   text-transform: uppercase;
+
+  @media (max-width: 420px) {
+    max-width: 100%;
+    font-size: 10px;
+  }
 `;
 
 const DotMark = styled.span`
@@ -73,7 +83,7 @@ const DotMark = styled.span`
 const SlideTitle = styled.h2`
   color: ${props => props.theme.colors.text.primary};
   margin: 0 0 14px;
-  font-size: clamp(36px, 7vw, 72px);
+  font-size: clamp(32px, 7vw, 72px);
   line-height: 0.96;
   font-weight: 800;
   letter-spacing: 0;
@@ -85,11 +95,16 @@ const SlideSubtitle = styled.p`
   margin: 0 0 24px;
   max-width: 520px;
   font-weight: 500;
+
+  @media (max-width: 420px) {
+    font-size: 14px;
+    margin-bottom: 18px;
+  }
 `;
 
 const CTAButton = styled.button`
   ${props => props.theme.typography.button}
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: 999px;
@@ -101,7 +116,12 @@ const CTAButton = styled.button`
 
   &:hover {
     transform: translateY(-2px);
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
+  }
+
+  @media (max-width: 420px) {
+    width: 100%;
+    min-height: 48px;
   }
 `;
 
@@ -116,9 +136,13 @@ const HeroPanel = styled.div`
   background: #ffffff;
   box-shadow: 0 30px 70px rgba(16, 24, 40, 0.14);
 
-  @media (max-width: 640px) {
+  @media (max-width: 760px) {
     min-height: 270px;
     border-radius: 22px;
+  }
+
+  @media (max-width: 420px) {
+    min-height: 230px;
   }
 `;
 
@@ -158,6 +182,11 @@ const StatsRow = styled.div`
   gap: 10px;
   max-width: 520px;
   margin-top: 28px;
+
+  @media (max-width: 520px) {
+    gap: 8px;
+    margin-top: 20px;
+  }
 `;
 
 const Stat = styled.div`
@@ -165,11 +194,19 @@ const Stat = styled.div`
   border: 1px solid ${props => props.theme.colors.border.light};
   border-radius: 18px;
   background: rgba(255,255,255,0.72);
+
+  @media (max-width: 420px) {
+    padding: 10px 8px;
+  }
 `;
 
 const StatValue = styled.div`
   ${props => props.theme.typography.heading3}
   font-weight: 800;
+
+  @media (max-width: 420px) {
+    font-size: 18px;
+  }
 `;
 
 const StatLabel = styled.div`
@@ -183,7 +220,7 @@ const ProgressBar = styled.div`
   bottom: 0;
   left: 0;
   height: 3px;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   width: ${props => props.$progress}%;
   transition: width 0.1s linear;
   z-index: 10;

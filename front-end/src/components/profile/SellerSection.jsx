@@ -44,7 +44,7 @@ const Subtitle = styled.p`
 const ViewAllButton = styled.button`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.inverse};
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   border: none;
   font-weight: 900;
   cursor: pointer;
@@ -53,7 +53,7 @@ const ViewAllButton = styled.button`
   transition: ${props => props.theme.transitions.swift};
 
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-1px);
   }
 `;

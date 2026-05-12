@@ -1,10 +1,18 @@
 import styled from 'styled-components';
 
 const Container = styled.div`
-  padding: 0 min(5vw, 48px);
+  padding: 0 clamp(14px, 5vw, 48px);
   margin: -36px auto ${props => props.theme.spacing.xl};
   position: relative;
   z-index: 2;
+
+  @media (max-width: 760px) {
+    margin-top: -24px;
+  }
+
+  @media (max-width: 420px) {
+    margin-top: -18px;
+  }
 `;
 
 const ActionsList = styled.div`
@@ -17,6 +25,10 @@ const ActionsList = styled.div`
 
   @media (max-width: 760px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 420px) {
+    gap: 10px;
   }
 `;
 
@@ -35,6 +47,13 @@ const ActionItem = styled.button`
   transition: ${props => props.theme.transitions.swift};
   box-shadow: 0 18px 38px rgba(16, 24, 40, 0.09);
   min-width: 0;
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 14px;
+    min-height: 132px;
+  }
 
   &:hover {
     border-color: ${props => props.$accent || props.theme.colors.primary};
@@ -60,6 +79,12 @@ const ActionIcon = styled.div`
   font-weight: 900;
   letter-spacing: 0;
   box-shadow: 0 12px 24px rgba(16, 24, 40, 0.08);
+
+  @media (max-width: 420px) {
+    width: 38px;
+    height: 38px;
+    border-radius: 14px;
+  }
 `;
 
 const ActionText = styled.div`
@@ -81,6 +106,8 @@ const ActionHint = styled.span`
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
   font-weight: 800;
+  display: block;
+  overflow-wrap: anywhere;
 `;
 
 const QUICK_ACTIONS = [

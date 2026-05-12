@@ -190,7 +190,7 @@ export const ThemeSettingsPage = () => {
 
       <Content>
         <Intro>
-          Choose how Shopply looks. You can match your device, stay light, or switch
+          Choose how Tsenga looks. You can match your device, stay light, or switch
           to a softer dark mode for low-light use.
         </Intro>
         <CardGrid>

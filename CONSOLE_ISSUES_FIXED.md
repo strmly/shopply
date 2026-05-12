@@ -40,7 +40,7 @@ GET /api/furniture/home?lat=-26.1076&lng=28.0567&tier=auto 200 - 26ms
 
 **Issue (From Logs):**
 ```
-Internal server error: /Users/abelsifisoshongwe/Desktop/ui-apps/shopply/front-end/src/components/home/ProductGrid.jsx: Identifier 'validProducts' has already been declared. (71:8)
+Internal server error: /Users/abelsifisoshongwe/Desktop/ui-apps/tsenga/front-end/src/components/home/ProductGrid.jsx: Identifier 'validProducts' has already been declared. (71:8)
 ```
 
 **Root Cause:**
@@ -161,7 +161,7 @@ Recommendation: Density is acceptable
 **Action:** Ensure backend server stays running while developing
 ```bash
 # In terminal 13:
-cd /Users/abelsifisoshongwe/Desktop/ui-apps/shopply/back-end
+cd /Users/abelsifisoshongwe/Desktop/ui-apps/tsenga/back-end
 node --watch server.js
 ```
 

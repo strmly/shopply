@@ -168,7 +168,7 @@ export const StoreFrontPage = ({ location }) => {
             logo: seller.storeSetup?.logo || null,
             description:
               seller.storeSetup?.description ||
-              'This is how shoppers will see your store on Shopply.',
+              'This is how shoppers will see your store on Tsenga.',
             address: seller.storeSetup?.address || {
               suburb: location?.suburb || 'Sandton',
               city: location?.city || 'Johannesburg',
@@ -236,7 +236,7 @@ export const StoreFrontPage = ({ location }) => {
         <Header>
           <Title>Store preview</Title>
           <Subtitle>
-            This is how shoppers see your store and products on Shopply.
+            This is how shoppers see your store and products on Tsenga.
           </Subtitle>
         </Header>
 

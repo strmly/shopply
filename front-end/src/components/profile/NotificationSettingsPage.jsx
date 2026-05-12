@@ -116,7 +116,7 @@ export const NotificationSettingsPage = () => {
             feel helpful, not noisy.
           </Text>
           <Hint>
-            For now, Shopply only sends essential, low-frequency notifications
+            For now, Tsenga only sends essential, low-frequency notifications
             related to orders and account safety.
           </Hint>
         </Card>

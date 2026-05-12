@@ -15,26 +15,33 @@ import { ModeIndicator } from './home/ModeIndicator';
 import { InlineSearch } from './home/InlineSearch';
 import { TrendingInArea, CommunityRecommendations } from './community';
 import { SellerBannerCompact, SellerBannerFull } from './home/SellerBanner';
+import { SellerTopBanner } from './home/SellerTopBanner';
 import { NotificationsPanel } from './ui';
 import { LocationPickerModal } from './home/LocationPickerModal';
 
 const Container = styled.div`
   min-height: 100vh;
+  overflow-x: hidden;
   background:
     linear-gradient(180deg, #ffffff 0%, #ffffff 56%, #F8FAFC 100%);
   animation: ${fadeIn} 0.5s ease-in;
   padding-bottom: 80px; /* Space for bottom nav */
+
+  @media (max-width: 640px) {
+    padding-bottom: 92px;
+  }
 `;
 
 const Content = styled.div`
   max-width: 100%;
   margin: 0 auto;
+  min-width: 0;
 `;
 
 const FeedHeader = styled.div`
   max-width: 1180px;
   margin: 0 auto 16px;
-  padding: 0 min(5vw, 48px);
+  padding: 0 clamp(14px, 5vw, 48px);
 `;
 
 const FeedEyebrow = styled.div`
@@ -49,6 +56,11 @@ const FeedTitle = styled.h2`
   ${props => props.theme.typography.heading2}
   color: ${props => props.theme.colors.text.primary};
   margin: 0;
+  line-height: 1.1;
+
+  @media (max-width: 520px) {
+    font-size: 24px;
+  }
 `;
 
 const LoadingContainer = styled.div`
@@ -61,11 +73,12 @@ const LoadingContainer = styled.div`
 `;
 
 import API_BASE_URL from '@config/api';
+import { toast } from './ui/Toast';
 
 export const HomeScreen = ({ location, onLocationChange }) => {
   const navigate = useNavigate();
-  const suburb = location?.suburb || 'Sandton Central';
-  const distance = '5 km';
+  const suburb = location?.suburb || 'Your area';
+  const city = location?.city || '';
 
   const [hotProducts, setHotProducts] = useState([]);
   const [flashDeals, setFlashDeals] = useState([]);
@@ -101,30 +114,31 @@ export const HomeScreen = ({ location, onLocationChange }) => {
     return () => clearInterval(interval);
   }, [userId]);
 
-  const [feedPage, setFeedPage] = useState(1);
-  const [loadingMoreFeed, setLoadingMoreFeed] = useState(false);
-  const [hasMoreFeed, setHasMoreFeed] = useState(false);
-  const itemsPerPage = 4;
+  const itemsPerPage = 8;
 
-  // Fetch products from API
+  // Fetch products from API — re-run when the user's area changes
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        
+
+        const locQS = location?.lat && location?.lng
+          ? `lat=${location.lat}&lng=${location.lng}&`
+          : '';
+
         const fallback = (err) => {
           console.error(err);
           return { ok: false, json: async () => ({ success: false, data: [] }) };
         };
 
         const [hotRes, dealsRes, recommendedRes, newRes, allRes, bundlesRes, topRatedRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/products/hot?limit=10`).catch(e => fallback('hot: ' + e)),
+          fetch(`${API_BASE_URL}/products/hot?${locQS}limit=10`).catch(e => fallback('hot: ' + e)),
           fetch(`${API_BASE_URL}/products/flash-deals?limit=10`).catch(e => fallback('flash: ' + e)),
-          fetch(`${API_BASE_URL}/products/recommended?limit=10`).catch(e => fallback('recommended: ' + e)),
-          fetch(`${API_BASE_URL}/products/new-arrivals?limit=10`).catch(e => fallback('new: ' + e)),
-          fetch(`${API_BASE_URL}/products?page=1&limit=${itemsPerPage}`).catch(e => fallback('all: ' + e)),
-          fetch(`${API_BASE_URL}/products/bundles?limit=10`).catch(e => fallback('bundles: ' + e)),
-          fetch(`${API_BASE_URL}/products/top-rated?limit=10`).catch(e => fallback('top-rated: ' + e)),
+          fetch(`${API_BASE_URL}/products/recommended?${locQS}limit=10`).catch(e => fallback('recommended: ' + e)),
+          fetch(`${API_BASE_URL}/products/new-arrivals?${locQS}limit=10`).catch(e => fallback('new: ' + e)),
+          fetch(`${API_BASE_URL}/products?${locQS}page=1&limit=30`).catch(e => fallback('all: ' + e)),
+          fetch(`${API_BASE_URL}/products/bundles?${locQS}limit=10`).catch(e => fallback('bundles: ' + e)),
+          fetch(`${API_BASE_URL}/products/top-rated?${locQS}limit=10`).catch(e => fallback('top-rated: ' + e)),
         ]);
 
         const [hotData, dealsData, recommendedData, newData, allData, bundlesData, topRatedData] = await Promise.all([
@@ -146,10 +160,8 @@ export const HomeScreen = ({ location, onLocationChange }) => {
 
         if (allData.success && Array.isArray(allData.data)) {
           setFeedProducts(allData.data);
-          setHasMoreFeed(allData.pagination?.hasMore || false);
         } else {
           setFeedProducts([]);
-          setHasMoreFeed(false);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -160,101 +172,53 @@ export const HomeScreen = ({ location, onLocationChange }) => {
         setBundles([]);
         setTopRated([]);
         setFeedProducts([]);
-        setHasMoreFeed(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, []);
-
-  const handleLoadMoreFeed = async () => {
-    try {
-      setLoadingMoreFeed(true);
-      const nextPage = feedPage + 1;
-      const response = await fetch(`${API_BASE_URL}/products?page=${nextPage}&limit=${itemsPerPage}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setFeedProducts(prev => [...prev, ...data.data]);
-        setHasMoreFeed(data.pagination?.hasMore || false);
-        setFeedPage(nextPage);
-      }
-    } catch (error) {
-      console.error('Error loading more products:', error);
-    } finally {
-      setLoadingMoreFeed(false);
-    }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location?.suburb]);
 
   const handleProductClick = (product) => {
     // Navigate to product detail page
     navigate(`/product/${product.id}`);
   };
 
-  const handleAddToCart = async (product) => {
-    if (!product || !product.id) return;
+  const handleAddToCart = (product) => {
+    if (!product?.id) return;
 
-    try {
-      // Add to localStorage cart
-      const cartItem = {
-        ...product,
-        quantity: 1,
-        selectedVariant: null,
-        addedAt: new Date().toISOString(),
-      };
+    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+    const alreadyAdded = cart.findIndex(
+      item => item.id === product.id && JSON.stringify(item.selectedVariant) === 'null'
+    ) >= 0;
 
-      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
-      
-      // Check if item already exists
-      const existingIndex = cart.findIndex(item => 
-        item.id === product.id && 
-        JSON.stringify(item.selectedVariant) === JSON.stringify(null)
-      );
-
-      if (existingIndex >= 0) {
-        cart[existingIndex].quantity += 1;
-      } else {
-        cart.push(cartItem);
-      }
-
-      localStorage.setItem('shopply_cart', JSON.stringify(cart));
-      
-      // Update cart count in localStorage
-      const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      localStorage.setItem('shopply_cart_count', cartCount.toString());
-
-      // Sync with backend
-      try {
-        await fetch(`${API_BASE_URL}/cart/items`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: 'default',
-            productId: product.id,
-            quantity: 1,
-            variant: null,
-            storeId: product.storeId,
-          }),
-        });
-      } catch (error) {
-        console.error('Error syncing cart to backend:', error);
-      }
-
-      // Dispatch custom event to update cart count in other components
-      window.dispatchEvent(new Event('cartUpdated'));
-
-      // Show success feedback (could be a toast notification)
-      console.log('Added to cart:', product.name);
-    } catch (error) {
-      console.error('Error adding to cart:', error);
+    if (alreadyAdded) {
+      // ProductCard already wrote the item to localStorage — just show toast.
+      toast.success(`${product.name} added to cart`);
+      return;
     }
+
+    // Called from a component that doesn't manage its own cart state.
+    cart.push({ ...product, quantity: 1, selectedVariant: null, addedAt: new Date().toISOString() });
+    localStorage.setItem('tsenga_cart', JSON.stringify(cart));
+    localStorage.setItem('tsenga_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
+    window.dispatchEvent(new Event('cartUpdated'));
+
+    fetch(`${API_BASE_URL}/cart/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'default', productId: product.id, quantity: 1, variant: null, storeId: product.storeId }),
+    }).catch(() => {});
+
+    toast.success(`${product.name} added to cart`);
   };
 
   if (loading) {
     return (
       <Container>
+        <SellerTopBanner />
         <TopNavigation
           location={location}
           onLocationClick={() => setShowLocationPicker(true)}
@@ -292,6 +256,7 @@ export const HomeScreen = ({ location, onLocationChange }) => {
 
   return (
     <Container>
+      <SellerTopBanner />
       <TopNavigation
         location={location}
         onLocationClick={() => setShowLocationPicker(true)}
@@ -328,8 +293,8 @@ export const HomeScreen = ({ location, onLocationChange }) => {
 
         {hotProducts.length > 0 && (
           <DiscoveryModule
-            title="Hot near you"
-            geoLabel={`Trending in ${suburb}`}
+            title={`Hot in ${suburb}`}
+            geoLabel={city ? `Trending in ${city}` : `Trending near you`}
             products={hotProducts}
             viewAllText="See all"
             onViewAll={() => navigate('/hot')}
@@ -409,9 +374,6 @@ export const HomeScreen = ({ location, onLocationChange }) => {
               products={feedProducts.length > 0 ? feedProducts : bundles}
               onProductClick={handleProductClick}
               onAddToCart={handleAddToCart}
-              onLoadMore={handleLoadMoreFeed}
-              hasMore={hasMoreFeed}
-              loading={loadingMoreFeed}
               itemsPerPage={itemsPerPage}
             />
           </>

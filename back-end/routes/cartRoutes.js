@@ -9,6 +9,12 @@ router.get('/', CartController.getCart);
 // POST /api/cart/items - Add item to cart
 router.post('/items', CartController.addItem);
 
+// PUT /api/cart/items/by-product/:productId - Update qty by product (no server item ID needed)
+router.put('/items/by-product/:productId', CartController.updateByProduct);
+
+// DELETE /api/cart/items/by-product/:productId - Remove by product
+router.delete('/items/by-product/:productId', CartController.removeByProduct);
+
 // PUT /api/cart/items/:itemId - Update item quantity
 router.put('/items/:itemId', CartController.updateQuantity);
 

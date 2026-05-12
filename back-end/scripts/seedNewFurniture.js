@@ -171,7 +171,7 @@ function convertToProductModel(generatedProduct) {
 
     // Assign to default seller store
     storeId: 1,
-    storeName: 'Shopply Home Furniture',
+    storeName: 'Tsenga Home Furniture',
   };
 }
 

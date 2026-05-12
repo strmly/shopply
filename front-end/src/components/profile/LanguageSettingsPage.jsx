@@ -313,7 +313,7 @@ export const LanguageSettingsPage = () => {
 
       <Content>
         <Intro>
-          Pick the language you’d like Shopply to use. Changing this won’t affect
+          Pick the language you’d like Tsenga to use. Changing this won’t affect
           your orders or saved data.
         </Intro>
         <List role="radiogroup" aria-label="App language">

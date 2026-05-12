@@ -78,6 +78,7 @@ const LoadingContainer = styled.div`
 `;
 
 import API_BASE_URL from '@config/api';
+import { toast } from '../ui/Toast';
 
 export const ProductDetailPage = ({ location }) => {
   const { id } = useParams();
@@ -88,7 +89,7 @@ export const ProductDetailPage = ({ location }) => {
   
   useEffect(() => {
     if (!currentLocation) {
-      const savedLocation = localStorage.getItem('shopply_location');
+      const savedLocation = localStorage.getItem('tsenga_location');
       if (savedLocation) {
         try {
           setCurrentLocation(JSON.parse(savedLocation));
@@ -125,7 +126,7 @@ export const ProductDetailPage = ({ location }) => {
     }
     
     // Load cart count from localStorage
-    const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
     const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     setCartCount(cartCount);
   }, [id]);
@@ -296,7 +297,7 @@ export const ProductDetailPage = ({ location }) => {
     };
 
     // Get existing cart
-    const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
     
     // Check if item already exists
     const existingIndex = cart.findIndex(item => 
@@ -310,32 +311,28 @@ export const ProductDetailPage = ({ location }) => {
       cart.push(cartItem);
     }
 
-    localStorage.setItem('shopply_cart', JSON.stringify(cart));
+    localStorage.setItem('tsenga_cart', JSON.stringify(cart));
     
     // Update cart count (sum of all quantities)
     const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     setCartCount(cartCount);
-    localStorage.setItem('shopply_cart_count', cartCount.toString());
+    localStorage.setItem('tsenga_cart_count', cartCount.toString());
 
-    // Dispatch custom event to update cart count in other components
     window.dispatchEvent(new Event('cartUpdated'));
+    toast.success(`${product.name} added to cart`);
 
-    // Also sync with backend
-    try {
-      await fetch(`${API_BASE_URL}/cart/items`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: 'default',
-          productId: product.id,
-          quantity,
-          variant: selectedVariant,
-          storeId: product.storeId,
-        }),
-      });
-    } catch (error) {
-      console.error('Error syncing cart to backend:', error);
-    }
+    // Sync with backend (CartPage will clear+rebuild on load, so this is best-effort)
+    fetch(`${API_BASE_URL}/cart/items`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: 'default',
+        productId: product.id,
+        quantity,
+        variant: selectedVariant,
+        storeId: product.storeId,
+      }),
+    }).catch(() => {});
   };
 
   const handleBack = () => {

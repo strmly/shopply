@@ -120,7 +120,7 @@ const EmptyText = styled.p`
 
 const ActionButton = styled.button`
   padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: ${props => props.theme.radii.md};
@@ -167,7 +167,7 @@ const ErrorText = styled.div`
 
 const RetryButton = styled.button`
   padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: ${props => props.theme.radii.md};

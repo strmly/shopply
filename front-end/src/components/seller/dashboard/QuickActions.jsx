@@ -90,7 +90,7 @@ const HighlightBadge = styled.div`
   position: absolute;
   top: -8px;
   right: -8px;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   width: 24px;
   height: 24px;

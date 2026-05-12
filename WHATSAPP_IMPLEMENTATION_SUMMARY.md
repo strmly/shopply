@@ -2,7 +2,7 @@
 
 ## 🎯 Implementation Complete ✅
 
-A complete, production-ready WhatsApp channel has been implemented for Shopply, allowing buyers and sellers to fully interact with the platform through WhatsApp Business API.
+A complete, production-ready WhatsApp channel has been implemented for Tsenga, allowing buyers and sellers to fully interact with the platform through WhatsApp Business API.
 
 ---
 
@@ -567,7 +567,7 @@ curl -X POST http://localhost:5000/api/whatsapp/send-message \
 
 ## 🎉 Conclusion
 
-**You now have a fully functional, production-ready WhatsApp channel for Shopply!**
+**You now have a fully functional, production-ready WhatsApp channel for Tsenga!**
 
 The implementation follows all the specifications from your detailed requirements:
 - ✅ Channel architecture (not a separate product)

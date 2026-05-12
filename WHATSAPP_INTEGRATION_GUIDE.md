@@ -1,8 +1,8 @@
-# WhatsApp Integration Guide for Shopply
+# WhatsApp Integration Guide for Tsenga
 
 ## 🎯 Overview
 
-This guide explains how to set up and use the WhatsApp channel integration for Shopply. The WhatsApp integration allows buyers and sellers to interact with the platform entirely through WhatsApp messages.
+This guide explains how to set up and use the WhatsApp channel integration for Tsenga. The WhatsApp integration allows buyers and sellers to interact with the platform entirely through WhatsApp messages.
 
 ## 📋 Table of Contents
 
@@ -200,7 +200,7 @@ ngrok http 5000
 ### Test Webhook Verification
 
 ```bash
-curl "http://localhost:5000/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=shopply_verify_token_2024&hub.challenge=test123"
+curl "http://localhost:5000/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=tsenga_verify_token_2024&hub.challenge=test123"
 ```
 
 Should return: `test123`
@@ -212,7 +212,7 @@ curl -X POST http://localhost:5000/api/whatsapp/send-message \
   -H "Content-Type: application/json" \
   -d '{
     "phoneNumber": "+27123456789",
-    "text": "Hello from Shopply! 👋"
+    "text": "Hello from Tsenga! 👋"
   }'
 ```
 
@@ -471,7 +471,7 @@ For issues or questions:
 
 ## 📝 License
 
-This WhatsApp integration is part of the Shopply platform.
+This WhatsApp integration is part of the Tsenga platform.
 
 ---
 

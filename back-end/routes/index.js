@@ -1,5 +1,6 @@
 import express from 'express';
 import userRoutes from './userRoutes.js';
+import authRoutes from './authRoutes.js';
 import addressRoutes from './addressRoutes.js';
 import productRoutes from './productRoutes.js';
 import searchRoutes from './searchRoutes.js';
@@ -31,6 +32,7 @@ const router = express.Router();
 
 // Mount all route modules
 router.use('/users', userRoutes);
+router.use('/auth', authRoutes);
 router.use('/addresses', addressRoutes);
 router.use('/products', productRoutes);
 router.use('/search', searchRoutes);

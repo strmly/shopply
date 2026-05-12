@@ -54,7 +54,7 @@ const Subtitle = styled.p`
 
 const RefreshButton = styled.button`
   padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   border-radius: ${props => props.theme.radii.md};

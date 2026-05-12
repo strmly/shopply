@@ -174,7 +174,7 @@ const LoadMoreButton = styled.button`
   width: 100%;
   margin-top: 24px;
   padding: 16px;
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: 999px;
@@ -185,7 +185,7 @@ const LoadMoreButton = styled.button`
   box-shadow: 0 18px 34px rgba(16, 24, 40, 0.16);
 
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-2px);
   }
 
@@ -331,7 +331,7 @@ export const SearchResults = ({
     return (
       <Container>
         <LoadingContainer>
-          <LoadingMark>S</LoadingMark>
+          <LoadingMark>T</LoadingMark>
           Searching nearby stores...
         </LoadingContainer>
       </Container>
@@ -343,7 +343,7 @@ export const SearchResults = ({
     return (
       <Container>
         <EmptyState>
-          <EmptyIcon>S</EmptyIcon>
+          <EmptyIcon>T</EmptyIcon>
           <EmptyTitle>No matches for "{query}" near {suburb}</EmptyTitle>
           <EmptyText>
             Try searching with different keywords or browse trending items near you.

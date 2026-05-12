@@ -1,8 +1,8 @@
-# 🎉 Shopply Hyperlocal System - Implementation Complete!
+# 🎉 Tsenga Hyperlocal System - Implementation Complete!
 
 ## ✅ What's Been Implemented
 
-Your Shopply platform now has a **complete, production-ready hyperlocal system** using Uber H3 geospatial indexing.
+Your Tsenga platform now has a **complete, production-ready hyperlocal system** using Uber H3 geospatial indexing.
 
 ---
 
@@ -494,7 +494,7 @@ Our approach: "Best products from best sellers, nearby"
 
 **You now have a complete, production-ready hyperlocal system!**
 
-Your Shopply platform can:
+Your Tsenga platform can:
 - 📍 Show products from nearest sellers first
 - 🔍 Search intelligently with auto-expansion
 - ⭐ Rank by quality + locality

@@ -2,7 +2,7 @@
 
 ## 🎉 Success Summary
 
-The **complete hyperlocal furniture marketplace** has been successfully implemented and integrated into your Shopply platform!
+The **complete hyperlocal furniture marketplace** has been successfully implemented and integrated into your Tsenga platform!
 
 ---
 
@@ -332,7 +332,7 @@ The furniture marketplace is **100% complete** and ready for:
 
 ## 🙏 Thank You!
 
-The Str3mly hyperlocal furniture marketplace has been successfully built and integrated into your Shopply platform. Everything is working as expected and ready for the next phase.
+The Str3mly hyperlocal furniture marketplace has been successfully built and integrated into your Tsenga platform. Everything is working as expected and ready for the next phase.
 
 **Happy furniture shopping! 🪑✨**
 

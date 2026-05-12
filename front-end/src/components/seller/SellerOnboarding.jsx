@@ -54,7 +54,7 @@ const ProgressBar = styled.div`
 
 const ProgressFill = styled.div`
   height: 100%;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   border-radius: ${props => props.theme.radii.pill};
   width: ${props => props.progress}%;
   transition: width 0.3s ease-out;

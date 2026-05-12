@@ -17,7 +17,7 @@
                              │ HTTPS Webhook
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                      SHOPPLY BACKEND                             │
+│                      TSENGA BACKEND                             │
 │                                                                   │
 │  ┌────────────────────────────────────────────────────────┐    │
 │  │         WhatsApp Gateway (Entry Point)                  │    │
@@ -667,5 +667,5 @@ This architecture provides:
 
 ---
 
-Built for Shopply | Production-Ready | 2024
+Built for Tsenga | Production-Ready | 2024
 

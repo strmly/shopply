@@ -117,7 +117,7 @@ class OrdersSkill extends BaseSkill {
       return this.textResponse('No order selected.');
     }
 
-    const trackingUrl = `${process.env.APP_URL || 'https://shopply.app'}/orders/${selectedOrder.id}/track`;
+    const trackingUrl = `${process.env.APP_URL || 'https://tsenga.app'}/orders/${selectedOrder.id}/track`;
 
     return this.ctaUrlResponse(
       `📍 *Track Order #${selectedOrder.id}*\n\nClick below to view real-time tracking:`,

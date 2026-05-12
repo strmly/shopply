@@ -81,7 +81,7 @@ seeder.runComplete({
   downloadImages: false,
   saveJSON: true,
   seedMongo: true,  // Enable
-  mongoConnection: 'mongodb://localhost:27017/shopply',
+  mongoConnection: 'mongodb://localhost:27017/tsenga',
   seedPostgres: false,
 });
 ```
@@ -102,7 +102,7 @@ seeder.runComplete({
   postgresConfig: {
     user: 'your_username',
     host: 'localhost',
-    database: 'shopply',
+    database: 'tsenga',
     password: 'your_password',
     port: 5432
   }
@@ -211,7 +211,7 @@ Look in `/back-end/products-final.json`
 
 ## 🎉 Success!
 
-You now have 1000 realistic furniture products ready to use in your Shopply application!
+You now have 1000 realistic furniture products ready to use in your Tsenga application!
 
 ---
 

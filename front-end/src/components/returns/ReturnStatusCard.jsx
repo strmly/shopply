@@ -184,7 +184,7 @@ const ExpectedDate = styled.div`
 
 const ActionButton = styled.button`
   padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: ${props => props.theme.radii.md};

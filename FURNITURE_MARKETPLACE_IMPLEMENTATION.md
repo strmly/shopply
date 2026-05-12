@@ -2,7 +2,7 @@
 
 ## 🎉 Complete Implementation Overview
 
-This document summarizes the comprehensive implementation of the **Str3mly Hyperlocal Furniture Marketplace** - a furniture-first, H3-powered marketplace integrated into the existing Shopply platform.
+This document summarizes the comprehensive implementation of the **Str3mly Hyperlocal Furniture Marketplace** - a furniture-first, H3-powered marketplace integrated into the existing Tsenga platform.
 
 ---
 
@@ -452,7 +452,7 @@ curl "http://localhost:5000/api/furniture/search?lat=-26.2041&lng=28.0473&condit
 
 ## 🔄 Integration Points
 
-### Existing Shopply Features
+### Existing Tsenga Features
 The furniture marketplace integrates seamlessly with:
 - **Cart system**: Furniture products can be added to cart
 - **Checkout flow**: Extended with furniture delivery options
@@ -524,7 +524,7 @@ When users open the app, they experience:
 
 ## 🎉 Summary
 
-This implementation provides a **production-ready foundation** for a hyperlocal furniture marketplace. All core features are functional, well-architected, and integrated with the existing Shopply platform.
+This implementation provides a **production-ready foundation** for a hyperlocal furniture marketplace. All core features are functional, well-architected, and integrated with the existing Tsenga platform.
 
 **Total Files Created/Modified**: 25+
 **Lines of Code**: 10,000+

@@ -1,125 +1,88 @@
 import { Promotion } from '../models/Promotion.js';
 import { PromotionService } from '../services/PromotionService.js';
+import { ProductService } from '../services/ProductService.js';
 
-const now = () => new Date();
 const hoursFromNow = (h) => new Date(Date.now() + h * 60 * 60 * 1000);
 
-const DEALS = [
-  {
-    title: 'Sectional Sofa Blowout',
-    description: 'Premium corner sectional — only 8 left at this price.',
-    productIds: [1],
-    discountValue: 40,
-    endDate: hoursFromNow(4),
-    maxInventory: 8,
-    currentInventory: 2,
-  },
-  {
-    title: 'King Bed Frame Flash',
-    description: 'Solid wood king frame, white-glove delivery included.',
-    productIds: [2],
-    discountValue: 35,
-    endDate: hoursFromNow(6),
-    maxInventory: 12,
-    currentInventory: 3,
-  },
-  {
-    title: 'Dining Table Lightning Deal',
-    description: 'Extendable 6-seater oak dining table. Weekend deal.',
-    productIds: [3],
-    discountValue: 30,
-    endDate: hoursFromNow(8),
-    maxInventory: 15,
-    currentInventory: 4,
-  },
-  {
-    title: 'Ergonomic Office Chair Rush',
-    description: 'Lumbar support mesh chair. Work-from-home essential.',
-    productIds: [4],
-    discountValue: 45,
-    endDate: hoursFromNow(3),
-    maxInventory: 20,
-    currentInventory: 7,
-  },
-  {
-    title: 'Bookcase Bundle Flash',
-    description: 'Floor-to-ceiling solid bookcase, walnut finish.',
-    productIds: [5],
-    discountValue: 25,
-    endDate: hoursFromNow(10),
-    maxInventory: 10,
-    currentInventory: 1,
-  },
-  {
-    title: 'Accent Chair Steal',
-    description: 'Velvet accent chair in sage — the one everyone wants.',
-    productIds: [6],
-    discountValue: 50,
-    endDate: hoursFromNow(2),
-    maxInventory: 5,
-    currentInventory: 2,
-  },
-  {
-    title: 'Standing Desk Flash',
-    description: 'Electric height-adjustable desk, dual-motor lift.',
-    productIds: [7],
-    discountValue: 38,
-    endDate: hoursFromNow(5),
-    maxInventory: 18,
-    currentInventory: 5,
-  },
-  {
-    title: 'Coffee Table Clear-Out',
-    description: 'Marble-top coffee table — only 6 units in stock.',
-    productIds: [8],
-    discountValue: 32,
-    endDate: hoursFromNow(7),
-    maxInventory: 6,
-    currentInventory: 0,
-  },
-  {
-    title: 'Wardrobe Flash Event',
-    description: 'Sliding door wardrobe, 3-panel mirror finish.',
-    productIds: [9],
-    discountValue: 28,
-    endDate: hoursFromNow(12),
-    maxInventory: 25,
-    currentInventory: 8,
-  },
-  {
-    title: 'TV Console Lightning Drop',
-    description: 'Floating media console with cable management.',
-    productIds: [10],
-    discountValue: 42,
-    endDate: hoursFromNow(3.5),
-    maxInventory: 14,
-    currentInventory: 3,
-  },
+// Keyword groups for matching products dynamically
+const DEAL_TEMPLATES = [
+  { title: 'Sectional Sofa Blowout',         keywords: ['sectional', 'corner sofa', 'l-shape'],   discount: 40, hours: 4,    maxInv: 8,  curInv: 2 },
+  { title: 'King Bed Frame Flash',            keywords: ['king bed', 'king frame', 'bed frame'],   discount: 35, hours: 6,    maxInv: 12, curInv: 3 },
+  { title: 'Dining Table Lightning Deal',     keywords: ['dining table', 'extendable table'],      discount: 30, hours: 8,    maxInv: 15, curInv: 4 },
+  { title: 'Ergonomic Chair Rush',            keywords: ['ergonomic', 'office chair', 'mesh'],     discount: 45, hours: 3,    maxInv: 20, curInv: 7 },
+  { title: 'Bookcase Bundle Flash',           keywords: ['bookcase', 'bookshelf', 'shelving'],     discount: 25, hours: 10,   maxInv: 10, curInv: 1 },
+  { title: 'Accent Chair Steal',              keywords: ['accent chair', 'armchair', 'velvet'],    discount: 50, hours: 2,    maxInv: 5,  curInv: 2 },
+  { title: 'Standing Desk Flash',             keywords: ['standing desk', 'height-adjustable'],    discount: 38, hours: 5,    maxInv: 18, curInv: 5 },
+  { title: 'Coffee Table Clear-Out',          keywords: ['coffee table', 'marble', 'centre table'],discount: 32, hours: 7,    maxInv: 6,  curInv: 0 },
+  { title: 'Wardrobe Flash Event',            keywords: ['wardrobe', 'armoire', 'sliding door'],   discount: 28, hours: 12,   maxInv: 25, curInv: 8 },
+  { title: 'TV Console Lightning Drop',       keywords: ['tv console', 'media unit', 'tv stand'],  discount: 42, hours: 3.5,  maxInv: 14, curInv: 3 },
+  { title: 'Queen Bed Flash Sale',            keywords: ['queen bed', 'queen frame', 'upholster'], discount: 33, hours: 9,    maxInv: 10, curInv: 4 },
+  { title: 'Dresser Drawer Blowout',          keywords: ['dresser', 'chest of drawers', 'drawer'], discount: 27, hours: 11,   maxInv: 16, curInv: 6 },
+  { title: 'Side Table Flash',                keywords: ['side table', 'end table', 'nightstand'], discount: 35, hours: 4.5,  maxInv: 22, curInv: 9 },
+  { title: 'Dining Chair Set Steal',          keywords: ['dining chair', 'upholstered chair'],     discount: 40, hours: 6.5,  maxInv: 30, curInv: 10},
+  { title: 'Sofa Bed Lightning Deal',         keywords: ['sofa bed', 'futon', 'sleeper sofa'],     discount: 38, hours: 5.5,  maxInv: 7,  curInv: 1 },
+  { title: 'Console Table Rush',              keywords: ['console table', 'hallway table'],        discount: 30, hours: 8.5,  maxInv: 12, curInv: 3 },
+  { title: 'Shoe Cabinet Flash',             keywords: ['shoe cabinet', 'shoe rack', 'entryway'],  discount: 44, hours: 2.5,  maxInv: 18, curInv: 7 },
+  { title: 'Recliner Chair Deal',             keywords: ['recliner', 'lounge chair', 'reclining'], discount: 48, hours: 3.5,  maxInv: 9,  curInv: 3 },
+  { title: 'Desk Chair Blowout',              keywords: ['desk chair', 'task chair', 'swivel'],    discount: 42, hours: 4,    maxInv: 24, curInv: 8 },
+  { title: 'Storage Ottoman Flash',           keywords: ['ottoman', 'footstool', 'storage bench'], discount: 36, hours: 6,    maxInv: 20, curInv: 5 },
 ];
+
+function findProduct(products, keywords, usedIds) {
+  // Try keyword match first
+  for (const kw of keywords) {
+    const match = products.find(p =>
+      !usedIds.has(p.id) &&
+      p.stock !== 'out' &&
+      (
+        p.name?.toLowerCase().includes(kw.toLowerCase()) ||
+        p.subcategory?.toLowerCase().includes(kw.toLowerCase()) ||
+        p.tags?.some(t => t?.toLowerCase().includes(kw.toLowerCase()))
+      )
+    );
+    if (match) return match;
+  }
+  // Fall back to any unused in-stock product
+  return products.find(p => !usedIds.has(p.id) && p.stock !== 'out') || null;
+}
 
 export async function seedFlashDeals() {
   if (PromotionService.promotions.some(p => p.type === 'flash')) {
-    return; // already seeded
+    return;
   }
 
-  for (const deal of DEALS) {
+  const products = ProductService.products;
+  if (products.length === 0) {
+    console.warn('⚠️  No products found — skipping flash deal seeding');
+    return;
+  }
+
+  const usedIds = new Set();
+  let seeded = 0;
+
+  for (const template of DEAL_TEMPLATES) {
+    const product = findProduct(products, template.keywords, usedIds);
+    if (!product) continue;
+
+    usedIds.add(product.id);
+
     const promotion = new Promotion({
       id: PromotionService.nextId++,
-      storeId: 1,
+      storeId: product.storeId || 1,
       sellerId: 1,
       type: 'flash',
-      title: deal.title,
-      description: deal.description,
-      productIds: deal.productIds,
-      discountValue: deal.discountValue,
+      title: template.title,
+      description: `${product.name} — limited stock at this price.`,
+      productIds: [product.id],
+      discountValue: template.discount,
       discountType: 'percentage',
       minPurchase: 0,
-      startDate: now(),
-      endDate: deal.endDate,
+      startDate: new Date(),
+      endDate: hoursFromNow(template.hours),
       isActive: true,
       isPaused: false,
-      maxInventory: deal.maxInventory,
-      currentInventory: deal.currentInventory,
+      maxInventory: template.maxInv,
+      currentInventory: template.curInv,
       showAsDeal: true,
       showOnHomePage: true,
       showOnCategoryPage: true,
@@ -127,7 +90,8 @@ export async function seedFlashDeals() {
     });
 
     PromotionService.promotions.push(promotion);
+    seeded++;
   }
 
-  console.log(`✅ Seeded ${DEALS.length} flash deals`);
+  console.log(`✅ Seeded ${seeded} flash deals`);
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the complete onboarding and location flow implementation for Shopply, following the detailed UX/UI specification.
+This document describes the complete onboarding and location flow implementation for Tsenga, following the detailed UX/UI specification.
 
 ## Features Implemented
 

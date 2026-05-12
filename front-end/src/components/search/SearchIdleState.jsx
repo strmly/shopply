@@ -137,7 +137,7 @@ const DealButton = styled.button`
   padding: 0 16px;
   border: 0;
   border-radius: 999px;
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   cursor: pointer;
   font-size: 13px;
@@ -155,6 +155,63 @@ const DealButton = styled.button`
     grid-column: 1 / -1;
     width: 100%;
   }
+`;
+
+const DealMeta = styled.div`
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 8px;
+
+  @media (max-width: 680px) {
+    grid-column: 1 / -1;
+  }
+`;
+
+const DealCount = styled.div`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  color: ${props => props.theme.colors.warning[600]};
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 10px 20px rgba(16, 24, 40, 0.05);
+`;
+
+const DealPreviewRail = styled.div`
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 0 2px 8px;
+  margin: -12px 0 30px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const DealPreviewCard = styled.div`
+  width: clamp(210px, 72vw, 252px);
+  flex: 0 0 auto;
+`;
+
+const NoDealsPanel = styled.div`
+  margin: -12px 0 30px;
+  padding: 18px;
+  border: 1px solid rgba(228, 231, 236, 0.82);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.78);
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
 `;
 
 const SectionTitle = styled.h3`
@@ -551,7 +608,13 @@ export const SearchIdleState = ({
   onRepeatPurchaseClick,
   onShortcutClick,
   onCategoryClick,
+  flashDeals = [],
+  flashDealsLoading = false,
+  onFlashDealClick,
+  onFlashDealAddToCart,
 }) => {
+  const flashDealCount = flashDeals.length;
+
   return (
     <Container>
       <HeroIntro>
@@ -565,24 +628,56 @@ export const SearchIdleState = ({
       <FlashDealsPanel>
         <DealIcon>%</DealIcon>
         <DealCopy>
-          <DealEyebrow>Limited offers</DealEyebrow>
-          <DealTitle>Flash Deals near you</DealTitle>
+          <DealEyebrow>Limited time only</DealEyebrow>
+          <DealTitle>Flash Deals</DealTitle>
           <DealText>
-            Jump straight into local markdowns, fast movers, and limited-time finds.
+            {flashDealsLoading
+              ? 'Checking live limited-time offers from nearby stores.'
+              : flashDealCount > 0
+                ? 'Live markdowns from the server, sorted for fast decisions.'
+                : 'No live flash deals right now. Check back soon for limited-time finds.'}
           </DealText>
         </DealCopy>
-        <DealButton
-          type="button"
-          onClick={() => onShortcutClick && onShortcutClick({
-            label: 'Flash Deals',
-            query: 'deals',
-            filter: { onSale: true },
-            icon: '%',
-          })}
-        >
-          Browse deals
-        </DealButton>
+        <DealMeta>
+          <DealCount>
+            {flashDealsLoading
+              ? 'Loading deals'
+              : `${flashDealCount} ${flashDealCount === 1 ? 'deal' : 'deals'} available now`}
+          </DealCount>
+          <DealButton
+            type="button"
+            onClick={() => onShortcutClick && onShortcutClick({
+              label: 'Flash Deals',
+              query: 'deals',
+              filter: { isFlashDeal: true, onSale: true },
+              icon: '%',
+            })}
+          >
+            Browse deals
+          </DealButton>
+        </DealMeta>
       </FlashDealsPanel>
+
+      {flashDealCount > 0 ? (
+        <DealPreviewRail aria-label="Live flash deals from server">
+          {flashDeals.slice(0, 6).map((product, index) => (
+            <DealPreviewCard key={product.id || index}>
+              <ProductCard
+                product={{
+                  ...product,
+                  originalPrice: product.price,
+                  price: product.flashDealPrice ?? product.discountPrice ?? product.price,
+                }}
+                variant="flash"
+                onClick={() => onFlashDealClick && onFlashDealClick(product)}
+                onAddToCart={() => onFlashDealAddToCart && onFlashDealAddToCart(product)}
+              />
+            </DealPreviewCard>
+          ))}
+        </DealPreviewRail>
+      ) : !flashDealsLoading ? (
+        <NoDealsPanel>No Flash Deals are live from the server yet.</NoDealsPanel>
+      ) : null}
 
       {recentSearches.length > 0 && (
         <Section>

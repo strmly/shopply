@@ -353,7 +353,7 @@ const ClearButton = styled.button`
 `;
 
 const CancelButton = styled.button`
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   border: none;
   color: ${props => props.theme.colors.text.inverse};
   border-radius: 999px;
@@ -366,7 +366,7 @@ const CancelButton = styled.button`
   box-shadow: 0 16px 30px rgba(16, 24, 40, 0.16);
 
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-1px);
   }
 `;
@@ -424,6 +424,8 @@ export const SearchPage = ({ location, onBack }) => {
   const [trendingSearches, setTrendingSearches] = useState([]);
   const [repeatPurchases, setRepeatPurchases] = useState([]);
   const [smartShortcuts, setSmartShortcuts] = useState([]);
+  const [flashDeals, setFlashDeals] = useState([]);
+  const [flashDealsLoading, setFlashDealsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -446,6 +448,7 @@ export const SearchPage = ({ location, onBack }) => {
     loadTrendingSearches();
     loadRepeatPurchases();
     loadSmartShortcuts();
+    loadFlashDeals();
   }, []);
 
   useEffect(() => {
@@ -609,6 +612,24 @@ export const SearchPage = ({ location, onBack }) => {
     setQuery(e.target.value);
   };
 
+  const loadFlashDeals = async () => {
+    setFlashDealsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/products/flash-deals?limit=8`);
+      const data = await response.json();
+      if (data.success && Array.isArray(data.data)) {
+        setFlashDeals(data.data);
+      } else {
+        setFlashDeals([]);
+      }
+    } catch (error) {
+      console.error('Error loading flash deals:', error);
+      setFlashDeals([]);
+    } finally {
+      setFlashDealsLoading(false);
+    }
+  };
+
   const handleClearSearch = () => {
     setQuery('');
     setSuggestions(null);
@@ -707,7 +728,7 @@ export const SearchPage = ({ location, onBack }) => {
               <RoomSelectChevron aria-hidden="true" />
             </RoomSelectWrap>
             <SearchWrapper>
-              <SearchIcon>S</SearchIcon>
+              <SearchIcon>T</SearchIcon>
               <SearchInput
                 ref={inputRef}
                 type="text"
@@ -759,11 +780,15 @@ export const SearchPage = ({ location, onBack }) => {
           trendingSearches={trendingSearches}
           repeatPurchases={repeatPurchases}
           smartShortcuts={smartShortcuts}
+          flashDeals={flashDeals}
+          flashDealsLoading={flashDealsLoading}
           location={location}
           onRecentSearchClick={handleRecentSearchClick}
           onTrendingSearchClick={handleTrendingSearchClick}
           onRemoveRecentSearch={handleRemoveRecentSearch}
           onRepeatPurchaseClick={handleProductClick}
+          onFlashDealClick={handleProductClick}
+          onFlashDealAddToCart={handleAddToCart}
           onShortcutClick={(shortcut) => {
             const nextFilters = shortcut.filter || {};
             setFilters(nextFilters);

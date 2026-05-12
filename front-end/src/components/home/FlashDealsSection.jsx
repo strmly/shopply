@@ -4,7 +4,7 @@ import { fadeIn } from '../../theme/animations';
 import { ProductCard } from './ProductCard';
 
 const SectionContainer = styled.section`
-  margin: 0 min(5vw, 48px) 34px;
+  margin: 0 clamp(14px, 5vw, 48px) 34px;
   animation: ${fadeIn} 0.5s ease-in;
 `;
 
@@ -18,6 +18,11 @@ const Shell = styled.div`
   border: 1px solid transparent;
   border-radius: 30px;
   box-shadow: 0 24px 58px rgba(16, 24, 40, 0.09);
+
+  @media (max-width: 520px) {
+    padding: 16px;
+    border-radius: 24px;
+  }
 
   &::after {
     content: '';
@@ -58,6 +63,13 @@ const Icon = styled.div`
   font-size: 26px;
   font-weight: 900;
   box-shadow: 0 16px 32px rgba(245, 158, 11, 0.15);
+
+  @media (max-width: 520px) {
+    width: 48px;
+    height: 48px;
+    border-radius: 17px;
+    font-size: 20px;
+  }
 `;
 
 const Copy = styled.div`
@@ -125,7 +137,7 @@ const ViewAllLink = styled.button`
   padding: 0 14px;
   border: 0;
   border-radius: 999px;
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   cursor: pointer;
   font-size: 13px;
@@ -157,10 +169,14 @@ const ProductsList = styled.div`
   gap: 16px;
   width: max-content;
   padding: 2px 2px 4px;
+
+  @media (max-width: 520px) {
+    gap: 12px;
+  }
 `;
 
 const ProductWrapper = styled.div`
-  width: min(260px, 72vw);
+  width: clamp(210px, 72vw, 260px);
   flex-shrink: 0;
   scroll-snap-align: start;
   display: flex;

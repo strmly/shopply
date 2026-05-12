@@ -170,7 +170,7 @@ const CourierAvatar = styled.div`
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -216,7 +216,7 @@ const SelectButton = styled.button`
   transition: ${props => props.theme.transitions.swift};
   
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     color: white;
   }
 `;
@@ -250,7 +250,7 @@ const ModalFooter = styled.div`
 const ConfirmButton = styled.button`
   flex: 1;
   padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   border-radius: ${props => props.theme.radii.md};

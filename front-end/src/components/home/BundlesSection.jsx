@@ -3,8 +3,13 @@ import { fadeIn } from '../../theme/animations';
 import { ProductCard } from './ProductCard';
 
 const SectionContainer = styled.section`
-  margin: 0 min(5vw, 48px) 34px;
+  margin: 0 clamp(14px, 5vw, 48px) 34px;
   animation: ${fadeIn} 0.5s ease-in;
+  overflow: hidden;
+
+  @media (max-width: 520px) {
+    margin-bottom: 30px;
+  }
 `;
 
 const Shell = styled.div`
@@ -17,6 +22,11 @@ const Shell = styled.div`
   border: 1px solid transparent;
   border-radius: 30px;
   box-shadow: 0 24px 58px rgba(16, 24, 40, 0.09);
+
+  @media (max-width: 520px) {
+    padding: 16px;
+    border-radius: 24px;
+  }
 
   &::after {
     content: '';
@@ -43,6 +53,10 @@ const Header = styled.div`
   @media (max-width: 680px) {
     grid-template-columns: auto minmax(0, 1fr);
   }
+
+  @media (max-width: 380px) {
+    gap: 12px;
+  }
 `;
 
 const HeaderIcon = styled.div`
@@ -57,6 +71,13 @@ const HeaderIcon = styled.div`
   font-size: 22px;
   font-weight: 900;
   box-shadow: 0 16px 32px rgba(34, 197, 94, 0.14);
+
+  @media (max-width: 520px) {
+    width: 48px;
+    height: 48px;
+    border-radius: 17px;
+    font-size: 18px;
+  }
 `;
 
 const HeaderCopy = styled.div`
@@ -77,6 +98,11 @@ const Title = styled.h2`
   font-size: clamp(22px, 3.5vw, 32px);
   line-height: 1;
   font-weight: 900;
+
+  @media (max-width: 380px) {
+    font-size: 21px;
+    line-height: 1.08;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -84,6 +110,7 @@ const Subtitle = styled.p`
   color: ${props => props.theme.colors.text.secondary};
   margin: 8px 0 0;
   font-weight: 700;
+  overflow-wrap: anywhere;
 `;
 
 const HeaderActions = styled.div`
@@ -95,6 +122,11 @@ const HeaderActions = styled.div`
   @media (max-width: 680px) {
     grid-column: 1 / -1;
     justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 380px) {
+    gap: 8px;
   }
 `;
 
@@ -112,6 +144,11 @@ const CountBadge = styled.div`
   font-weight: 900;
   white-space: nowrap;
   box-shadow: 0 10px 20px rgba(16, 24, 40, 0.05);
+
+  @media (max-width: 380px) {
+    white-space: normal;
+    min-height: 34px;
+  }
 `;
 
 const ViewAllLink = styled.button`
@@ -122,7 +159,7 @@ const ViewAllLink = styled.button`
   padding: 0 14px;
   border: 0;
   border-radius: 999px;
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   cursor: pointer;
   font-size: 13px;
@@ -155,6 +192,7 @@ const ScrollContainer = styled.div`
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   scroll-snap-type: x mandatory;
+  scroll-padding-inline: 2px;
 
   &::-webkit-scrollbar {
     display: none;
@@ -166,15 +204,31 @@ const ProductsList = styled.div`
   gap: 16px;
   width: max-content;
   padding: 2px 2px 4px;
+
+  @media (max-width: 520px) {
+    gap: 12px;
+  }
 `;
 
 const ProductWrapper = styled.div`
-  width: min(260px, 72vw);
+  width: clamp(210px, 46vw, 260px);
   flex-shrink: 0;
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   gap: 6px;
+
+  @media (max-width: 760px) {
+    width: clamp(210px, 56vw, 250px);
+  }
+
+  @media (max-width: 420px) {
+    width: min(82vw, 250px);
+  }
+
+  @media (max-width: 340px) {
+    width: calc(100vw - 60px);
+  }
 `;
 
 const EmptyState = styled.div`
@@ -183,6 +237,11 @@ const EmptyState = styled.div`
   background: ${props => props.theme.colors.background};
   border-radius: ${props => props.theme.radii.lg};
   margin: 0 ${props => props.theme.spacing.xl};
+
+  @media (max-width: 520px) {
+    margin: 0;
+    padding: 28px 16px;
+  }
 `;
 
 const EmptyIcon = styled.div`

@@ -9,7 +9,7 @@ const shimmer = keyframes`
 /* ─── Compact strip ───────────────────────────────────── */
 
 const CompactWrap = styled.div`
-  margin: 0 min(5vw, 48px) 34px;
+  margin: 0 clamp(14px, 5vw, 48px) 34px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -37,6 +37,8 @@ const CompactWrap = styled.div`
   @media (max-width: 560px) {
     grid-template-columns: auto minmax(0, 1fr);
     gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
   }
 `;
 
@@ -71,6 +73,7 @@ const CompactSub = styled.div`
   font-weight: 700;
   color: rgba(255, 255, 255, 0.52);
   margin-top: 2px;
+  overflow-wrap: anywhere;
 `;
 
 const CompactBtn = styled.button`
@@ -125,7 +128,7 @@ export function SellerBannerCompact() {
 /* ─── Full banner ─────────────────────────────────────── */
 
 const FullWrap = styled.div`
-  margin: 0 min(5vw, 48px) 34px;
+  margin: 0 clamp(14px, 5vw, 48px) 34px;
   position: relative;
   overflow: hidden;
   border-radius: 28px;
@@ -140,6 +143,11 @@ const FullWrap = styled.div`
   @media (max-width: 680px) {
     grid-template-columns: 1fr;
     padding: 28px 24px;
+  }
+
+  @media (max-width: 420px) {
+    padding: 22px 18px;
+    border-radius: 24px;
   }
 `;
 
@@ -185,6 +193,10 @@ const FullTitle = styled.h2`
   font-weight: 900;
   line-height: 1.05;
   color: #ffffff;
+
+  @media (max-width: 420px) {
+    font-size: 24px;
+  }
 `;
 
 const FullSub = styled.p`
@@ -224,6 +236,7 @@ const FullRight = styled.div`
     align-items: flex-start;
     flex-direction: row;
     flex-wrap: wrap;
+    width: 100%;
   }
 `;
 
@@ -233,6 +246,10 @@ const StatBlock = styled.div`
   @media (max-width: 680px) {
     text-align: left;
     margin-right: 24px;
+  }
+
+  @media (max-width: 420px) {
+    margin-right: 12px;
   }
 `;
 
@@ -298,6 +315,16 @@ const BtnRow = styled.div`
   display: flex;
   gap: 10px;
   align-items: center;
+
+  @media (max-width: 520px) {
+    width: 100%;
+    flex-wrap: wrap;
+
+    ${FullBtn},
+    ${LearnBtn} {
+      flex: 1 1 150px;
+    }
+  }
 `;
 
 export function SellerBannerFull() {
@@ -307,7 +334,7 @@ export function SellerBannerFull() {
       <Blob1 />
       <Blob2 />
       <FullLeft>
-        <FullEyebrow>Sell on Shopply</FullEyebrow>
+        <FullEyebrow>Sell on Tsenga</FullEyebrow>
         <FullTitle>Turn your space<br />into income</FullTitle>
         <FullSub>
           List your pieces in minutes. Reach thousands of local buyers. Track every order from your seller dashboard.

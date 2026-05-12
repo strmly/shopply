@@ -475,7 +475,7 @@ docker run -d -p 6379:6379 redis:alpine
 
 ## 🎉 You're Ready!
 
-Your Shopply app now has a fully functional WhatsApp channel!
+Your Tsenga app now has a fully functional WhatsApp channel!
 
 **Test it:**
 1. Start Redis: `redis-server`

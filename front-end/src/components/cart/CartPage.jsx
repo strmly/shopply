@@ -99,7 +99,7 @@ export const CartPage = ({ location, onClose }) => {
   }, [routerLocation.state]);
 
   const loadDeliveryAddress = () => {
-    const savedLocation = localStorage.getItem('shopply_location');
+    const savedLocation = localStorage.getItem('tsenga_location');
     if (savedLocation) {
       try {
         const locationData = JSON.parse(savedLocation);
@@ -114,14 +114,43 @@ export const CartPage = ({ location, onClose }) => {
     }
   };
 
+  // After any backend cart mutation, rebuild localStorage from the server response
+  // so the badge count and any future syncs stay accurate.
+  const syncLocalFromCart = (cartData) => {
+    const allItems = [
+      ...(cartData.items || []),
+      ...(cartData.storeGroups?.flatMap(g => g.items) || []),
+    ];
+    // Deduplicate by productId (storeGroups and items can overlap)
+    const seen = new Set();
+    const localCart = allItems
+      .filter(item => {
+        if (seen.has(item.productId)) return false;
+        seen.add(item.productId);
+        return true;
+      })
+      .map(item => ({
+        id: item.productId,
+        ...item.product,
+        quantity: item.quantity,
+        selectedVariant: item.variant || null,
+        storeId: item.storeId,
+        storeName: item.storeName,
+      }));
+    localStorage.setItem('tsenga_cart', JSON.stringify(localCart));
+    localStorage.setItem('tsenga_cart_count', (cartData.itemCount || 0).toString());
+    window.dispatchEvent(new Event('cartUpdated'));
+  };
+
   const loadCart = async () => {
     try {
       setLoading(true);
-      
-      // First, sync localStorage cart to backend
-      const localCart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
+
+      const localCart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
       if (localCart.length > 0) {
-        // Sync each item to backend
+        // Clear backend cart first so re-syncing never doubles quantities
+        await fetch(`${API_BASE_URL}/cart?userId=default`, { method: 'DELETE' }).catch(() => {});
+
         for (const item of localCart) {
           try {
             await fetch(`${API_BASE_URL}/cart/items`, {
@@ -135,35 +164,29 @@ export const CartPage = ({ location, onClose }) => {
                 storeId: item.storeId,
               }),
             });
-          } catch (error) {
-            console.error('Error syncing item:', error);
-          }
+          } catch {}
         }
       }
-      
-      // Then load cart from backend
+
       const locationParam = location ? encodeURIComponent(JSON.stringify(location)) : '';
       const response = await fetch(`${API_BASE_URL}/cart?userId=default&location=${locationParam}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
       const data = await response.json();
       if (data.success) {
         setCart(data.data);
-        // Update localStorage cart count
-        localStorage.setItem('shopply_cart_count', (data.data.itemCount || 0).toString());
+        localStorage.setItem('tsenga_cart_count', (data.data.itemCount || 0).toString());
+        window.dispatchEvent(new Event('cartUpdated'));
       }
     } catch (error) {
       console.error('Error loading cart:', error);
-      // Fallback to localStorage cart if backend fails
-      const localCart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
+      const localCart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
       if (localCart.length > 0) {
-        // Create a mock cart structure from localStorage
+        const itemsTotal = localCart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
         setCart({
           items: localCart.map(item => ({
-            id: item.id || Date.now(),
+            id: item.id,
             productId: item.id,
             product: item,
             quantity: item.quantity || 1,
@@ -173,13 +196,13 @@ export const CartPage = ({ location, onClose }) => {
           })),
           itemCount: localCart.reduce((sum, item) => sum + (item.quantity || 1), 0),
           totals: {
-            itemsTotal: localCart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0),
+            itemsTotal,
             deliveryFee: 0,
             smallOrderFee: 0,
             serviceFee: 0,
             discount: 0,
-            subtotal: 0,
-            total: 0,
+            subtotal: itemsTotal,
+            total: itemsTotal,
           },
         });
       }
@@ -189,143 +212,65 @@ export const CartPage = ({ location, onClose }) => {
   };
 
   const handleUpdateQuantity = async (itemId, quantity) => {
+    // Optimistic UI update
+    const applyQty = items => items.map(item =>
+      (item.id === itemId || item.id === parseInt(itemId)) ? { ...item, quantity } : item
+    );
+    setCart(prev => prev ? {
+      ...prev,
+      items: prev.items ? applyQty(prev.items) : prev.items,
+      storeGroups: prev.storeGroups
+        ? prev.storeGroups.map(g => ({ ...g, items: applyQty(g.items) }))
+        : prev.storeGroups,
+    } : prev);
+
     try {
-      // First update localStorage immediately for better UX
-      const localCart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
-      
-      // Find the item in the cart state
-      let cartItem = null;
-      const itemIdNum = typeof itemId === 'string' ? parseInt(itemId) : itemId;
-      
-      if (cart?.items) {
-        cartItem = cart.items.find(item => item.id === itemIdNum || item.id === itemId);
-      }
-      
-      if (!cartItem && cart?.storeGroups) {
-        // Search through store groups
-        for (const group of cart.storeGroups) {
-          cartItem = group.items.find(item => item.id === itemIdNum || item.id === itemId);
-          if (cartItem) break;
-        }
-      }
-
-      if (!cartItem) {
-        console.error('Item not found in cart', { itemId, itemIdNum, cartItems: cart?.items, storeGroups: cart?.storeGroups });
-        // Try to update localStorage anyway and reload
-        const updatedLocalCart = localCart.map(item => {
-          if (item.id === itemIdNum || item.id === itemId) {
-            return { ...item, quantity };
-          }
-          return item;
-        });
-        localStorage.setItem('shopply_cart', JSON.stringify(updatedLocalCart));
-        const cartCount = updatedLocalCart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        localStorage.setItem('shopply_cart_count', cartCount.toString());
-        window.dispatchEvent(new Event('cartUpdated'));
-        loadCart();
-        return;
-      }
-
-      // Update localStorage
-      const updatedLocalCart = localCart.map(item => {
-        if (item.id === cartItem.productId && 
-            JSON.stringify(item.selectedVariant) === JSON.stringify(cartItem.variant)) {
-          return { ...item, quantity };
-        }
-        return item;
-      });
-      localStorage.setItem('shopply_cart', JSON.stringify(updatedLocalCart));
-      
-      // Update cart count
-      const cartCount = updatedLocalCart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      localStorage.setItem('shopply_cart_count', cartCount.toString());
-      
-      // Dispatch event to update other components
-      window.dispatchEvent(new Event('cartUpdated'));
-
-      // Optimistically update UI immediately
-      if (cart) {
-        const updatedCart = { ...cart };
-        if (updatedCart.items) {
-          updatedCart.items = updatedCart.items.map(item => {
-            if (item.id === itemId || item.id === parseInt(itemId)) {
-              return { ...item, quantity };
-            }
-            return item;
-          });
-        }
-        if (updatedCart.storeGroups) {
-          updatedCart.storeGroups = updatedCart.storeGroups.map(group => ({
-            ...group,
-            items: group.items.map(item => {
-              if (item.id === itemId || item.id === parseInt(itemId)) {
-                return { ...item, quantity };
-              }
-              return item;
-            }),
-          }));
-        }
-        // Recalculate item count
-        if (updatedCart.storeGroups) {
-          updatedCart.itemCount = updatedCart.storeGroups.reduce((sum, group) => 
-            sum + group.items.reduce((s, item) => s + (item.quantity || 1), 0), 0);
-        } else if (updatedCart.items) {
-          updatedCart.itemCount = updatedCart.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        }
-        setCart(updatedCart);
-      }
-
-      // Then sync with backend
       const response = await fetch(`${API_BASE_URL}/cart/items/${itemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: 'default', quantity: parseInt(quantity) }),
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Backend error:', errorText);
-        // Reload cart to get correct state from backend
-        loadCart();
-        return;
-      }
+
+      if (!response.ok) { loadCart(); return; }
 
       const data = await response.json();
       if (data.success) {
         setCart(data.data);
-        // Update localStorage cart count from backend response
-        localStorage.setItem('shopply_cart_count', (data.data.itemCount || 0).toString());
+        syncLocalFromCart(data.data);
       } else {
-        // If backend fails, reload cart to sync
         loadCart();
       }
-    } catch (error) {
-      console.error('Error updating quantity:', error);
-      // Reload cart to sync state
+    } catch {
       loadCart();
     }
   };
 
   const handleRemoveItem = async (itemId) => {
+    // Optimistic UI update
+    const filterOut = items => items.filter(item =>
+      item.id !== itemId && item.id !== parseInt(itemId)
+    );
+    setCart(prev => prev ? {
+      ...prev,
+      items: prev.items ? filterOut(prev.items) : prev.items,
+      storeGroups: prev.storeGroups
+        ? prev.storeGroups.map(g => ({ ...g, items: filterOut(g.items) })).filter(g => g.items.length > 0)
+        : prev.storeGroups,
+    } : prev);
+
     try {
       const response = await fetch(`${API_BASE_URL}/cart/items/${itemId}?userId=default`, {
         method: 'DELETE',
       });
-      
+
       const data = await response.json();
       if (data.success) {
         setCart(data.data);
-        // Update localStorage cart count
-        const cartCount = data.data.itemCount || 0;
-        localStorage.setItem('shopply_cart_count', cartCount.toString());
-        
-        // Also update localStorage cart
-        const localCart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
-        const updatedCart = localCart.filter(item => item.id !== itemId);
-        localStorage.setItem('shopply_cart', JSON.stringify(updatedCart));
+        syncLocalFromCart(data.data);
       }
     } catch (error) {
       console.error('Error removing item:', error);
+      loadCart();
     }
   };
 

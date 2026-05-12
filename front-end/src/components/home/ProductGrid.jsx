@@ -3,17 +3,23 @@ import styled from 'styled-components';
 import { ProductCard } from './ProductCard';
 
 const Container = styled.div`
-  padding: 0 min(5vw, 48px);
+  padding: 0 clamp(14px, 5vw, 48px);
   margin-bottom: ${props => props.theme.spacing.xl};
   max-width: 1180px;
   margin-left: auto;
   margin-right: auto;
+  min-width: 0;
 `;
 
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
 
   @media (min-width: ${props => props.theme.breakpoints.tablet}) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -34,18 +40,16 @@ const LoadMoreButton = styled.button`
   min-height: 54px;
   margin: 28px auto 0;
   padding: 0 22px;
-  background:
-    linear-gradient(${props => props.theme.colors.text.primary}, ${props => props.theme.colors.text.primary}) padding-box,
-    linear-gradient(135deg, rgba(61, 129, 239, 0.48), rgba(245, 158, 11, 0.28), rgba(255,255,255,0.8)) border-box;
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
-  border: 1px solid transparent;
+  border: 0;
   border-radius: 999px;
   ${props => props.theme.typography.button}
   font-weight: 900;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   box-shadow:
-    0 18px 34px rgba(16, 24, 40, 0.16),
+    0 18px 34px rgba(61, 129, 239, 0.24),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
 
   &::after {
@@ -59,11 +63,9 @@ const LoadMoreButton = styled.button`
   }
 
   &:hover {
-    background:
-      linear-gradient(${props => props.theme.colors.primary}, ${props => props.theme.colors.primary}) padding-box,
-      linear-gradient(135deg, rgba(61, 129, 239, 0.5), rgba(245, 158, 11, 0.34), rgba(255,255,255,0.86)) border-box;
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-2px);
-    box-shadow: 0 24px 48px rgba(16, 24, 40, 0.18);
+    box-shadow: 0 24px 48px rgba(61, 129, 239, 0.3);
   }
 
   &:hover::after {
@@ -74,7 +76,7 @@ const LoadMoreButton = styled.button`
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-    box-shadow: 0 12px 24px rgba(16, 24, 40, 0.1);
+    box-shadow: 0 12px 24px rgba(61, 129, 239, 0.14);
   }
 
   &:disabled::after {

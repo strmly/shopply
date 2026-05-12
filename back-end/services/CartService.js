@@ -40,9 +40,9 @@ class CartServiceClass {
       throw new Error('Product not found');
     }
 
-    // Check if item already exists with same variant
-    const existingIndex = cart.items.findIndex(item => 
-      item.productId === productId && 
+    // Check if item already exists with same variant (loose productId comparison)
+    const existingIndex = cart.items.findIndex(item =>
+      String(item.productId) === String(productId) &&
       JSON.stringify(item.variant) === JSON.stringify(variant)
     );
 
@@ -104,6 +104,35 @@ class CartServiceClass {
     cart.items = [];
     cart.updatedAt = new Date();
     return cart;
+  }
+
+  /**
+   * Update quantity by productId (used by ProductCard — avoids server-side item ID tracking)
+   */
+  updateByProduct(userId, productId, quantity, variant = null) {
+    const cart = this.getCart(userId);
+    const item = cart.items.find(i =>
+      String(i.productId) === String(productId) &&
+      JSON.stringify(i.variant) === JSON.stringify(variant)
+    );
+    if (!item) throw new Error('Item not found in cart');
+    if (quantity <= 0) return this.removeByProduct(userId, productId, variant);
+    item.quantity = quantity;
+    cart.updatedAt = new Date();
+    return this.calculateCartTotals(cart);
+  }
+
+  /**
+   * Remove by productId (used by ProductCard)
+   */
+  removeByProduct(userId, productId, variant = null) {
+    const cart = this.getCart(userId);
+    cart.items = cart.items.filter(i =>
+      !(String(i.productId) === String(productId) &&
+        JSON.stringify(i.variant) === JSON.stringify(variant))
+    );
+    cart.updatedAt = new Date();
+    return this.calculateCartTotals(cart);
   }
 
   /**

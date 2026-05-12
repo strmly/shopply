@@ -22,7 +22,7 @@ const Toast = styled.div`
   top: ${props => props.theme.spacing.xl};
   left: 50%;
   transform: translateX(-50%);
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
   border-radius: ${props => props.theme.radii.md};
@@ -71,7 +71,7 @@ export const OnboardingFlow = ({ onComplete, onBrowseAsGuest }) => {
       setLocation(defaultLocation);
       setAddressData(defaultAddress);
       
-      localStorage.setItem('shopply_location', JSON.stringify({
+      localStorage.setItem('tsenga_location', JSON.stringify({
         suburb: defaultAddress.suburb,
         city: defaultAddress.city,
         ...defaultLocation,
@@ -99,7 +99,7 @@ export const OnboardingFlow = ({ onComplete, onBrowseAsGuest }) => {
         setAddressData(mockAddress);
         
         // Save to localStorage and go directly to home
-        localStorage.setItem('shopply_location', JSON.stringify({
+        localStorage.setItem('tsenga_location', JSON.stringify({
           suburb: mockAddress.suburb,
           city: mockAddress.city,
           ...detectedLocation,
@@ -123,7 +123,7 @@ export const OnboardingFlow = ({ onComplete, onBrowseAsGuest }) => {
         setLocation(defaultLocation);
         setAddressData(defaultAddress);
         
-        localStorage.setItem('shopply_location', JSON.stringify({
+        localStorage.setItem('tsenga_location', JSON.stringify({
           suburb: defaultAddress.suburb,
           city: defaultAddress.city,
           ...defaultLocation,
@@ -154,7 +154,7 @@ export const OnboardingFlow = ({ onComplete, onBrowseAsGuest }) => {
     setAddressData(defaultAddress);
     
     // Save to localStorage
-    localStorage.setItem('shopply_location', JSON.stringify({
+    localStorage.setItem('tsenga_location', JSON.stringify({
       suburb: defaultAddress.suburb,
       city: defaultAddress.city,
       ...defaultLocation,
@@ -174,7 +174,7 @@ export const OnboardingFlow = ({ onComplete, onBrowseAsGuest }) => {
     setAddressData(address);
     
     // Save to localStorage and go directly to home
-    localStorage.setItem('shopply_location', JSON.stringify({
+    localStorage.setItem('tsenga_location', JSON.stringify({
       suburb: address.suburb,
       city: address.city,
       ...mockLocation,
@@ -208,7 +208,7 @@ export const OnboardingFlow = ({ onComplete, onBrowseAsGuest }) => {
     }
     
     // Save to localStorage and complete onboarding
-    localStorage.setItem('shopply_location', JSON.stringify({
+    localStorage.setItem('tsenga_location', JSON.stringify({
       suburb: confirmedAddress.suburb,
       city: confirmedAddress.city,
       ...confirmedAddress.location,

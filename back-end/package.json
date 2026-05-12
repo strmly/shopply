@@ -1,7 +1,7 @@
 {
-  "name": "shopply-backend",
+  "name": "tsenga-backend",
   "version": "1.0.0",
-  "description": "Shopply Backend API",
+  "description": "Tsenga Backend API",
   "main": "server.js",
   "type": "module",
   "scripts": {

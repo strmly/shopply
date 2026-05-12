@@ -111,7 +111,7 @@ export const theme = {
       secondary: '#667085',
       tertiary: '#98A2B3',
       inverse: '#FFFFFF',
-      accent: '#D62F7F',
+      accent: '#3D81EF',
     },
     status: {
       success: '#12B76A',
@@ -126,7 +126,7 @@ export const theme = {
     border: {
       light: '#F2F4F7',
       default: '#E4E7EC',
-      focus: '#D62F7F',
+      focus: '#3D81EF',
     },
   },
 
@@ -155,7 +155,7 @@ export const theme = {
     md: '0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06)',
     lg: '0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03)',
     xl: '0 20px 24px -4px rgba(16, 24, 40, 0.08), 0 8px 8px -4px rgba(16, 24, 40, 0.03)',
-    glow: '0 0 15px rgba(214, 47, 127, 0.3)',
+    glow: '0 0 15px rgba(61, 129, 239, 0.3)',
   },
 
   radii: {

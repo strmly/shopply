@@ -97,7 +97,7 @@ const PrimaryBadge = styled.div`
   position: absolute;
   top: 4px;
   right: 4px;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   padding: 2px 6px;
   border-radius: 4px;

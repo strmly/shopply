@@ -174,7 +174,7 @@ const StateMessage = styled.p`
 const RetryButton = styled.button`
   ${props => props.theme.typography.button}
   padding: 14px 20px;
-  background: ${props => props.theme.colors.text.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   border-radius: 999px;
@@ -183,7 +183,7 @@ const RetryButton = styled.button`
   transition: ${props => props.theme.transitions.swift};
 
   &:hover {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-1px);
   }
 `;
@@ -283,7 +283,7 @@ export const CategoryProductsPage = ({ location }) => {
         addedAt: new Date().toISOString(),
       };
 
-      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
       const existingIndex = cart.findIndex(item =>
         item.id === product.id &&
         JSON.stringify(item.selectedVariant) === JSON.stringify(null)
@@ -295,9 +295,9 @@ export const CategoryProductsPage = ({ location }) => {
         cart.push(cartItem);
       }
 
-      localStorage.setItem('shopply_cart', JSON.stringify(cart));
+      localStorage.setItem('tsenga_cart', JSON.stringify(cart));
       const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      localStorage.setItem('shopply_cart_count', cartCount.toString());
+      localStorage.setItem('tsenga_cart_count', cartCount.toString());
 
       try {
         await fetch(`${API_BASE_URL}/cart/items`, {

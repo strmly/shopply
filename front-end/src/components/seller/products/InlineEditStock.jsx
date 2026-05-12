@@ -26,7 +26,7 @@ const Button = styled.button`
   width: 32px;
   height: 32px;
   padding: 0;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   border-radius: ${props => props.theme.radii.sm};

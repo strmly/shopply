@@ -149,6 +149,8 @@ export const InlineSearch = ({ location, onClose, onProductClick, onAddToCart })
   const [trendingSearches, setTrendingSearches] = useState([]);
   const [repeatPurchases, setRepeatPurchases] = useState([]);
   const [smartShortcuts, setSmartShortcuts] = useState([]);
+  const [flashDeals, setFlashDeals] = useState([]);
+  const [flashDealsLoading, setFlashDealsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -179,6 +181,7 @@ export const InlineSearch = ({ location, onClose, onProductClick, onAddToCart })
     loadTrendingSearches();
     loadRepeatPurchases();
     loadSmartShortcuts();
+    loadFlashDeals();
   }, []);
 
   useEffect(() => {
@@ -262,6 +265,24 @@ export const InlineSearch = ({ location, onClose, onProductClick, onAddToCart })
       }
     } catch (error) {
       console.error('Error loading smart shortcuts:', error);
+    }
+  };
+
+  const loadFlashDeals = async () => {
+    setFlashDealsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/products/flash-deals?limit=8`);
+      const data = await response.json();
+      if (data.success && Array.isArray(data.data)) {
+        setFlashDeals(data.data);
+      } else {
+        setFlashDeals([]);
+      }
+    } catch (error) {
+      console.error('Error loading flash deals:', error);
+      setFlashDeals([]);
+    } finally {
+      setFlashDealsLoading(false);
     }
   };
 
@@ -435,11 +456,15 @@ export const InlineSearch = ({ location, onClose, onProductClick, onAddToCart })
             trendingSearches={trendingSearches}
             repeatPurchases={repeatPurchases}
             smartShortcuts={smartShortcuts}
+            flashDeals={flashDeals}
+            flashDealsLoading={flashDealsLoading}
             location={location}
             onRecentSearchClick={handleRecentSearchClick}
             onTrendingSearchClick={handleTrendingSearchClick}
             onRemoveRecentSearch={handleRemoveRecentSearch}
             onRepeatPurchaseClick={handleProductClick}
+            onFlashDealClick={handleProductClick}
+            onFlashDealAddToCart={onAddToCart}
             onShortcutClick={(shortcut) => {
               setFilters(shortcut.filter || {});
               setQuery('');

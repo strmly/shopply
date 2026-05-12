@@ -1,6 +1,6 @@
 # Hyperlocal System Integration Example
 
-This guide shows exactly how to integrate the hyperlocal system into your existing Shopply app.
+This guide shows exactly how to integrate the hyperlocal system into your existing Tsenga app.
 
 ---
 

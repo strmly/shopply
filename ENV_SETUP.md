@@ -19,7 +19,7 @@ This project uses a centralized `.env` file at the root directory for all enviro
 - `NODE_ENV` - Environment mode: `development`, `production`, or `test`
 - `PORT` - Backend server port (default: 5000)
 - `API_VERSION` - API version (default: v1)
-- `APP_URL` - Base URL of your application (e.g., `https://shopply.app`)
+- `APP_URL` - Base URL of your application (e.g., `https://tsenga.app`)
 - `CORS_ORIGIN` - Allowed CORS origin for production
 
 ### Database Configuration

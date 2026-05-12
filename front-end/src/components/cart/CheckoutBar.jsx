@@ -82,7 +82,7 @@ const CheckoutButton = styled.button`
   animation: ${props => props.$pulse ? css`${pulse} 2s ease-in-out infinite` : 'none'};
 
   &:hover:not(:disabled) {
-    background: ${props => props.theme.colors.primary};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-2px);
     box-shadow: 0 22px 42px rgba(16, 24, 40, 0.2);
   }
@@ -101,15 +101,12 @@ const WarningText = styled.div`
 export const CheckoutBar = ({ total, eta, deliveryAddress, paymentMethod, onCheckout }) => {
   const navigate = useNavigate();
   const isReady = !!deliveryAddress;
-  const missingItems = [];
-  if (!deliveryAddress) missingItems.push('delivery address');
-
-  const getButtonText = () => {
-    if (!deliveryAddress) return 'Add address';
-    return 'Checkout';
-  };
 
   const handleCheckout = () => {
+    if (!deliveryAddress) {
+      navigate('/addresses/new');
+      return;
+    }
     if (onCheckout) {
       onCheckout();
     } else {
@@ -124,18 +121,15 @@ export const CheckoutBar = ({ total, eta, deliveryAddress, paymentMethod, onChec
           <TotalPrice>R{total.toFixed(2)}</TotalPrice>
           <ETAText>{eta}</ETAText>
           {!isReady && (
-            <WarningText>
-              {missingItems.length > 0 && `Add ${missingItems.join(' and ')} to continue`}
-            </WarningText>
+            <WarningText>Add a delivery address to continue</WarningText>
           )}
         </TotalSection>
 
         <CheckoutButton
-          disabled={!isReady}
           $pulse={isReady}
           onClick={handleCheckout}
         >
-          {getButtonText()}
+          {isReady ? 'Checkout' : 'Add address'}
         </CheckoutButton>
       </BarContent>
     </Bar>

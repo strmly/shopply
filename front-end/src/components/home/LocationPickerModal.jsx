@@ -1,27 +1,261 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 const SUBURBS = [
-  { suburb: 'Sandton', city: 'Johannesburg', lat: -26.1076, lng: 28.0567 },
-  { suburb: 'Rosebank', city: 'Johannesburg', lat: -26.1452, lng: 28.0436 },
-  { suburb: 'Melville', city: 'Johannesburg', lat: -26.1792, lng: 28.0121 },
-  { suburb: 'Randburg', city: 'Johannesburg', lat: -26.0942, lng: 27.9997 },
-  { suburb: 'Soweto', city: 'Johannesburg', lat: -26.2671, lng: 27.8561 },
-  { suburb: 'Midrand', city: 'Johannesburg', lat: -25.9939, lng: 28.1261 },
-  { suburb: 'Fourways', city: 'Johannesburg', lat: -26.0258, lng: 28.0059 },
-  { suburb: 'Bryanston', city: 'Johannesburg', lat: -26.0742, lng: 28.0191 },
-  { suburb: 'Parkhurst', city: 'Johannesburg', lat: -26.1418, lng: 28.0094 },
-  { suburb: 'Norwood', city: 'Johannesburg', lat: -26.1697, lng: 28.0780 },
-  { suburb: 'Roodepoort', city: 'Johannesburg', lat: -26.1631, lng: 27.8739 },
-  { suburb: 'Alexandra', city: 'Johannesburg', lat: -26.1067, lng: 28.0866 },
-  { suburb: 'Centurion', city: 'Pretoria', lat: -25.8535, lng: 28.1887 },
-  { suburb: 'Pretoria CBD', city: 'Pretoria', lat: -25.7459, lng: 28.1878 },
-  { suburb: 'Hatfield', city: 'Pretoria', lat: -25.7531, lng: 28.2273 },
-  { suburb: 'Cape Town CBD', city: 'Cape Town', lat: -33.9249, lng: 18.4241 },
-  { suburb: 'V&A Waterfront', city: 'Cape Town', lat: -33.9007, lng: 18.4193 },
-  { suburb: 'Claremont', city: 'Cape Town', lat: -33.9831, lng: 18.4666 },
-  { suburb: 'Durban CBD', city: 'Durban', lat: -29.8587, lng: 31.0218 },
-  { suburb: 'Umhlanga', city: 'Durban', lat: -29.7234, lng: 31.0742 },
+  // ── GAUTENG ──────────────────────────────────────────
+  // Johannesburg
+  { suburb: 'Johannesburg CBD', city: 'Johannesburg', province: 'Gauteng', lat: -26.2041, lng: 28.0473 },
+  { suburb: 'Sandton', city: 'Johannesburg', province: 'Gauteng', lat: -26.1076, lng: 28.0567 },
+  { suburb: 'Rosebank', city: 'Johannesburg', province: 'Gauteng', lat: -26.1452, lng: 28.0436 },
+  { suburb: 'Melville', city: 'Johannesburg', province: 'Gauteng', lat: -26.1792, lng: 28.0121 },
+  { suburb: 'Randburg', city: 'Johannesburg', province: 'Gauteng', lat: -26.0942, lng: 27.9997 },
+  { suburb: 'Midrand', city: 'Johannesburg', province: 'Gauteng', lat: -25.9939, lng: 28.1261 },
+  { suburb: 'Fourways', city: 'Johannesburg', province: 'Gauteng', lat: -26.0258, lng: 28.0059 },
+  { suburb: 'Bryanston', city: 'Johannesburg', province: 'Gauteng', lat: -26.0742, lng: 28.0191 },
+  { suburb: 'Parkhurst', city: 'Johannesburg', province: 'Gauteng', lat: -26.1418, lng: 28.0094 },
+  { suburb: 'Norwood', city: 'Johannesburg', province: 'Gauteng', lat: -26.1697, lng: 28.0780 },
+  { suburb: 'Roodepoort', city: 'Johannesburg', province: 'Gauteng', lat: -26.1631, lng: 27.8739 },
+  { suburb: 'Alexandra', city: 'Johannesburg', province: 'Gauteng', lat: -26.1067, lng: 28.0866 },
+  { suburb: 'Hillbrow', city: 'Johannesburg', province: 'Gauteng', lat: -26.1951, lng: 28.0473 },
+  { suburb: 'Yeoville', city: 'Johannesburg', province: 'Gauteng', lat: -26.1858, lng: 28.0644 },
+  { suburb: 'Maboneng', city: 'Johannesburg', province: 'Gauteng', lat: -26.2022, lng: 28.0606 },
+  { suburb: 'Newtown', city: 'Johannesburg', province: 'Gauteng', lat: -26.2007, lng: 28.0356 },
+  { suburb: 'Soweto', city: 'Johannesburg', province: 'Gauteng', lat: -26.2671, lng: 27.8561 },
+  { suburb: 'Orlando', city: 'Johannesburg', province: 'Gauteng', lat: -26.2513, lng: 27.8883 },
+  { suburb: 'Meadowlands', city: 'Johannesburg', province: 'Gauteng', lat: -26.2308, lng: 27.8688 },
+  { suburb: 'Pimville', city: 'Johannesburg', province: 'Gauteng', lat: -26.2800, lng: 27.8888 },
+  { suburb: 'Protea Glen', city: 'Johannesburg', province: 'Gauteng', lat: -26.2750, lng: 27.8313 },
+  { suburb: 'Dobsonville', city: 'Johannesburg', province: 'Gauteng', lat: -26.2480, lng: 27.8466 },
+  { suburb: 'Diepkloof', city: 'Johannesburg', province: 'Gauteng', lat: -26.2475, lng: 27.8860 },
+  { suburb: 'Eldorado Park', city: 'Johannesburg', province: 'Gauteng', lat: -26.2908, lng: 27.8991 },
+  { suburb: 'Lenasia', city: 'Johannesburg', province: 'Gauteng', lat: -26.3041, lng: 27.8312 },
+  { suburb: 'Orange Farm', city: 'Johannesburg', province: 'Gauteng', lat: -26.4817, lng: 27.8273 },
+  { suburb: 'Diepsloot', city: 'Johannesburg', province: 'Gauteng', lat: -25.9318, lng: 28.0009 },
+  { suburb: 'Cosmo City', city: 'Johannesburg', province: 'Gauteng', lat: -26.0458, lng: 27.9327 },
+  { suburb: 'Waterfall', city: 'Johannesburg', province: 'Gauteng', lat: -25.9727, lng: 28.1014 },
+  // Pretoria / Tshwane
+  { suburb: 'Pretoria CBD', city: 'Pretoria', province: 'Gauteng', lat: -25.7459, lng: 28.1878 },
+  { suburb: 'Centurion', city: 'Pretoria', province: 'Gauteng', lat: -25.8535, lng: 28.1887 },
+  { suburb: 'Hatfield', city: 'Pretoria', province: 'Gauteng', lat: -25.7531, lng: 28.2273 },
+  { suburb: 'Arcadia', city: 'Pretoria', province: 'Gauteng', lat: -25.7576, lng: 28.2156 },
+  { suburb: 'Sunnyside', city: 'Pretoria', province: 'Gauteng', lat: -25.7598, lng: 28.2199 },
+  { suburb: 'Brooklyn', city: 'Pretoria', province: 'Gauteng', lat: -25.7725, lng: 28.2408 },
+  { suburb: 'Lynnwood', city: 'Pretoria', province: 'Gauteng', lat: -25.7733, lng: 28.2762 },
+  { suburb: 'Menlyn', city: 'Pretoria', province: 'Gauteng', lat: -25.7842, lng: 28.2758 },
+  { suburb: 'Montana', city: 'Pretoria', province: 'Gauteng', lat: -25.6773, lng: 28.2498 },
+  { suburb: 'Pretoria North', city: 'Pretoria', province: 'Gauteng', lat: -25.6938, lng: 28.1886 },
+  { suburb: 'Mamelodi', city: 'Pretoria', province: 'Gauteng', lat: -25.7109, lng: 28.3596 },
+  { suburb: 'Atteridgeville', city: 'Pretoria', province: 'Gauteng', lat: -25.7875, lng: 28.1096 },
+  { suburb: 'Soshanguve', city: 'Pretoria', province: 'Gauteng', lat: -25.5255, lng: 28.0951 },
+  { suburb: 'Ga-Rankuwa', city: 'Pretoria', province: 'Gauteng', lat: -25.6236, lng: 27.9985 },
+  { suburb: 'Mabopane', city: 'Pretoria', province: 'Gauteng', lat: -25.5003, lng: 28.0631 },
+  { suburb: 'Laudium', city: 'Pretoria', province: 'Gauteng', lat: -25.8053, lng: 28.1101 },
+  // Ekurhuleni (East Rand)
+  { suburb: 'Kempton Park', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.1009, lng: 28.2289 },
+  { suburb: 'Boksburg', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.2127, lng: 28.2607 },
+  { suburb: 'Benoni', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.1875, lng: 28.3174 },
+  { suburb: 'Brakpan', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.2353, lng: 28.3680 },
+  { suburb: 'Springs', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.2513, lng: 28.4483 },
+  { suburb: 'Germiston', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.2198, lng: 28.1592 },
+  { suburb: 'Edenvale', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.1432, lng: 28.1701 },
+  { suburb: 'Tembisa', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.0073, lng: 28.2219 },
+  { suburb: 'Katlehong', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.3363, lng: 28.1622 },
+  { suburb: 'Vosloorus', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.3530, lng: 28.1930 },
+  { suburb: 'Thokoza', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.3410, lng: 28.1401 },
+  { suburb: 'Daveyton', city: 'Ekurhuleni', province: 'Gauteng', lat: -26.1474, lng: 28.4043 },
+  // West Rand
+  { suburb: 'Krugersdorp', city: 'West Rand', province: 'Gauteng', lat: -26.0996, lng: 27.7694 },
+  { suburb: 'Randfontein', city: 'West Rand', province: 'Gauteng', lat: -26.1875, lng: 27.7057 },
+  { suburb: 'Kagiso', city: 'West Rand', province: 'Gauteng', lat: -26.1521, lng: 27.7844 },
+  { suburb: 'Westonaria', city: 'West Rand', province: 'Gauteng', lat: -26.3163, lng: 27.6614 },
+
+  // ── WESTERN CAPE ──────────────────────────────────────
+  // Cape Town
+  { suburb: 'Cape Town CBD', city: 'Cape Town', province: 'Western Cape', lat: -33.9249, lng: 18.4241 },
+  { suburb: 'V&A Waterfront', city: 'Cape Town', province: 'Western Cape', lat: -33.9007, lng: 18.4193 },
+  { suburb: 'Sea Point', city: 'Cape Town', province: 'Western Cape', lat: -33.9179, lng: 18.3955 },
+  { suburb: 'Green Point', city: 'Cape Town', province: 'Western Cape', lat: -33.9062, lng: 18.4116 },
+  { suburb: 'De Waterkant', city: 'Cape Town', province: 'Western Cape', lat: -33.9182, lng: 18.4178 },
+  { suburb: 'Camps Bay', city: 'Cape Town', province: 'Western Cape', lat: -33.9473, lng: 18.3762 },
+  { suburb: 'Clifton', city: 'Cape Town', province: 'Western Cape', lat: -33.9382, lng: 18.3786 },
+  { suburb: 'Bo-Kaap', city: 'Cape Town', province: 'Western Cape', lat: -33.9271, lng: 18.4113 },
+  { suburb: 'Woodstock', city: 'Cape Town', province: 'Western Cape', lat: -33.9347, lng: 18.4399 },
+  { suburb: 'Observatory', city: 'Cape Town', province: 'Western Cape', lat: -33.9371, lng: 18.4725 },
+  { suburb: 'Salt River', city: 'Cape Town', province: 'Western Cape', lat: -33.9278, lng: 18.4617 },
+  { suburb: 'Claremont', city: 'Cape Town', province: 'Western Cape', lat: -33.9831, lng: 18.4666 },
+  { suburb: 'Rondebosch', city: 'Cape Town', province: 'Western Cape', lat: -33.9667, lng: 18.4755 },
+  { suburb: 'Newlands', city: 'Cape Town', province: 'Western Cape', lat: -33.9867, lng: 18.4651 },
+  { suburb: 'Mowbray', city: 'Cape Town', province: 'Western Cape', lat: -33.9544, lng: 18.4738 },
+  { suburb: 'Wynberg', city: 'Cape Town', province: 'Western Cape', lat: -34.0088, lng: 18.4737 },
+  { suburb: 'Muizenberg', city: 'Cape Town', province: 'Western Cape', lat: -34.1042, lng: 18.4694 },
+  { suburb: 'Constantia', city: 'Cape Town', province: 'Western Cape', lat: -34.0288, lng: 18.4456 },
+  { suburb: 'Athlone', city: 'Cape Town', province: 'Western Cape', lat: -33.9706, lng: 18.5067 },
+  { suburb: 'Hanover Park', city: 'Cape Town', province: 'Western Cape', lat: -33.9944, lng: 18.5277 },
+  { suburb: 'Manenberg', city: 'Cape Town', province: 'Western Cape', lat: -33.9983, lng: 18.5476 },
+  { suburb: 'Mitchells Plain', city: 'Cape Town', province: 'Western Cape', lat: -34.0456, lng: 18.6279 },
+  { suburb: 'Khayelitsha', city: 'Cape Town', province: 'Western Cape', lat: -34.0386, lng: 18.6848 },
+  { suburb: 'Gugulethu', city: 'Cape Town', province: 'Western Cape', lat: -33.9966, lng: 18.5687 },
+  { suburb: 'Langa', city: 'Cape Town', province: 'Western Cape', lat: -33.9510, lng: 18.5366 },
+  { suburb: 'Nyanga', city: 'Cape Town', province: 'Western Cape', lat: -34.0105, lng: 18.5901 },
+  { suburb: 'Philippi', city: 'Cape Town', province: 'Western Cape', lat: -34.0175, lng: 18.5694 },
+  { suburb: 'Bellville', city: 'Cape Town', province: 'Western Cape', lat: -33.8963, lng: 18.6334 },
+  { suburb: 'Parow', city: 'Cape Town', province: 'Western Cape', lat: -33.8982, lng: 18.5856 },
+  { suburb: 'Goodwood', city: 'Cape Town', province: 'Western Cape', lat: -33.9106, lng: 18.5558 },
+  { suburb: 'Durbanville', city: 'Cape Town', province: 'Western Cape', lat: -33.8298, lng: 18.6492 },
+  { suburb: 'Kraaifontein', city: 'Cape Town', province: 'Western Cape', lat: -33.8479, lng: 18.7199 },
+  { suburb: 'Brackenfell', city: 'Cape Town', province: 'Western Cape', lat: -33.8671, lng: 18.7012 },
+  { suburb: 'Kuils River', city: 'Cape Town', province: 'Western Cape', lat: -33.9379, lng: 18.7302 },
+  { suburb: 'Somerset West', city: 'Cape Town', province: 'Western Cape', lat: -34.0769, lng: 18.8458 },
+  { suburb: 'Strand', city: 'Cape Town', province: 'Western Cape', lat: -34.1154, lng: 18.8277 },
+  // Other Western Cape
+  { suburb: 'Stellenbosch', city: 'Stellenbosch', province: 'Western Cape', lat: -33.9321, lng: 18.8602 },
+  { suburb: 'Paarl', city: 'Paarl', province: 'Western Cape', lat: -33.7306, lng: 18.9711 },
+  { suburb: 'Franschhoek', city: 'Franschhoek', province: 'Western Cape', lat: -33.9087, lng: 19.1208 },
+  { suburb: 'Wellington', city: 'Wellington', province: 'Western Cape', lat: -33.6409, lng: 19.0148 },
+  { suburb: 'George', city: 'George', province: 'Western Cape', lat: -33.9630, lng: 22.4617 },
+  { suburb: 'Mossel Bay', city: 'Mossel Bay', province: 'Western Cape', lat: -34.1826, lng: 22.1441 },
+  { suburb: 'Knysna', city: 'Knysna', province: 'Western Cape', lat: -34.0355, lng: 23.0466 },
+  { suburb: 'Oudtshoorn', city: 'Oudtshoorn', province: 'Western Cape', lat: -33.5903, lng: 22.2015 },
+  { suburb: 'Worcester', city: 'Worcester', province: 'Western Cape', lat: -33.6458, lng: 19.4458 },
+  { suburb: 'Hermanus', city: 'Hermanus', province: 'Western Cape', lat: -34.4212, lng: 19.2374 },
+  { suburb: 'Swellendam', city: 'Swellendam', province: 'Western Cape', lat: -34.0234, lng: 20.4428 },
+
+  // ── EASTERN CAPE ──────────────────────────────────────
+  // Gqeberha (Port Elizabeth)
+  { suburb: 'Gqeberha CBD', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.9608, lng: 25.6022 },
+  { suburb: 'Summerstrand', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.9971, lng: 25.6591 },
+  { suburb: 'Walmer', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.9851, lng: 25.5943 },
+  { suburb: 'Newton Park', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.9579, lng: 25.5625 },
+  { suburb: 'Greenacres', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.9522, lng: 25.5738 },
+  { suburb: 'Motherwell', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.8443, lng: 25.6234 },
+  { suburb: 'Kwazakhele', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.9192, lng: 25.5893 },
+  { suburb: 'New Brighton', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.9225, lng: 25.6149 },
+  { suburb: 'Uitenhage', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.7622, lng: 25.3974 },
+  // East London (Buffalo City)
+  { suburb: 'East London CBD', city: 'East London', province: 'Eastern Cape', lat: -33.0292, lng: 27.8793 },
+  { suburb: 'Vincent', city: 'East London', province: 'Eastern Cape', lat: -32.9964, lng: 27.8837 },
+  { suburb: 'Cambridge', city: 'East London', province: 'Eastern Cape', lat: -32.9754, lng: 27.8704 },
+  { suburb: 'Quigney', city: 'East London', province: 'Eastern Cape', lat: -33.0198, lng: 27.9010 },
+  { suburb: 'Berea', city: 'East London', province: 'Eastern Cape', lat: -33.0071, lng: 27.8896 },
+  { suburb: 'Nahoon', city: 'East London', province: 'Eastern Cape', lat: -32.9780, lng: 27.9418 },
+  { suburb: 'Beacon Bay', city: 'East London', province: 'Eastern Cape', lat: -32.9792, lng: 27.9351 },
+  { suburb: 'Mdantsane', city: 'East London', province: 'Eastern Cape', lat: -32.9591, lng: 27.7627 },
+  { suburb: 'Duncan Village', city: 'East London', province: 'Eastern Cape', lat: -33.0023, lng: 27.8437 },
+  // Other Eastern Cape
+  { suburb: 'Mthatha CBD', city: 'Mthatha', province: 'Eastern Cape', lat: -31.5892, lng: 28.7857 },
+  { suburb: 'Bhisho', city: 'Bhisho', province: 'Eastern Cape', lat: -32.8475, lng: 27.4347 },
+  { suburb: 'Makhanda (Grahamstown)', city: 'Makhanda', province: 'Eastern Cape', lat: -33.3047, lng: 26.5310 },
+  { suburb: 'Queenstown', city: 'Queenstown', province: 'Eastern Cape', lat: -31.8975, lng: 26.8726 },
+  { suburb: 'Aliwal North', city: 'Aliwal North', province: 'Eastern Cape', lat: -30.6944, lng: 26.7115 },
+  { suburb: 'King Williams Town', city: 'King Williams Town', province: 'Eastern Cape', lat: -32.8760, lng: 27.3988 },
+
+  // ── KWAZULU-NATAL ─────────────────────────────────────
+  // Durban (eThekwini)
+  { suburb: 'Durban CBD', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.8587, lng: 31.0218 },
+  { suburb: 'Berea', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.8458, lng: 31.0019 },
+  { suburb: 'Morningside', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.8468, lng: 31.0200 },
+  { suburb: 'Glenwood', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.8708, lng: 30.9965 },
+  { suburb: 'Musgrave', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.8558, lng: 30.9940 },
+  { suburb: 'Westville', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.8333, lng: 30.9376 },
+  { suburb: 'Pinetown', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.8114, lng: 30.8544 },
+  { suburb: 'Chatsworth', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.8989, lng: 30.9295 },
+  { suburb: 'Umlazi', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.9761, lng: 30.9001 },
+  { suburb: 'KwaMashu', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.7426, lng: 30.9929 },
+  { suburb: 'Ntuzuma', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.7636, lng: 30.9768 },
+  { suburb: 'Inanda', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.7196, lng: 30.9405 },
+  { suburb: 'Phoenix', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.7212, lng: 31.0017 },
+  { suburb: 'Verulam', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.6395, lng: 31.0416 },
+  { suburb: 'Tongaat', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.5674, lng: 31.1167 },
+  { suburb: 'Umhlanga', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.7234, lng: 31.0742 },
+  { suburb: 'La Lucia', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.7570, lng: 31.0621 },
+  { suburb: 'Ballito', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.5368, lng: 31.2102 },
+  { suburb: 'Amanzimtoti', city: 'Durban', province: 'KwaZulu-Natal', lat: -30.0558, lng: 30.8841 },
+  { suburb: 'Isipingo', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.9914, lng: 30.9484 },
+  { suburb: 'Prospecton', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.9686, lng: 30.9255 },
+  { suburb: 'Hillcrest', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.7725, lng: 30.7744 },
+  // Pietermaritzburg
+  { suburb: 'Pietermaritzburg CBD', city: 'Pietermaritzburg', province: 'KwaZulu-Natal', lat: -29.6180, lng: 30.3920 },
+  { suburb: 'Northdale', city: 'Pietermaritzburg', province: 'KwaZulu-Natal', lat: -29.5895, lng: 30.4031 },
+  { suburb: 'Edendale', city: 'Pietermaritzburg', province: 'KwaZulu-Natal', lat: -29.6433, lng: 30.3467 },
+  { suburb: 'Scottsville', city: 'Pietermaritzburg', province: 'KwaZulu-Natal', lat: -29.6314, lng: 30.4031 },
+  // Other KZN
+  { suburb: 'Richards Bay', city: 'Richards Bay', province: 'KwaZulu-Natal', lat: -28.7784, lng: 32.0381 },
+  { suburb: 'Newcastle', city: 'Newcastle', province: 'KwaZulu-Natal', lat: -27.7623, lng: 29.9318 },
+  { suburb: 'Ladysmith', city: 'Ladysmith', province: 'KwaZulu-Natal', lat: -28.5597, lng: 29.7814 },
+  { suburb: 'Empangeni', city: 'Empangeni', province: 'KwaZulu-Natal', lat: -28.7533, lng: 31.8908 },
+  { suburb: 'Ulundi', city: 'Ulundi', province: 'KwaZulu-Natal', lat: -28.3218, lng: 31.4155 },
+  { suburb: 'Port Shepstone', city: 'Port Shepstone', province: 'KwaZulu-Natal', lat: -30.7364, lng: 30.4526 },
+
+  // ── LIMPOPO ───────────────────────────────────────────
+  { suburb: 'Polokwane CBD', city: 'Polokwane', province: 'Limpopo', lat: -23.9045, lng: 29.4688 },
+  { suburb: 'Seshego', city: 'Polokwane', province: 'Limpopo', lat: -23.8702, lng: 29.4048 },
+  { suburb: 'Bendor', city: 'Polokwane', province: 'Limpopo', lat: -23.9266, lng: 29.4722 },
+  { suburb: 'Tzaneen', city: 'Tzaneen', province: 'Limpopo', lat: -23.8326, lng: 30.1644 },
+  { suburb: 'Phalaborwa', city: 'Phalaborwa', province: 'Limpopo', lat: -23.9405, lng: 31.1531 },
+  { suburb: 'Thohoyandou', city: 'Thohoyandou', province: 'Limpopo', lat: -22.9586, lng: 30.4868 },
+  { suburb: 'Louis Trichardt', city: 'Louis Trichardt', province: 'Limpopo', lat: -23.0449, lng: 29.9112 },
+  { suburb: 'Bela-Bela', city: 'Bela-Bela', province: 'Limpopo', lat: -24.8863, lng: 28.2903 },
+  { suburb: 'Mokopane', city: 'Mokopane', province: 'Limpopo', lat: -24.2000, lng: 28.9583 },
+  { suburb: 'Lephalale', city: 'Lephalale', province: 'Limpopo', lat: -23.6778, lng: 27.7131 },
+  { suburb: 'Giyani', city: 'Giyani', province: 'Limpopo', lat: -23.3044, lng: 30.7186 },
+  { suburb: 'Lebowakgomo', city: 'Lebowakgomo', province: 'Limpopo', lat: -24.0046, lng: 29.4856 },
+
+  // ── MPUMALANGA ────────────────────────────────────────
+  { suburb: 'Mbombela CBD', city: 'Mbombela', province: 'Mpumalanga', lat: -25.4753, lng: 30.9694 },
+  { suburb: 'West Acres', city: 'Mbombela', province: 'Mpumalanga', lat: -25.4912, lng: 30.9567 },
+  { suburb: 'Sonheuwel', city: 'Mbombela', province: 'Mpumalanga', lat: -25.4671, lng: 30.9822 },
+  { suburb: 'eMalahleni', city: 'eMalahleni', province: 'Mpumalanga', lat: -25.8737, lng: 29.2404 },
+  { suburb: 'Middelburg', city: 'Middelburg', province: 'Mpumalanga', lat: -25.7737, lng: 29.4628 },
+  { suburb: 'Secunda', city: 'Secunda', province: 'Mpumalanga', lat: -26.5250, lng: 29.1689 },
+  { suburb: 'Ermelo', city: 'Ermelo', province: 'Mpumalanga', lat: -26.5305, lng: 29.9824 },
+  { suburb: 'Standerton', city: 'Standerton', province: 'Mpumalanga', lat: -26.9452, lng: 29.2428 },
+  { suburb: 'Hazyview', city: 'Hazyview', province: 'Mpumalanga', lat: -25.0507, lng: 31.1288 },
+  { suburb: 'White River', city: 'White River', province: 'Mpumalanga', lat: -25.3294, lng: 31.0059 },
+  { suburb: 'Barberton', city: 'Barberton', province: 'Mpumalanga', lat: -25.7841, lng: 31.0526 },
+  { suburb: 'Thulamahashe', city: 'Thulamahashe', province: 'Mpumalanga', lat: -24.7300, lng: 31.2053 },
+
+  // ── NORTH WEST ────────────────────────────────────────
+  { suburb: 'Rustenburg CBD', city: 'Rustenburg', province: 'North West', lat: -25.6671, lng: 27.2419 },
+  { suburb: 'Tlhabane', city: 'Rustenburg', province: 'North West', lat: -25.6451, lng: 27.2188 },
+  { suburb: 'Boitekong', city: 'Rustenburg', province: 'North West', lat: -25.6038, lng: 27.3032 },
+  { suburb: 'Klerksdorp', city: 'Klerksdorp', province: 'North West', lat: -26.8676, lng: 26.6673 },
+  { suburb: 'Jouberton', city: 'Klerksdorp', province: 'North West', lat: -26.8745, lng: 26.7108 },
+  { suburb: 'Mafikeng', city: 'Mafikeng', province: 'North West', lat: -25.8488, lng: 25.6467 },
+  { suburb: 'Mmabatho', city: 'Mafikeng', province: 'North West', lat: -25.8614, lng: 25.6315 },
+  { suburb: 'Potchefstroom', city: 'Potchefstroom', province: 'North West', lat: -26.7138, lng: 27.0990 },
+  { suburb: 'Brits', city: 'Brits', province: 'North West', lat: -25.6367, lng: 27.7831 },
+  { suburb: 'Vryburg', city: 'Vryburg', province: 'North West', lat: -26.9554, lng: 24.7287 },
+  { suburb: 'Lichtenburg', city: 'Lichtenburg', province: 'North West', lat: -26.1448, lng: 26.1634 },
+  { suburb: 'Orkney', city: 'Orkney', province: 'North West', lat: -26.9866, lng: 26.6744 },
+
+  // ── FREE STATE ────────────────────────────────────────
+  { suburb: 'Bloemfontein CBD', city: 'Bloemfontein', province: 'Free State', lat: -29.0852, lng: 26.1596 },
+  { suburb: 'Mangaung', city: 'Bloemfontein', province: 'Free State', lat: -29.1177, lng: 26.1924 },
+  { suburb: 'Langenhoven Park', city: 'Bloemfontein', province: 'Free State', lat: -29.1246, lng: 26.1132 },
+  { suburb: 'Bayswater', city: 'Bloemfontein', province: 'Free State', lat: -29.0759, lng: 26.2162 },
+  { suburb: 'Westdene', city: 'Bloemfontein', province: 'Free State', lat: -29.1090, lng: 26.1890 },
+  { suburb: 'Botshabelo', city: 'Botshabelo', province: 'Free State', lat: -29.2529, lng: 26.7094 },
+  { suburb: 'Thaba Nchu', city: 'Thaba Nchu', province: 'Free State', lat: -29.2147, lng: 26.8228 },
+  { suburb: 'Welkom', city: 'Welkom', province: 'Free State', lat: -27.9880, lng: 26.7352 },
+  { suburb: 'Thabong', city: 'Welkom', province: 'Free State', lat: -28.0016, lng: 26.7530 },
+  { suburb: 'Sasolburg', city: 'Sasolburg', province: 'Free State', lat: -26.8150, lng: 27.8283 },
+  { suburb: 'Kroonstad', city: 'Kroonstad', province: 'Free State', lat: -27.6506, lng: 27.2351 },
+  { suburb: 'Maokeng', city: 'Kroonstad', province: 'Free State', lat: -27.6640, lng: 27.2531 },
+  { suburb: 'Bethlehem', city: 'Bethlehem', province: 'Free State', lat: -28.2311, lng: 28.3090 },
+  { suburb: 'Phuthaditjhaba', city: 'Phuthaditjhaba', province: 'Free State', lat: -28.5281, lng: 28.8929 },
+  { suburb: 'Parys', city: 'Parys', province: 'Free State', lat: -26.9016, lng: 27.4558 },
+
+  // ── NORTHERN CAPE ─────────────────────────────────────
+  { suburb: 'Kimberley CBD', city: 'Kimberley', province: 'Northern Cape', lat: -28.7282, lng: 24.7499 },
+  { suburb: 'Galeshewe', city: 'Kimberley', province: 'Northern Cape', lat: -28.7133, lng: 24.7297 },
+  { suburb: 'Roodepan', city: 'Kimberley', province: 'Northern Cape', lat: -28.7004, lng: 24.7781 },
+  { suburb: 'Upington', city: 'Upington', province: 'Northern Cape', lat: -28.4478, lng: 21.2561 },
+  { suburb: 'Springbok', city: 'Springbok', province: 'Northern Cape', lat: -29.6639, lng: 17.8865 },
+  { suburb: 'De Aar', city: 'De Aar', province: 'Northern Cape', lat: -30.6471, lng: 24.0103 },
+  { suburb: 'Kuruman', city: 'Kuruman', province: 'Northern Cape', lat: -27.4535, lng: 23.4330 },
+  { suburb: 'Kathu', city: 'Kathu', province: 'Northern Cape', lat: -27.7007, lng: 23.0570 },
+  { suburb: 'Carnarvon', city: 'Carnarvon', province: 'Northern Cape', lat: -30.9618, lng: 22.1304 },
+  { suburb: 'Colesberg', city: 'Colesberg', province: 'Northern Cape', lat: -30.7248, lng: 25.0974 },
 ];
 
 function findNearestSuburb(lat, lng) {
@@ -291,7 +525,7 @@ const CheckCircle = styled.span`
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -305,6 +539,109 @@ const EmptyState = styled.div`
   color: ${props => props.theme.colors.text.secondary};
   font-size: 14px;
   font-weight: 600;
+`;
+
+const ProvinceGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 4px 4px 24px;
+
+  @media (max-width: 360px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+`;
+
+const ProvinceCard = styled.button`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 16px 8px 14px;
+  border-radius: 18px;
+  border: 1.5px solid ${props => props.$active ? 'rgba(61, 129, 239, 0.42)' : 'rgba(228, 231, 236, 0.9)'};
+  background: ${props => props.$active ? props.theme.colors.primarySoftBg : 'rgba(248, 250, 252, 0.7)'};
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.18s ease;
+
+  &:hover {
+    border-color: rgba(61, 129, 239, 0.38);
+    background: ${props => props.theme.colors.primarySoftBg};
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(61, 129, 239, 0.12);
+  }
+`;
+
+const ProvinceIconCircle = styled.span`
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: ${props => props.$active ? 'rgba(61, 129, 239, 0.12)' : '#ffffff'};
+  border: 1px solid ${props => props.$active ? 'rgba(61, 129, 239, 0.24)' : 'rgba(228, 231, 236, 0.9)'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.secondary};
+  font-size: 15px;
+`;
+
+const ProvinceName = styled.div`
+  font-size: 11px;
+  font-weight: 900;
+  color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.primary};
+  line-height: 1.3;
+`;
+
+const ProvinceCount = styled.div`
+  font-size: 10px;
+  font-weight: 700;
+  color: ${props => props.theme.colors.text.secondary};
+`;
+
+const ProvinceBreadcrumb = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 20px 10px;
+  padding: 9px 12px;
+  background: ${props => props.theme.colors.primarySoftBg};
+  border: 1px solid rgba(61, 129, 239, 0.2);
+  border-radius: 14px;
+  flex-shrink: 0;
+`;
+
+const ProvinceBreadcrumbBack = styled.button`
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid rgba(61, 129, 239, 0.25);
+  background: #ffffff;
+  color: ${props => props.theme.colors.primary};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba(61, 129, 239, 0.1);
+  }
+`;
+
+const ProvinceBreadcrumbLabel = styled.div`
+  font-size: 13px;
+  font-weight: 900;
+  color: ${props => props.theme.colors.primary};
+  flex: 1;
+`;
+
+const ProvinceBreadcrumbCount = styled.div`
+  font-size: 11px;
+  font-weight: 700;
+  color: ${props => props.theme.colors.text.secondary};
 `;
 
 const PinIcon = () => (
@@ -334,9 +671,23 @@ const CheckSVGIcon = () => (
   </svg>
 );
 
+const BackChevronIcon = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m15 18-6-6 6-6" />
+  </svg>
+);
+
+const MapRegionIcon = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z" />
+    <path d="M9 3v15M15 6v15" />
+  </svg>
+);
+
 export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   const [search, setSearch] = useState('');
   const [detecting, setDetecting] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -345,17 +696,43 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   }, []);
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        if (selectedProvince && !search.trim()) {
+          setSelectedProvince(null);
+        } else {
+          onClose();
+        }
+      }
+    };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, selectedProvince, search]);
 
-  const filtered = search.trim()
-    ? SUBURBS.filter(s =>
-        s.suburb.toLowerCase().includes(search.toLowerCase()) ||
-        s.city.toLowerCase().includes(search.toLowerCase())
-      )
-    : SUBURBS;
+  const grouped = useMemo(() => {
+    const map = {};
+    for (const s of SUBURBS) {
+      if (!map[s.province]) map[s.province] = [];
+      map[s.province].push(s);
+    }
+    return map;
+  }, []);
+
+  const provinces = useMemo(() => Object.keys(grouped), [grouped]);
+
+  const isSearching = Boolean(search.trim());
+
+  const searchResults = useMemo(() => {
+    if (!isSearching) return [];
+    const q = search.toLowerCase();
+    return SUBURBS.filter(s =>
+      s.suburb.toLowerCase().includes(q) ||
+      s.city.toLowerCase().includes(q) ||
+      s.province.toLowerCase().includes(q)
+    );
+  }, [search, isSearching]);
+
+  const provinceSuburbs = selectedProvince ? grouped[selectedProvince] : [];
 
   const handleGPS = () => {
     if (!navigator.geolocation || detecting) return;
@@ -368,6 +745,7 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
           lng: pos.coords.longitude,
           suburb: nearest.suburb,
           city: nearest.city,
+          province: nearest.province,
         });
         setDetecting(false);
       },
@@ -377,11 +755,44 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   };
 
   const handleSelect = (s) => {
-    onSelect({ lat: s.lat, lng: s.lng, suburb: s.suburb, city: s.city });
+    onSelect({ lat: s.lat, lng: s.lng, suburb: s.suburb, city: s.city, province: s.province });
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    if (e.target.value.trim()) setSelectedProvince(null);
   };
 
   const isActive = (s) =>
     currentLocation?.suburb === s.suburb && currentLocation?.city === s.city;
+
+  const isActiveProvince = (province) =>
+    currentLocation?.province === province;
+
+  const SuburbList = ({ items, showProvince = false }) => (
+    <>
+      {items.map(s => (
+        <SuburbRow
+          key={`${s.suburb}-${s.city}`}
+          $active={isActive(s)}
+          onClick={() => handleSelect(s)}
+        >
+          <SuburbIconWrap $active={isActive(s)}>
+            <PinIcon />
+          </SuburbIconWrap>
+          <SuburbInfo>
+            <SuburbName $active={isActive(s)}>{s.suburb}</SuburbName>
+            <SuburbCity>{s.city}{showProvince ? ` · ${s.province}` : ''}</SuburbCity>
+          </SuburbInfo>
+          {isActive(s) && (
+            <CheckCircle>
+              <CheckSVGIcon />
+            </CheckCircle>
+          )}
+        </SuburbRow>
+      ))}
+    </>
+  );
 
   return (
     <>
@@ -389,7 +800,9 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
       <Sheet role="dialog" aria-modal="true" aria-label="Choose delivery area">
         <Handle />
         <Header>
-          <Title>Choose delivery area</Title>
+          <Title>
+            {!isSearching && selectedProvince ? selectedProvince : 'Choose delivery area'}
+          </Title>
           <CloseButton onClick={onClose} aria-label="Close">&#10005;</CloseButton>
         </Header>
 
@@ -401,50 +814,65 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
             <SearchInput
               ref={inputRef}
               type="text"
-              placeholder="Search suburb or city..."
+              placeholder="Search suburb, city or province..."
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={handleSearchChange}
             />
           </SearchRow>
         </SearchWrap>
 
-        <GPSButton onClick={handleGPS} disabled={detecting}>
-          <GPSIconCircle>
-            <GPSCrosshairIcon />
-          </GPSIconCircle>
-          <div>
-            <GPSLabel>{detecting ? 'Detecting location...' : 'Use my current location'}</GPSLabel>
-            <GPSSub>Auto-detect via GPS</GPSSub>
-          </div>
-        </GPSButton>
+        {!isSearching && !selectedProvince && <Divider />}
 
-        <Divider />
+        {/* Breadcrumb when a province is selected */}
+        {!isSearching && selectedProvince && (
+          <ProvinceBreadcrumb>
+            <ProvinceBreadcrumbBack
+              onClick={() => setSelectedProvince(null)}
+              aria-label="Back to provinces"
+            >
+              <BackChevronIcon />
+            </ProvinceBreadcrumbBack>
+            <ProvinceBreadcrumbLabel>{selectedProvince}</ProvinceBreadcrumbLabel>
+            <ProvinceBreadcrumbCount>{provinceSuburbs.length} areas</ProvinceBreadcrumbCount>
+          </ProvinceBreadcrumb>
+        )}
 
         <ListWrap>
-          {!search.trim() && <SectionLabel>Popular areas</SectionLabel>}
-          {filtered.length === 0 && (
-            <EmptyState>No areas found for &ldquo;{search}&rdquo;</EmptyState>
+          {/* Search results */}
+          {isSearching && (
+            searchResults.length === 0 ? (
+              <EmptyState>No areas found for &ldquo;{search}&rdquo;</EmptyState>
+            ) : (
+              <SuburbList items={searchResults} showProvince />
+            )
           )}
-          {filtered.map(s => (
-            <SuburbRow
-              key={`${s.suburb}-${s.city}`}
-              $active={isActive(s)}
-              onClick={() => handleSelect(s)}
-            >
-              <SuburbIconWrap $active={isActive(s)}>
-                <PinIcon />
-              </SuburbIconWrap>
-              <SuburbInfo>
-                <SuburbName $active={isActive(s)}>{s.suburb}</SuburbName>
-                <SuburbCity>{s.city}</SuburbCity>
-              </SuburbInfo>
-              {isActive(s) && (
-                <CheckCircle>
-                  <CheckSVGIcon />
-                </CheckCircle>
-              )}
-            </SuburbRow>
-          ))}
+
+          {/* Province grid */}
+          {!isSearching && !selectedProvince && (
+            <>
+              <SectionLabel>Select your province</SectionLabel>
+              <ProvinceGrid>
+                {provinces.map(province => (
+                  <ProvinceCard
+                    key={province}
+                    $active={isActiveProvince(province)}
+                    onClick={() => setSelectedProvince(province)}
+                  >
+                    <ProvinceIconCircle $active={isActiveProvince(province)}>
+                      <MapRegionIcon />
+                    </ProvinceIconCircle>
+                    <ProvinceName $active={isActiveProvince(province)}>{province}</ProvinceName>
+                    <ProvinceCount>{grouped[province].length} areas</ProvinceCount>
+                  </ProvinceCard>
+                ))}
+              </ProvinceGrid>
+            </>
+          )}
+
+          {/* Suburb list for selected province */}
+          {!isSearching && selectedProvince && (
+            <SuburbList items={provinceSuburbs} />
+          )}
         </ListWrap>
       </Sheet>
     </>

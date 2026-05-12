@@ -4,8 +4,10 @@ import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
 const Container = styled.div`
-  width: 100%;
+  width: min(1180px, calc(100% - 28px));
+  margin: 0 auto 34px;
   animation: ${fadeIn} 0.3s ease-in;
+  min-width: 0;
 `;
 
 const Header = styled.div`
@@ -48,6 +50,8 @@ const CardHeader = styled.div`
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: ${props => props.theme.spacing.sm};
+  gap: 12px;
+  min-width: 0;
 `;
 
 const CardTitle = styled.div`
@@ -56,12 +60,14 @@ const CardTitle = styled.div`
   font-weight: 700;
   font-size: 16px;
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
 `;
 
 const CardDescription = styled.div`
   ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.secondary};
   font-size: 13px;
+  overflow-wrap: anywhere;
 `;
 
 const CuratorInfo = styled.div`
@@ -103,7 +109,7 @@ const CuratorText = styled.div`
 
 const ViewButton = styled.button`
   padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: ${props => props.theme.radii.md};
@@ -117,6 +123,11 @@ const ViewButton = styled.button`
   &:hover {
     background: ${props => props.theme.colors.primaryHover};
     transform: translateY(-1px);
+  }
+
+  @media (max-width: 420px) {
+    width: 100%;
+    min-height: 42px;
   }
 `;
 

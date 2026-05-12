@@ -104,7 +104,7 @@ export const CheckoutPage = ({ location, onClose }) => {
   };
 
   const loadDeliveryAddress = () => {
-    const savedLocation = localStorage.getItem('shopply_location');
+    const savedLocation = localStorage.getItem('tsenga_location');
     if (savedLocation) {
       try {
         const locationData = JSON.parse(savedLocation);
@@ -123,8 +123,8 @@ export const CheckoutPage = ({ location, onClose }) => {
 
   const loadContactInfo = () => {
     // Load saved contact info if available
-    const savedPhone = localStorage.getItem('shopply_phone');
-    const savedEmail = localStorage.getItem('shopply_email');
+    const savedPhone = localStorage.getItem('tsenga_phone');
+    const savedEmail = localStorage.getItem('tsenga_email');
     if (savedPhone || savedEmail) {
       setContactInfo({
         phone: savedPhone || '',
@@ -209,14 +209,14 @@ export const CheckoutPage = ({ location, onClose }) => {
           if (paymentData.success) {
             // Save contact info
             if (contactInfo.phone) {
-              localStorage.setItem('shopply_phone', contactInfo.phone);
+              localStorage.setItem('tsenga_phone', contactInfo.phone);
             }
             if (contactInfo.email) {
-              localStorage.setItem('shopply_email', contactInfo.email);
+              localStorage.setItem('tsenga_email', contactInfo.email);
             }
 
             // Clear cart count
-            localStorage.setItem('shopply_cart_count', '0');
+            localStorage.setItem('tsenga_cart_count', '0');
             window.dispatchEvent(new Event('cartUpdated'));
 
             setOrderId(order.id);

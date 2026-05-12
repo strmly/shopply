@@ -42,7 +42,7 @@ const FilledLine = styled.div`
   top: 20px;
   left: 0;
   height: 3px;
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   z-index: 2;
   transition: width 0.5s ease;
   width: ${props => props.$progress}%;

@@ -45,7 +45,7 @@ const Title = styled.h1`
 
 const SaveButton = styled.button`
   padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  background: ${props => props.theme.colors.primary};
+  background: ${props => props.theme.colors.gradient.primary};
   color: white;
   border: none;
   border-radius: ${props => props.theme.radii.md};

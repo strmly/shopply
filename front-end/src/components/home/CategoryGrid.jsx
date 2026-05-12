@@ -2,7 +2,7 @@ import styled from 'styled-components';
 import { useTheme } from '../../hooks/useTheme';
 
 const Container = styled.section`
-  padding: 0 min(5vw, 48px);
+  padding: 0 clamp(14px, 5vw, 48px);
   margin: 0 auto 38px;
 `;
 
@@ -65,6 +65,10 @@ const Grid = styled.div`
   @media (max-width: 900px) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const CategoryItem = styled.button`
@@ -85,6 +89,12 @@ const CategoryItem = styled.button`
   position: relative;
   text-align: left;
   box-shadow: 0 14px 32px rgba(16, 24, 40, 0.06);
+
+  @media (max-width: 520px) {
+    min-height: 132px;
+    border-radius: 20px;
+    padding: 16px;
+  }
 
   &::after {
     content: '';
@@ -131,6 +141,10 @@ const CategoryLabel = styled.span`
   font-size: 21px;
   line-height: 1.1;
   font-weight: 900;
+
+  @media (max-width: 520px) {
+    font-size: 19px;
+  }
 `;
 
 const CategoryDescription = styled.span`
