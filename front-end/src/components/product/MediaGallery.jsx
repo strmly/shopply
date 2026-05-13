@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
@@ -89,8 +89,8 @@ const Dot = styled.button`
   height: 8px;
   border-radius: 50%;
   border: none;
-  background: ${props => props.$active 
-    ? props.theme.colors.primary 
+  background: ${props => props.$active
+    ? props.theme.colors.primary
     : 'rgba(255, 255, 255, 0.72)'};
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
@@ -98,6 +98,34 @@ const Dot = styled.button`
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   position: relative;
   z-index: 3;
+`;
+
+const NavButton = styled.button`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  ${props => props.$dir === 'prev' ? 'left: 12px;' : 'right: 12px;'}
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.88);
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+  color: ${props => props.theme.colors.text.primary};
+  box-shadow: 0 4px 12px rgba(16,24,40,0.18);
+  backdrop-filter: blur(10px);
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    background: #ffffff;
+    transform: translateY(-50%) scale(1.08);
+  }
 `;
 
 const GalleryIndicator = styled.div`
@@ -165,47 +193,86 @@ const CloseButton = styled.button`
   }
 `;
 
+const FullscreenNav = styled.button`
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  ${props => props.$dir === 'prev' ? 'left: 24px;' : 'right: 24px;'}
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 52px;
+  height: 52px;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+`;
+
 export const MediaGallery = ({ product }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
-  // Use product images or fallback to single image
-  const images = product.images && product.images.length > 0 
-    ? product.images 
-    : product.image 
-      ? [product.image] 
+
+  const images = product.images && product.images.length > 0
+    ? product.images
+    : product.image
+      ? [product.image]
       : [];
+
+  const goNext = (e) => {
+    e?.stopPropagation();
+    setCurrentIndex(i => (i + 1) % images.length);
+  };
+
+  const goPrev = (e) => {
+    e?.stopPropagation();
+    setCurrentIndex(i => (i - 1 + images.length) % images.length);
+  };
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handleKey = (e) => {
+      if (e.key === 'ArrowRight') goNext();
+      else if (e.key === 'ArrowLeft') goPrev();
+      else if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isFullscreen, images.length]);
 
   if (images.length === 0) {
     return (
       <GalleryContainer>
-        <ImagePlaceholder>F</ImagePlaceholder>
+        <ImagePlaceholder>{product.name?.[0]?.toUpperCase() || '?'}</ImagePlaceholder>
       </GalleryContainer>
     );
   }
-
-  const handleImageClick = () => {
-    setIsFullscreen(true);
-  };
-
-  const handleCloseFullscreen = () => {
-    setIsFullscreen(false);
-  };
 
   return (
     <>
       <GalleryContainer>
         <ImageCarousel $currentIndex={currentIndex}>
           {images.map((image, index) => (
-            <ImageSlide key={index} onClick={handleImageClick}>
+            <ImageSlide key={index} onClick={() => setIsFullscreen(true)}>
               <ProductImage src={image} alt={`${product.name} - Image ${index + 1}`} />
             </ImageSlide>
           ))}
         </ImageCarousel>
-        
+
         {images.length > 1 && (
           <>
-            <GalleryIndicator onClick={handleImageClick}>
+            <NavButton $dir="prev" onClick={goPrev}>‹</NavButton>
+            <NavButton $dir="next" onClick={goNext}>›</NavButton>
+            <GalleryIndicator onClick={() => setIsFullscreen(true)}>
               {currentIndex + 1} / {images.length}
             </GalleryIndicator>
             <Dots>
@@ -223,17 +290,23 @@ export const MediaGallery = ({ product }) => {
           </>
         )}
         {images.length === 1 && (
-          <GalleryIndicator onClick={handleImageClick}>
+          <GalleryIndicator onClick={() => setIsFullscreen(true)}>
             View image
           </GalleryIndicator>
         )}
       </GalleryContainer>
 
       {isFullscreen && (
-        <FullscreenOverlay onClick={handleCloseFullscreen}>
-          <CloseButton onClick={handleCloseFullscreen}>x</CloseButton>
-          <FullscreenImage 
-            src={images[currentIndex]} 
+        <FullscreenOverlay onClick={() => setIsFullscreen(false)}>
+          <CloseButton onClick={() => setIsFullscreen(false)}>✕</CloseButton>
+          {images.length > 1 && (
+            <>
+              <FullscreenNav $dir="prev" onClick={goPrev}>‹</FullscreenNav>
+              <FullscreenNav $dir="next" onClick={goNext}>›</FullscreenNav>
+            </>
+          )}
+          <FullscreenImage
+            src={images[currentIndex]}
             alt={`${product.name} - Fullscreen`}
             onClick={(e) => e.stopPropagation()}
           />
@@ -242,4 +315,3 @@ export const MediaGallery = ({ product }) => {
     </>
   );
 };
-

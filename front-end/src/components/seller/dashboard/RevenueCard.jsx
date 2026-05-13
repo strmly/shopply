@@ -1,108 +1,91 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 
 const pulse = keyframes`
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025); }
 `;
 
-const slideIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
-
-const Container = styled.div`
-  background: ${props => {
-    if (props.$isPositive) {
-      return 'linear-gradient(135deg, #3D81EF 0%, #5C9AF2 50%, #7EC1F6 100%)';
-    }
-    if (props.$isNegative) {
-      return 'linear-gradient(135deg, #C62850 0%, #D93E5F 50%, #E23E66 100%)';
-    }
-    return 'linear-gradient(135deg, #667085 0%, #7B889A 50%, #98A2B3 100%)';
-  }};
-  border-radius: ${props => props.theme.radii.xl};
-  padding: ${props => props.theme.spacing.xl};
-  color: white;
+const Card = styled.button`
+  width: 100%;
+  min-height: 294px;
+  padding: clamp(18px, 3vw, 26px);
+  border: 1px solid rgba(61, 129, 239, 0.16);
+  border-radius: 26px;
+  background:
+    linear-gradient(135deg, rgba(13, 28, 51, 0.98), rgba(20, 48, 86, 0.96) 44%, rgba(61, 129, 239, 0.9) 100%);
+  color: #ffffff;
   cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  box-shadow: ${props => props.theme.shadows.lg};
-  position: relative;
+  text-align: left;
+  box-shadow: 0 28px 70px rgba(13, 28, 51, 0.2);
   overflow: hidden;
-  animation: ${slideIn} 0.4s ease-out;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  transition: ${props => props.theme.transitions.swift};
 
-  &::before {
+  &::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    inset: auto -18% -42% 34%;
+    height: 220px;
+    border-radius: 999px;
+    background: rgba(196, 184, 252, 0.24);
     pointer-events: none;
   }
 
-  &:active {
-    transform: scale(0.97);
-  }
-
   &:hover {
-    box-shadow: ${props => props.theme.shadows.xl};
-    transform: translateY(-4px);
+    transform: translateY(-3px);
+    box-shadow: 0 34px 80px rgba(13, 28, 51, 0.26);
   }
+`;
+
+const Content = styled.div`
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 16px;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
 `;
 
 const Label = styled.div`
-  ${props => props.theme.typography.body2}
-  font-size: 14px;
-  opacity: 0.9;
-  margin-bottom: ${props => props.theme.spacing.xs};
-  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  font-weight: 850;
 `;
 
 const Amount = styled.div`
-  ${props => props.theme.typography.heading1}
-  font-size: 40px;
-  font-weight: 700;
-  margin-bottom: ${props => props.theme.spacing.sm};
+  margin-top: 8px;
+  font-size: clamp(38px, 7vw, 62px);
+  line-height: 0.95;
+  font-weight: 950;
+  letter-spacing: 0;
   animation: ${props => props.$pulse ? pulse : 'none'} 0.6s ease-in-out;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
-const Comparison = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  ${props => props.theme.typography.body2}
-  font-size: 13px;
-  opacity: 0.95;
-  margin-bottom: ${props => props.theme.spacing.md};
-`;
-
-const TrendIcon = styled.span`
-  font-size: 16px;
+const Pill = styled.div`
   display: inline-flex;
   align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
 `;
 
-const SparklineContainer = styled.div`
-  height: 40px;
-  margin-top: ${props => props.theme.spacing.md};
-  position: relative;
+const SparklineWrap = styled.div`
+  height: 92px;
+  margin-top: 8px;
 `;
 
 const Sparkline = styled.svg`
@@ -111,185 +94,117 @@ const Sparkline = styled.svg`
   overflow: visible;
 `;
 
-const SparklinePath = styled.path`
+const Area = styled.path`
+  fill: url(#revenueArea);
+`;
+
+const Line = styled.path`
   fill: none;
-  stroke: rgba(255, 255, 255, 0.8);
-  stroke-width: 2;
+  stroke: rgba(255,255,255,0.92);
+  stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
-  animation: drawLine 1s ease-out forwards;
-  
-  @keyframes drawLine {
-    from {
-      stroke-dasharray: 1000;
-      stroke-dashoffset: 1000;
-    }
-    to {
-      stroke-dasharray: 1000;
-      stroke-dashoffset: 0;
-    }
-  }
 `;
 
-const SparklineArea = styled.path`
-  fill: url(#sparklineGradient);
-  opacity: 0.3;
-  animation: drawLine 1s ease-out forwards;
-`;
-
-const Toast = styled.div`
-  position: absolute;
-  top: ${props => props.theme.spacing.md};
-  right: ${props => props.theme.spacing.md};
-  background: rgba(255, 255, 255, 0.95);
-  color: ${props => props.theme.colors.successBase};
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.radii.md};
-  ${props => props.theme.typography.caption}
-  font-weight: 600;
+const Footer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.72);
   font-size: 12px;
-  animation: ${slideIn} 0.3s ease-out;
-  box-shadow: ${props => props.theme.shadows.md};
+  font-weight: 850;
 `;
 
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-ZA', {
-    style: 'currency',
-    currency: 'ZAR',
-    minimumFractionDigits: 2,
-  }).format(amount);
-};
+const formatCurrency = (amount) => new Intl.NumberFormat('en-ZA', {
+  style: 'currency',
+  currency: 'ZAR',
+  maximumFractionDigits: 0,
+}).format(amount || 0);
 
-const generateSparklinePath = (data) => {
-  if (!data || data.length === 0) {
-    return '';
-  }
+const getPoints = (data) => {
+  const values = data?.length ? data.map(d => Number(d.revenue) || 0) : [0, 8, 18, 11, 30, 24, 42, 38, 52];
+  const width = 420;
+  const height = 92;
+  const padding = 6;
+  const max = Math.max(...values, 1);
+  const min = Math.min(...values, 0);
+  const range = max - min || 1;
 
-  const width = 300;
-  const height = 40;
-  const padding = 4;
-
-  const maxValue = Math.max(...data.map(d => d.revenue), 1);
-  const minValue = Math.min(...data.map(d => d.revenue), 0);
-  const range = maxValue - minValue || 1;
-
-  const points = data.map((d, index) => {
-    const x = (index / (data.length - 1 || 1)) * (width - padding * 2) + padding;
-    const y = height - padding - ((d.revenue - minValue) / range) * (height - padding * 2);
-    return `${x},${y}`;
+  return values.map((value, index) => {
+    const x = padding + (index / Math.max(values.length - 1, 1)) * (width - padding * 2);
+    const y = height - padding - ((value - min) / range) * (height - padding * 2);
+    return [x, y];
   });
-
-  return `M ${points.join(' L ')}`;
 };
 
-const generateSparklineArea = (data) => {
-  if (!data || data.length === 0) {
-    return '';
-  }
-
-  const width = 300;
-  const height = 40;
-  const padding = 4;
-
-  const maxValue = Math.max(...data.map(d => d.revenue), 1);
-  const minValue = Math.min(...data.map(d => d.revenue), 0);
-  const range = maxValue - minValue || 1;
-
-  const points = data.map((d, index) => {
-    const x = (index / (data.length - 1 || 1)) * (width - padding * 2) + padding;
-    const y = height - padding - ((d.revenue - minValue) / range) * (height - padding * 2);
-    return `${x},${y}`;
-  });
-
-  const firstX = (0 / (data.length - 1 || 1)) * (width - padding * 2) + padding;
-  const lastX = ((data.length - 1) / (data.length - 1 || 1)) * (width - padding * 2) + padding;
-
-  return `M ${firstX},${height - padding} L ${points.join(' L ')} L ${lastX},${height - padding} Z`;
+const toLine = (points) => `M ${points.map(point => point.join(',')).join(' L ')}`;
+const toArea = (points) => {
+  const first = points[0] || [0, 0];
+  const last = points[points.length - 1] || [420, 0];
+  return `M ${first[0]},92 L ${points.map(point => point.join(',')).join(' L ')} L ${last[0]},92 Z`;
 };
 
-export const RevenueCard = ({ 
-  revenue = 0, 
-  comparison = null, 
+export const RevenueCard = ({
+  revenue = 0,
+  comparison = null,
   hourlyRevenue = [],
-  onCardClick 
+  onCardClick,
 }) => {
   const navigate = useNavigate();
-  const [pulse, setPulse] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [prevRevenue, setPrevRevenue] = useState(revenue);
+  const [animate, setAnimate] = useState(false);
+  const [previousRevenue, setPreviousRevenue] = useState(revenue);
 
   useEffect(() => {
-    if (revenue > prevRevenue) {
-      const difference = revenue - prevRevenue;
-      setPulse(true);
-      setToast(`+${formatCurrency(difference)} added`);
-      setTimeout(() => {
-        setPulse(false);
-        setTimeout(() => setToast(null), 3000);
-      }, 600);
+    if (revenue !== previousRevenue) {
+      setAnimate(true);
+      const timeout = setTimeout(() => setAnimate(false), 600);
+      setPreviousRevenue(revenue);
+      return () => clearTimeout(timeout);
     }
-    setPrevRevenue(revenue);
-  }, [revenue, prevRevenue]);
+  }, [previousRevenue, revenue]);
+
+  const points = getPoints(hourlyRevenue);
+  const isPositive = comparison?.isPositive ?? true;
+  const percentage = Math.abs(comparison?.percentage ?? 0);
 
   const handleClick = () => {
-    if (onCardClick) {
-      onCardClick();
-    } else {
-      navigate('/seller/analytics');
-    }
+    if (onCardClick) onCardClick();
+    else navigate('/seller/analytics');
   };
 
-  const isPositive = comparison?.isPositive ?? true;
-  const isNegative = comparison?.isPositive === false;
-  const percentage = comparison?.percentage ?? 0;
-
-  const sparklineData = hourlyRevenue.length > 0 
-    ? hourlyRevenue 
-    : Array.from({ length: 24 }, (_, i) => ({ hour: i, revenue: Math.random() * 50 }));
-
   return (
-    <Container 
-      $isPositive={isPositive} 
-      $isNegative={isNegative}
+    <Card
+      type="button"
       onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      aria-label={`Today's revenue: ${formatCurrency(revenue)}. ${comparison ? `${Math.abs(percentage)}% ${isPositive ? 'increase' : 'decrease'} from yesterday.` : ''} Click to view full analytics.`}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
+      aria-label={`Today's revenue ${formatCurrency(revenue)}. Open analytics.`}
     >
-      {toast && <Toast>{toast}</Toast>}
-      
-      <Label>Today's Revenue</Label>
-      <Amount $pulse={pulse}>{formatCurrency(revenue)}</Amount>
-      
-      {comparison && (
-        <Comparison>
-          <TrendIcon>
-            {isPositive ? '▲' : '▼'}
-          </TrendIcon>
-          <span>
-            {Math.abs(percentage)}% vs yesterday
-          </span>
-        </Comparison>
-      )}
+      <Content>
+        <Header>
+          <div>
+            <Label>Today's revenue</Label>
+            <Amount $pulse={animate}>{formatCurrency(revenue)}</Amount>
+          </div>
+          <Pill>{isPositive ? 'Up' : 'Down'} {percentage}%</Pill>
+        </Header>
 
-      <SparklineContainer>
-        <Sparkline viewBox="0 0 300 40" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="sparklineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
-              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-            </linearGradient>
-          </defs>
-          <SparklineArea d={generateSparklineArea(sparklineData)} />
-          <SparklinePath d={generateSparklinePath(sparklineData)} />
-        </Sparkline>
-      </SparklineContainer>
-    </Container>
+        <SparklineWrap>
+          <Sparkline viewBox="0 0 420 92" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="revenueArea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.34)" />
+                <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+              </linearGradient>
+            </defs>
+            <Area d={toArea(points)} />
+            <Line d={toLine(points)} />
+          </Sparkline>
+        </SparklineWrap>
+
+        <Footer>
+          <span>Live seller analytics</span>
+          <span>Open report</span>
+        </Footer>
+      </Content>
+    </Card>
   );
 };

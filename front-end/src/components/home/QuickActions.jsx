@@ -2,16 +2,16 @@ import styled from 'styled-components';
 
 const Container = styled.div`
   padding: 0 clamp(14px, 5vw, 48px);
-  margin: -36px auto ${props => props.theme.spacing.xl};
+  margin: -18px auto ${props => props.theme.spacing.xl};
   position: relative;
   z-index: 2;
 
   @media (max-width: 760px) {
-    margin-top: -24px;
+    margin-top: -10px;
   }
 
   @media (max-width: 420px) {
-    margin-top: -18px;
+    margin-top: -4px;
   }
 `;
 

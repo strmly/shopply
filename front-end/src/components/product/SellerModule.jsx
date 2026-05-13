@@ -120,7 +120,8 @@ const VerifiedBadge = styled.span`
 
 export const SellerModule = ({ product, location }) => {
   const distance = product.distance || product.storeLocation?.distance || 'N/A';
-  const deliveryFee = distance < 2 ? 'Free' : 'R15';
+  const distNum = parseFloat(distance);
+  const deliveryFee = !isNaN(distNum) && distNum < 2 ? 'Free' : 'R15';
   const rating = product.rating || 4.5;
 
   return (

@@ -149,7 +149,7 @@ class ReviewService {
    */
   getProductReviews(productId) {
     const reviews = Array.from(this.reviews.values())
-      .filter(review => review.productId === productId)
+      .filter(review => String(review.productId) === String(productId))
       .map(review => review.toJSON ? review.toJSON() : review);
     
     return reviews.sort((a, b) => {
@@ -397,6 +397,61 @@ class ReviewService {
   }
 }
 
+const SAMPLE_REVIEWERS = [
+  { name: 'Thabo M.', suburb: 'Sandton', distance: 0.8 },
+  { name: 'Ayesha K.', suburb: 'Rosebank', distance: 1.2 },
+  { name: 'Johan V.', suburb: 'Randburg', distance: 2.1 },
+  { name: 'Nomsa D.', suburb: 'Soweto', distance: 3.5 },
+  { name: 'Priya S.', suburb: 'Midrand', distance: 4.0 },
+  { name: 'Marcus L.', suburb: 'Bryanston', distance: 1.7 },
+  { name: 'Fatima B.', suburb: 'Roodepoort', distance: 5.2 },
+  { name: 'Sipho N.', suburb: 'Alexandra', distance: 2.8 },
+];
+
+const SAMPLE_REVIEWS = [
+  { rating: 5, title: 'Absolutely love it!', content: 'Exceeded my expectations. Great quality and fast delivery. Would definitely buy again.' },
+  { rating: 4, title: 'Good product', content: 'Solid build quality. Looks exactly as pictured. Minor packaging issue but product was fine.' },
+  { rating: 5, title: 'Highly recommend', content: 'Amazing value for money. The quality is outstanding and it arrived within 2 days.' },
+  { rating: 3, title: 'Decent but not perfect', content: 'Does the job but there are a few areas where it could be improved. Overall okay.' },
+  { rating: 5, title: 'Perfect addition!', content: 'Exactly what I needed. Great quality and the seller was very responsive. Will order again.' },
+  { rating: 4, title: 'Very satisfied', content: 'Well made and durable. My family loves it. Fast delivery to our area.' },
+  { rating: 2, title: 'Could be better', content: 'Not quite what I expected from the description. Quality is okay but a bit overpriced.' },
+  { rating: 5, title: 'Excellent!', content: 'Beautiful product. Better in person than photos suggest. Very happy with this purchase.' },
+];
+
+function seedInstance(service) {
+  // Seed 3-5 reviews for the first 50 product IDs
+  for (let productId = 1; productId <= 50; productId++) {
+    const reviewCount = 2 + (productId % 4); // 2-5 reviews per product
+    for (let i = 0; i < reviewCount; i++) {
+      const reviewer = SAMPLE_REVIEWERS[(productId + i) % SAMPLE_REVIEWERS.length];
+      const reviewData = SAMPLE_REVIEWS[(productId + i * 2) % SAMPLE_REVIEWS.length];
+      const daysAgo = Math.floor(Math.random() * 60) + 1;
+      const date = new Date();
+      date.setDate(date.getDate() - daysAgo);
+
+      const review = new Review({
+        id: `seed-${productId}-${i}`,
+        userId: `user-seed-${i}`,
+        userName: reviewer.name,
+        userLocation: { suburb: reviewer.suburb, distance: reviewer.distance },
+        productId: productId,
+        rating: reviewData.rating,
+        title: reviewData.title,
+        content: reviewData.content,
+        verifiedPurchase: i === 0, // First review is verified
+        helpfulCount: Math.floor(Math.random() * 12),
+        createdAt: date,
+        updatedAt: date,
+      });
+      service.reviews.set(review.id, review);
+    }
+  }
+}
+
+const instance = new ReviewService();
+seedInstance(instance);
+
 // Export singleton instance
-export default new ReviewService();
+export default instance;
 

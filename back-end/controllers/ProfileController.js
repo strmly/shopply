@@ -200,11 +200,11 @@ export class ProfileController {
       const { userId } = req.params;
       const { name, email, mobile, avatarUrl } = req.body || {};
 
-      // Basic guardrail for avatar size when using base64 data URLs
-      if (typeof avatarUrl === 'string' && avatarUrl.length > 500000) {
+      // Reject base64 blobs — avatar must now be a file path (/uploads/...)
+      if (typeof avatarUrl === 'string' && avatarUrl.startsWith('data:')) {
         return res.status(400).json({
           success: false,
-          message: 'Profile photo is too large. Please choose a smaller image.',
+          message: 'Upload the image via /api/uploads/image and pass the returned URL.',
         });
       }
 

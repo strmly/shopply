@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import API_BASE_URL from '@config/api';
 import { AuthModal } from '../auth';
 import { isSignedIn } from '../../utils/authState';
+import { useUser } from '../../context/UserContext';
 
 /* ─── Shell ───────────────────────────────────────────── */
 
@@ -24,7 +25,7 @@ const NavContainer = styled.nav`
 
 const NavContent = styled.div`
   display: grid;
-  grid-template-columns: minmax(180px, auto) minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   max-width: 1180px;
@@ -44,10 +45,11 @@ const MainCluster = styled.div`
   align-items: center;
   gap: 10px;
   min-width: 0;
-  width: 100%;
+  width: auto;
 
   @media (max-width: 900px) {
     justify-content: space-between;
+    width: 100%;
   }
 `;
 
@@ -197,7 +199,7 @@ const SearchButton = styled.button`
   gap: 8px;
   flex: 1;
   min-width: 0;
-  max-width: 460px;
+  max-width: none;
   height: 40px;
   padding: 0 14px;
   background: #f4f6f8;
@@ -221,11 +223,11 @@ const SearchButton = styled.button`
   }
 
   @media (max-width: 420px) {
-    min-width: 44px;
-    width: 44px;
-    padding: 0;
-    justify-content: center;
-    flex: 0 0 44px;
+    min-width: 0;
+    width: auto;
+    padding: 0 10px;
+    justify-content: flex-start;
+    flex: 1 1 auto;
   }
 `;
 
@@ -237,7 +239,7 @@ const SearchLabel = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
 
-  @media (max-width: 420px) { display: none; }
+  @media (max-width: 360px) { display: none; }
 `;
 
 const IconButton = styled.button`
@@ -985,6 +987,8 @@ export const TopNavigation = ({
   cartCount: cartCountProp,
 }) => {
   const navigate = useNavigate();
+  const routerLocation = useLocation();
+  const { user: contextUser } = useUser();
   const [cartCount, setCartCount] = useState(cartCountProp || 0);
   const [cartPreview, setCartPreview] = useState(null);
   const [cartLoading, setCartLoading] = useState(false);
@@ -1001,6 +1005,7 @@ export const TopNavigation = ({
   const suburb = location?.suburb || 'Your Area';
   const city = location?.city || '';
   const isTitleMode = Boolean(title);
+  const canShowBack = routerLocation.pathname !== '/';
 
   const syncCartState = (cart) => {
     const count = cart?.itemCount ?? getCartItems(cart).reduce((sum, item) => sum + (item.quantity || 1), 0);
@@ -1165,6 +1170,20 @@ export const TopNavigation = ({
     };
   }, [cartCountProp, location]);
 
+  const handleBackClick = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/');
+  };
+  const handleSearchClick = () => onSearchClick ? onSearchClick() : navigate('/search');
   const handleCartClick = () => onCartClick ? onCartClick() : navigate('/cart');
   const handleProfileClick = () => {
     if (!profileSignedIn) {
@@ -1201,11 +1220,12 @@ export const TopNavigation = ({
   const cartItems = getCartItems(cartPreview);
   const cartTotal = cartPreview?.totals?.total ?? cartPreview?.totals?.subtotal ?? cartPreview?.totals?.itemsTotal ?? 0;
   const displayUnread = notificationUnread ?? unreadCount;
-  const profileName = profileSignedIn ? (profilePreview?.name || 'Tsenga Shopper') : 'Sign in to Tsenga';
-  const profileEmail = profileSignedIn
-    ? (profilePreview?.email || profilePreview?.mobile || 'Manage your account')
-    : 'Unlock saved carts, orders, and local deals';
-  const profileAvatar = profilePreview?.avatarUrl;
+  const resolvedName = contextUser?.name || profilePreview?.name || 'Tsenga Shopper';
+  const resolvedEmail = contextUser?.email || profilePreview?.email || profilePreview?.mobile || 'Manage your account';
+  const resolvedAvatar = contextUser?.avatarUrl || profilePreview?.avatarUrl || '';
+  const profileName = profileSignedIn ? resolvedName : 'Sign in to Tsenga';
+  const profileEmail = profileSignedIn ? resolvedEmail : 'Unlock saved carts, orders, and local deals';
+  const profileAvatar = profileSignedIn ? resolvedAvatar : '';
   const profileNotifications = profilePrefs?.notifications || {};
 
   const updateCartQuantity = async (item, nextQuantity) => {
@@ -1259,8 +1279,8 @@ export const TopNavigation = ({
         <MainCluster>
           {isTitleMode ? (
             <>
-              {onBack && (
-                <BackButton onClick={onBack} aria-label="Go back">&lt;</BackButton>
+              {canShowBack && (
+                <BackButton onClick={handleBackClick} aria-label="Go back">&lt;</BackButton>
               )}
               <PageTitleWrap>
                 <PageTitle>{title}</PageTitle>
@@ -1268,6 +1288,9 @@ export const TopNavigation = ({
             </>
           ) : (
             <>
+              {canShowBack && (
+                <BackButton onClick={handleBackClick} aria-label="Go back">&lt;</BackButton>
+              )}
               <BrandButton type="button" onClick={() => navigate('/')} aria-label="Home">
                 <BrandGlyph>T</BrandGlyph>
                 <BrandText>Tsenga</BrandText>
@@ -1282,7 +1305,7 @@ export const TopNavigation = ({
         </MainCluster>
 
         <Actions>
-          <SearchButton onClick={onSearchClick} aria-label="Search">
+          <SearchButton onClick={handleSearchClick} aria-label="Search">
             <NavIconWrap><SearchIcon /></NavIconWrap>
             <SearchLabel>Search furniture, rooms, stores…</SearchLabel>
           </SearchButton>

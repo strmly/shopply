@@ -32,11 +32,11 @@ const StoreCard = styled.button`
   align-items: center;
   justify-content: space-between;
   padding: ${props => props.theme.spacing.md};
-  background: ${props => props.selected 
-    ? props.theme.colors.primarySoftBg 
+  background: ${props => props.$selected
+    ? props.theme.colors.primarySoftBg
     : props.theme.colors.background};
-  border: 2px solid ${props => props.selected 
-    ? props.theme.colors.primary 
+  border: 2px solid ${props => props.$selected
+    ? props.theme.colors.primary
     : props.theme.colors.border.light};
   border-radius: ${props => props.theme.radii.md};
   cursor: pointer;
@@ -133,7 +133,7 @@ export const MultiStoreSelector = ({ stores = [], selectedStore, onSelectStore, 
           return (
             <StoreCard
               key={store.id || index}
-              selected={isSelected}
+              $selected={isSelected}
               onClick={() => onSelectStore && onSelectStore(store)}
             >
               <StoreInfo>

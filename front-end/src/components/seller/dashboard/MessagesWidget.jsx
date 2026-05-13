@@ -13,23 +13,23 @@ const pulse = keyframes`
 `;
 
 const Container = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.xl};
+  background: #ffffff;
+  border-radius: 24px;
   padding: ${props => props.theme.spacing.lg};
-  border: 2px solid ${props => props.theme.colors.border.light};
+  border: 1px solid rgba(228, 231, 236, 0.92);
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
   animation: ${fadeIn} 0.4s ease-out;
   position: relative;
-  box-shadow: ${props => props.theme.shadows.sm};
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
 
   &:active {
     transform: scale(0.98);
   }
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    box-shadow: ${props => props.theme.shadows.lg};
+    border-color: rgba(61, 129, 239, 0.34);
+    box-shadow: 0 24px 54px rgba(16, 24, 40, 0.11);
     transform: translateY(-2px);
   }
 `;
@@ -46,6 +46,7 @@ const Title = styled.h3`
   color: ${props => props.theme.colors.text.primary};
   font-weight: 700;
   font-size: 18px;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: ${props => props.theme.spacing.xs};
@@ -77,9 +78,10 @@ const MessageItem = styled.div`
   align-items: flex-start;
   gap: ${props => props.theme.spacing.sm};
   padding: ${props => props.theme.spacing.sm};
-  background: ${props => props.theme.colors.background};
-  border-radius: ${props => props.theme.radii.md};
+  background: ${props => props.theme.colors.gradient.soft};
+  border-radius: 16px;
   transition: ${props => props.theme.transitions.swift};
+  border: 1px solid rgba(61, 129, 239, 0.1);
 
   &:hover {
     background: ${props => props.theme.colors.primarySoftBg};
@@ -178,7 +180,7 @@ export const MessagesWidget = ({
     >
       <Header>
         <Title>
-          💬 Messages
+          Messages
           {unreadCount > 0 && (
             <UnreadBadge 
               $pulse={pulse}

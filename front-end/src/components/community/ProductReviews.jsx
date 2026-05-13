@@ -93,13 +93,15 @@ export const ProductReviews = ({ productId, location }) => {
     try {
       setLoading(true);
       const locationParam = location ? encodeURIComponent(JSON.stringify(location)) : '';
-      const filterParams = Object.entries(filters)
-        .filter(([_, value]) => value)
-        .map(([key, _]) => `${key}=true`)
-        .join('&');
-      
+      const params = new URLSearchParams();
+      if (locationParam) params.set('location', locationParam);
+      if (filters.verifiedPurchase) params.set('verified', 'true');
+      if (filters.withPhotos) params.set('images', 'true');
+      if (filters.recent) params.set('recent', 'true');
+      if (filters.nearYou) params.set('nearYou', 'true');
+
       const response = await fetch(
-        `${API_BASE_URL}/community/products/${productId}/reviews?location=${locationParam}&${filterParams}`
+        `${API_BASE_URL}/community/products/${productId}/reviews?${params.toString()}`
       );
       
       if (!response.ok) {

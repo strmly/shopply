@@ -91,6 +91,101 @@ export class SellerController {
     }
   }
 
+  async getStoreHours(req, res, next) {
+    try {
+      const data = await SellerService.getStoreHours(req.params.id);
+
+      if (!data) {
+        return res.status(404).json({
+          success: false,
+          message: 'Seller not found',
+        });
+      }
+
+      res.json({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateStoreHours(req, res, next) {
+    try {
+      const data = await SellerService.updateStoreHours(req.params.id, req.body);
+
+      if (!data) {
+        return res.status(404).json({
+          success: false,
+          message: 'Seller not found',
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'Store hours updated successfully',
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Public become-a-seller application.
+   */
+  async createBecomeSellerApplication(req, res, next) {
+    try {
+      const seller = await SellerService.createBecomeSellerApplication(req.body);
+
+      res.status(201).json({
+        success: true,
+        message: 'Seller application created successfully',
+        data: {
+          seller,
+          nextUrl: '/seller/onboarding',
+          onboardingId: seller.id,
+        },
+      });
+    } catch (error) {
+      if (error.statusCode === 400 || error.statusCode === 409) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message,
+          errors: error.message.split(', '),
+        });
+      }
+      next(error);
+    }
+  }
+
+  async getBecomeSellerStats(req, res, next) {
+    try {
+      const stats = await SellerService.getBecomeSellerStats();
+
+      res.json({
+        success: true,
+        data: stats,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getSellerLearnMoreContent(req, res, next) {
+    try {
+      const content = await SellerService.getSellerLearnMoreContent();
+
+      res.json({
+        success: true,
+        data: content,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /**
    * Get onboarding data for a seller
    */

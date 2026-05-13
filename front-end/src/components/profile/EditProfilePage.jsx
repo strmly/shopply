@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../../context/UserContext';
+import { uploadImage } from '../../utils/uploadImage';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { BottomNavigation } from '../home/BottomNavigation';
@@ -215,8 +217,6 @@ const Row = styled.div`
   }
 `;
 
-import API_BASE_URL from '@config/api';
-
 const splitName = (name = '') => {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 0) return { firstName: '', lastName: '' };
@@ -239,9 +239,9 @@ const getInitials = (firstName, lastName) => {
 
 export const EditProfilePage = () => {
   const navigate = useNavigate();
-  const userId = 'default'; // TODO: get from auth context when available
+  const { user, loading: userLoading, updateUser } = useUser();
+  const userId = 'default';
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
@@ -257,6 +257,23 @@ export const EditProfilePage = () => {
 
   const [initialForm, setInitialForm] = useState(form);
   const [errors, setErrors] = useState({});
+  const [formReady, setFormReady] = useState(false);
+
+  // Populate form once the user is loaded from context
+  useEffect(() => {
+    if (!userLoading && user && !formReady) {
+      const nextForm = {
+        firstName: user.firstName || 'Guest',
+        lastName: user.lastName || 'User',
+        email: user.email || '',
+        mobile: user.mobile || '',
+        avatarUrl: user.avatarUrl || '',
+      };
+      setForm(nextForm);
+      setInitialForm(nextForm);
+      setFormReady(true);
+    }
+  }, [user, userLoading, formReady]);
 
   const isDirty = useMemo(() => {
     return (
@@ -272,48 +289,6 @@ export const EditProfilePage = () => {
     if (errors.email || errors.mobile) return false;
     return true;
   }, [form, errors]);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/profile/${userId}`);
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || 'Failed to load profile');
-        }
-
-        const { firstName, lastName } = splitName(data.data.name || '');
-        const nextForm = {
-          firstName: firstName || 'Guest',
-          lastName: lastName || 'User',
-          email: data.data.email || '',
-          mobile: data.data.mobile || '',
-          avatarUrl: data.data.avatarUrl || '',
-        };
-
-        setForm(nextForm);
-        setInitialForm(nextForm);
-      } catch (error) {
-        console.error('Error loading profile:', error);
-        toast.error('Could not load profile. Using a safe default.');
-        const fallback = {
-          firstName: 'Guest',
-          lastName: 'User',
-          email: 'guest@example.com',
-          mobile: '',
-          avatarUrl: '',
-        };
-        setForm(fallback);
-        setInitialForm(fallback);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProfile();
-  }, [userId]);
 
   const handleFieldChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -361,35 +336,18 @@ export const EditProfilePage = () => {
 
     try {
       setSaving(true);
-      const payload = {
-        name: buildName(form.firstName, form.lastName),
+      await updateUser({
+        firstName: form.firstName,
+        lastName: form.lastName,
         email: form.email || undefined,
         mobile: form.mobile || undefined,
-      };
-
-      const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
       });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Could not save changes');
-      }
-
-      const nextInitial = {
-        ...form,
-        avatarUrl: form.avatarUrl,
-      };
-      setInitialForm(nextInitial);
+      setInitialForm({ ...form });
       toast.success('Profile updated');
       setLastSavedAt(new Date());
     } catch (error) {
       console.error('Error saving profile:', error);
-      const apiMessage = error?.message || 'Couldn’t save changes. Try again.';
-      toast.error(apiMessage);
+      toast.error('Could not save changes. Try again.');
     } finally {
       setSaving(false);
     }
@@ -406,23 +364,11 @@ export const EditProfilePage = () => {
     try {
       setUploadingAvatar(true);
 
-      const toBase64 = fileToBase64(file);
-      const base64 = await toBase64;
+      const url = await uploadImage(file, 'avatar');
 
-      const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatarUrl: base64 }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update photo');
-      }
-
-      setForm(prev => ({ ...prev, avatarUrl: base64 }));
-      setInitialForm(prev => ({ ...prev, avatarUrl: base64 }));
+      setForm(prev => ({ ...prev, avatarUrl: url }));
+      setInitialForm(prev => ({ ...prev, avatarUrl: url }));
+      await updateUser({ avatarUrl: url });
       toast.success('Photo updated');
     } catch (error) {
       console.error('Error updating avatar:', error);
@@ -436,21 +382,9 @@ export const EditProfilePage = () => {
   const handleRemoveAvatar = async () => {
     try {
       setUploadingAvatar(true);
-
-      const response = await fetch(`${API_BASE_URL}/profile/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ avatarUrl: '' }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to remove photo');
-      }
-
       setForm(prev => ({ ...prev, avatarUrl: '' }));
       setInitialForm(prev => ({ ...prev, avatarUrl: '' }));
+      await updateUser({ avatarUrl: '' });
       toast.success('Photo removed');
     } catch (error) {
       console.error('Error removing avatar:', error);
@@ -476,7 +410,7 @@ export const EditProfilePage = () => {
 
   const currentInitials = getInitials(form.firstName, form.lastName);
 
-  if (loading) {
+  if (userLoading && !formReady) {
     return (
       <Container>
         <Header>
@@ -657,13 +591,5 @@ export const EditProfilePage = () => {
     </Container>
   );
 };
-
-const fileToBase64 = file =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
-    reader.readAsDataURL(file);
-  });
 
 

@@ -68,6 +68,18 @@ const DiscountBadge = styled.span`
   font-weight: 800;
 `;
 
+const FlashBadge = styled.span`
+  ${props => props.theme.typography.body2}
+  background: ${props => props.theme.colors.dangerBase};
+  color: ${props => props.theme.colors.text.inverse};
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+`;
+
 const SignalGrid = styled.div`
   display: grid;
   gap: 8px;
@@ -89,23 +101,30 @@ const Signal = styled.div`
 `;
 
 export const PricingBlock = ({ product }) => {
-  const hasDiscount = product.originalPrice && product.originalPrice > product.price;
-  const discountAmount = hasDiscount ? (product.originalPrice - product.price).toFixed(2) : null;
+  const isFlashDeal = product.flashDealPrice != null;
+  const currentPrice = isFlashDeal ? product.flashDealPrice : product.price;
+  const originalPrice = isFlashDeal
+    ? product.price
+    : (product.originalPrice && product.originalPrice > product.price ? product.originalPrice : null);
+
+  const hasDiscount = originalPrice != null && originalPrice > currentPrice;
+  const discountAmount = hasDiscount ? (originalPrice - currentPrice).toFixed(2) : null;
   const discountPercent = hasDiscount
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
     : null;
 
-  const displayPrice = typeof product.price === 'number' ? product.price.toFixed(2) : product.price;
+  const displayPrice = typeof currentPrice === 'number' ? currentPrice.toFixed(2) : currentPrice;
 
   return (
     <Container>
       <PriceRow>
         <CurrentPrice>R{displayPrice}</CurrentPrice>
-        {hasDiscount && <OriginalPrice>R{product.originalPrice.toFixed(2)}</OriginalPrice>}
+        {hasDiscount && <OriginalPrice>R{parseFloat(originalPrice).toFixed(2)}</OriginalPrice>}
       </PriceRow>
 
-      {hasDiscount && (
+      {(hasDiscount || isFlashDeal) && (
         <BadgeRow>
+          {isFlashDeal && <FlashBadge>⚡ Flash Deal</FlashBadge>}
           {discountAmount && <SavingsBadge>Save R{discountAmount}</SavingsBadge>}
           {discountPercent && <DiscountBadge>{discountPercent}% off</DiscountBadge>}
         </BadgeRow>

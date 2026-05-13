@@ -139,7 +139,7 @@ export async function seedBundles() {
       id: nextId++,
       ...data,
       category: 'furniture',
-      storeId: 1,
+      storeId: 0,
       storeName: 'Tsenga Home Furniture',
       stock: 'in',
       stockQuantity: 20,

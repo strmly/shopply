@@ -25,9 +25,12 @@ const PORT = appConfig.port;
 
 // Middleware
 app.use(cors(appConfig.cors));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 app.use(logger);
+
+// Serve uploaded files (avatars, product images, etc.)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Seed new furniture products on startup (1000 furniture items from IKEA, West Elm, Wayfair)
 import { seedNewFurniture } from './scripts/seedNewFurniture.js';

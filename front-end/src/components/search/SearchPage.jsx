@@ -676,13 +676,20 @@ export const SearchPage = ({ location, onBack }) => {
   };
 
   const handleProductClick = (product) => {
-    console.log('Product clicked:', product);
-    // Navigate to product detail
+    navigate(`/product/${product.id}`);
   };
 
   const handleAddToCart = (product) => {
-    console.log('Add to cart:', product);
-    // Add to cart logic
+    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+    const idx = cart.findIndex(i => String(i.id) === String(product.id) && JSON.stringify(i.selectedVariant) === 'null');
+    if (idx >= 0) {
+      cart[idx].quantity += 1;
+    } else {
+      cart.push({ ...product, quantity: 1, selectedVariant: null, addedAt: new Date().toISOString() });
+    }
+    localStorage.setItem('tsenga_cart', JSON.stringify(cart));
+    localStorage.setItem('tsenga_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
+    window.dispatchEvent(new Event('cartUpdated'));
   };
 
   const handleFilterChange = (newFilters) => {
@@ -702,7 +709,13 @@ export const SearchPage = ({ location, onBack }) => {
   };
 
   const handleRoomChange = (event) => {
-    navigate(`/category/${event.target.value}`);
+    const room = event.target.value;
+    if (room === 'all') {
+      const { room: _r, ...rest } = filters;
+      setFilters(rest);
+    } else {
+      setFilters(prev => ({ ...prev, room }));
+    }
   };
 
   const activeFilterCount = Object.values(filters).filter(v => v !== undefined && v !== '' && v !== false).length;
@@ -716,7 +729,7 @@ export const SearchPage = ({ location, onBack }) => {
               <RoomSelectIcon aria-hidden="true" />
               <RoomSelect
                 aria-label="Shop by room"
-                defaultValue="all"
+                value={filters.room || 'all'}
                 onChange={handleRoomChange}
               >
                 {ROOM_OPTIONS.map(room => (
@@ -826,6 +839,8 @@ export const SearchPage = ({ location, onBack }) => {
           hasMore={hasMoreResults}
           loadingMore={loadingMore}
           totalResults={totalResults}
+          filters={filters}
+          onFilterChange={handleFilterChange}
         />
       )}
 

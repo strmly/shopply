@@ -114,21 +114,27 @@ export const ProductDetailPage = ({ location }) => {
   const [cartCount, setCartCount] = useState(0);
   const [availableStores, setAvailableStores] = useState([]);
 
+  // Keep cartCount live by subscribing to cartUpdated events
+  useEffect(() => {
+    const updateCount = () => {
+      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      setCartCount(cart.reduce((sum, item) => sum + (item.quantity || 1), 0));
+    };
+    updateCount();
+    window.addEventListener('cartUpdated', updateCount);
+    return () => window.removeEventListener('cartUpdated', updateCount);
+  }, []);
+
   useEffect(() => {
     // Always scroll to top when product ID changes (instant scroll for better UX)
     window.scrollTo(0, 0);
-    
+
     if (id) {
       loadProduct();
       loadRelatedProducts();
       loadFrequentlyBoughtTogether();
       loadComplementaryEssentials();
     }
-    
-    // Load cart count from localStorage
-    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
-    const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    setCartCount(cartCount);
   }, [id]);
 
   const loadProduct = async () => {
@@ -226,11 +232,10 @@ export const ProductDetailPage = ({ location }) => {
       
       const data = await response.json();
       if (data.success) {
-        // Filter to complementary items (different category or complementary)
-        const complementary = (data.data || []).filter(p => 
-          p.category !== product?.category || 
-          p.id !== product?.id
-        ).slice(0, 4);
+        // Filter out the current product by id, take up to 4
+        const complementary = (data.data || [])
+          .filter(p => String(p.id) !== String(id))
+          .slice(0, 4);
         setComplementaryEssentials(complementary);
       }
     } catch (error) {
@@ -289,8 +294,10 @@ export const ProductDetailPage = ({ location }) => {
   const handleAddToCartClick = async () => {
     if (!product) return;
 
+    const effectivePrice = product.flashDealPrice ?? product.price;
     const cartItem = {
       ...product,
+      price: effectivePrice,
       selectedVariant,
       quantity,
       addedAt: new Date().toISOString(),
@@ -300,8 +307,8 @@ export const ProductDetailPage = ({ location }) => {
     const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
     
     // Check if item already exists
-    const existingIndex = cart.findIndex(item => 
-      item.id === product.id && 
+    const existingIndex = cart.findIndex(item =>
+      String(item.id) === String(product.id) &&
       JSON.stringify(item.selectedVariant) === JSON.stringify(selectedVariant)
     );
 
@@ -321,7 +328,7 @@ export const ProductDetailPage = ({ location }) => {
     window.dispatchEvent(new Event('cartUpdated'));
     toast.success(`${product.name} added to cart`);
 
-    // Sync with backend (CartPage will clear+rebuild on load, so this is best-effort)
+    // Sync with backend (best-effort)
     fetch(`${API_BASE_URL}/cart/items`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

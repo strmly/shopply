@@ -6,7 +6,10 @@ import { BaseModel } from './BaseModel.js';
  */
 export class Promotion extends BaseModel {
   constructor(data = {}) {
-    super(data);
+    const cleanData = { ...data };
+    delete cleanData.status;
+    delete cleanData.isCurrentlyActive;
+    super(cleanData);
     this.id = data.id || null;
     this.storeId = data.storeId || null;
     this.sellerId = data.sellerId || null;

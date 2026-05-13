@@ -316,14 +316,16 @@ class PromotionServiceClass {
       }
     }
 
-    // Check for conflicts
-    const conflicts = await this.checkConflicts(promotionData);
-    if (conflicts.length > 0) {
-      const error = new Error('Promotion conflicts with existing active promotions');
-      error.statusCode = 409;
-      error.conflicts = conflicts;
-      error.message = `This promotion conflicts with ${conflicts.length} existing promotion${conflicts.length > 1 ? 's' : ''}`;
-      throw error;
+    // Check for conflicts only when the new promotion is intended to be active.
+    if (promotionData.isActive !== false) {
+      const conflicts = await this.checkConflicts(promotionData);
+      if (conflicts.length > 0) {
+        const error = new Error('Promotion conflicts with existing active promotions');
+        error.statusCode = 409;
+        error.conflicts = conflicts;
+        error.message = `This promotion conflicts with ${conflicts.length} existing promotion${conflicts.length > 1 ? 's' : ''}`;
+        throw error;
+      }
     }
 
     const promotion = new Promotion({
@@ -432,10 +434,15 @@ class PromotionServiceClass {
    * End promotion (set end date to now)
    */
   async endPromotion(id) {
-    return this.updatePromotion(id, { 
-      endDate: new Date(),
-      isActive: false,
-    });
+    const promotionIndex = this.promotions.findIndex(p => p.id === parseInt(id));
+    if (promotionIndex === -1) return null;
+
+    const promotion = this.promotions[promotionIndex];
+    promotion.isActive = false;
+    promotion.isPaused = false;
+    promotion.endDate = new Date();
+    promotion.updatedAt = new Date();
+    return promotion;
   }
 
   /**
@@ -453,7 +460,17 @@ class PromotionServiceClass {
     delete promotionData.updatedAt;
     
     // Modify title
-    promotionData.title = `${promotionData.title} (Copy)`;
+    const baseTitle = promotionData.title.replace(/\s+\(Copy(?: \d+)?\)$/i, '');
+    let copyTitle = `${baseTitle} (Copy)`;
+    let copyNumber = 2;
+    while (this.promotions.some(p =>
+      p.storeId === promotion.storeId &&
+      p.title.toLowerCase().trim() === copyTitle.toLowerCase().trim()
+    )) {
+      copyTitle = `${baseTitle} (Copy ${copyNumber})`;
+      copyNumber += 1;
+    }
+    promotionData.title = copyTitle;
     
     // Set to inactive by default
     promotionData.isActive = false;

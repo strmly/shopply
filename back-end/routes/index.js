@@ -27,6 +27,7 @@ import inventoryRoutes from './inventoryRoutes.js';
 import whatsappRoutes from './whatsappRoutes.js';
 import legalRoutes from './legalRoutes.js';
 import furnitureRoutes from './furnitureRoutes.js';
+import uploadRoutes from './uploadRoutes.js';
 
 const router = express.Router();
 
@@ -59,5 +60,6 @@ router.use('/hyperlocal', hyperlocalRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/legal', legalRoutes);
+router.use('/uploads', uploadRoutes);
 
 export default router;

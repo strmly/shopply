@@ -4,13 +4,16 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { GlobalStyles } from './styles/GlobalStyles'
 import { ThemeModeProvider } from './theme/ThemeModeProvider.jsx'
+import { UserProvider } from './context/UserContext.jsx'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <ThemeModeProvider>
-        <GlobalStyles />
-        <App />
+        <UserProvider>
+          <GlobalStyles />
+          <App />
+        </UserProvider>
       </ThemeModeProvider>
     </BrowserRouter>
   </React.StrictMode>,

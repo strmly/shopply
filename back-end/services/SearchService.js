@@ -1,389 +1,340 @@
 import { ProductService } from './ProductService.js';
 
-/**
- * Search Service
- * Handles semantic search, autocomplete, and intelligent ranking
- */
+// Words that don't count as meaningful search terms
+const STOP_WORDS = new Set(['and', 'the', 'a', 'an', 'in', 'of', 'for', 'to', 'with', 'on', 'at', 'by', 'from', 'room', 'style']);
+
+// Strip common plural/verb suffixes to find the stem
+function stem(word) {
+  if (word.length < 4) return word;
+  if (word.endsWith('ies') && word.length > 5) return word.slice(0, -3) + 'y';
+  if (word.endsWith('ves') && word.length > 5) return word.slice(0, -3) + 'f';
+  if (word.endsWith('ses') || word.endsWith('xes') || word.endsWith('zes')) return word.slice(0, -2);
+  if (word.endsWith('ing') && word.length > 5) return word.slice(0, -3);
+  if (word.endsWith('ed') && word.length > 4) return word.slice(0, -2);
+  if (word.endsWith('s') && word.length > 3 && !word.endsWith('ss')) return word.slice(0, -1);
+  return word;
+}
+
+// Levenshtein distance — used to tolerate 1-character typos
+function editDistance(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 99;
+  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let cur = i;
+    for (let j = 1; j <= b.length; j++) {
+      const temp = cur;
+      cur = a[i - 1] === b[j - 1] ? prev[j - 1] : 1 + Math.min(prev[j - 1], prev[j], cur);
+      prev[j - 1] = temp;
+    }
+    prev[b.length] = cur;
+  }
+  return prev[b.length];
+}
+
+// Returns true if the term exists in the text, with stemmed or fuzzy fallback
+function textMatch(text, term, stemmedTerm) {
+  if (text.includes(term)) return 'exact';
+  if (stemmedTerm !== term && text.includes(stemmedTerm)) return 'stem';
+  // Fuzzy: check each word in text against the term (only for words ≥ 4 chars)
+  if (term.length >= 4) {
+    const words = text.split(/\W+/).filter(w => w.length >= 4);
+    for (const w of words) {
+      if (editDistance(w, term) === 1) return 'fuzzy';
+      if (stemmedTerm !== term && editDistance(w, stemmedTerm) === 1) return 'fuzzy';
+    }
+  }
+  return null;
+}
+
+// Score a single field match by type
+function matchScore(matchType, baseScore) {
+  if (matchType === 'exact') return baseScore;
+  if (matchType === 'stem') return Math.round(baseScore * 0.85);
+  if (matchType === 'fuzzy') return Math.round(baseScore * 0.55);
+  return 0;
+}
+
 class SearchServiceClass {
   constructor() {
-    this.recentSearches = []; // In production, store per user
+    this.recentSearches = [];
     this.trendingSearches = [
-      { query: 'Coke 2L', count: 87, location: 'Sandton', today: true },
-      { query: 'Charcoal 5kg', count: 65, location: 'Sandton', today: true },
-      { query: 'Fresh chicken', count: 52, location: 'Sandton', today: true },
-      { query: 'Extension cables', count: 43, location: 'Sandton', today: true },
-      { query: 'Milk special', count: 38, location: 'Sandton', today: true },
+      { query: 'Sectional sofa', count: 94, location: 'Sandton', today: true },
+      { query: 'Standing desk', count: 78, location: 'Sandton', today: true },
+      { query: 'King bed frame', count: 61, location: 'Sandton', today: true },
+      { query: 'Dining table set', count: 49, location: 'Sandton', today: true },
+      { query: 'Ergonomic chair', count: 44, location: 'Sandton', today: true },
     ];
-    this.repeatPurchases = []; // AI-predicted repeat purchases
   }
 
-  /**
-   * Get repeat purchases (AI-predicted)
-   */
-  async getRepeatPurchases(userId = null, location = null) {
-    // In production, use ML model based on purchase history
-    // For now, return common repeat purchase items
-    const { products = [] } = await ProductService.getAllProducts();
-    const commonRepeats = ['Milk', 'Eggs', 'Bread', 'Sugar', 'Rice', 'Tomato', 'Detergent'];
-    
+  async getRepeatPurchases(userId = null) {
+    const products = await ProductService.getAll();
+    const popular = ['sofa', 'chair', 'desk', 'bed', 'table', 'bookcase', 'dresser'];
     return products
-      .filter(p => commonRepeats.some(repeat => p.name.toLowerCase().includes(repeat.toLowerCase())))
+      .filter(p => popular.some(kw => p.name.toLowerCase().includes(kw)))
+      .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0))
       .slice(0, 6)
-      .map(p => ({
-        ...p,
-        isRepeatPurchase: true,
-      }));
+      .map(p => ({ ...p, isRepeatPurchase: true }));
   }
 
-  /**
-   * Get smart shortcuts (dynamic based on context)
-   */
-  getSmartShortcuts(location = null, timeOfDay = null) {
-    const hour = timeOfDay || new Date().getHours();
-    const shortcuts = [];
-
-    // Time-based shortcuts
-    if (hour >= 6 && hour <= 10) {
-      shortcuts.push({ label: 'Breakfast essentials', icon: '🍳', filter: { category: 'Groceries' } });
-    }
-    if (hour >= 17 && hour <= 20) {
-      shortcuts.push({ label: 'Braai essentials', icon: '🍗', filter: { category: 'Braai' } });
-    }
-
-    // Always available shortcuts
-    shortcuts.push(
-      { label: 'Under R50', icon: '💰', filter: { maxPrice: 50 } },
+  getSmartShortcuts() {
+    return [
+      { label: 'Under R2 000', icon: '💰', filter: { maxPrice: 2000 } },
+      { label: 'Flash deals', icon: '🔥', filter: { onSale: true } },
+      { label: 'In stock now', icon: '✅', filter: { inStock: true } },
       { label: 'Fast delivery', icon: '⚡', filter: { fastDelivery: true } },
-      { label: 'In Stock Now', icon: '✅', filter: { inStock: true } },
-      { label: 'Deals only', icon: '🔥', filter: { onSale: true } },
-      { label: 'Essentials near you', icon: '🏠', filter: { category: 'Groceries', maxDistance: 2 } }
-    );
-
-    return shortcuts.slice(0, 5);
+      { label: 'Highly rated', icon: '⭐', filter: { sortBy: 'rating' } },
+    ];
   }
 
-  /**
-   * Semantic query expansion
-   * Maps natural language to product categories and terms
-   */
-  expandQuery(query) {
-    const lowerQuery = query.toLowerCase();
-    const expansions = {
-      'braai': ['braai', 'bbq', 'grill', 'barbecue'],
-      'tong': ['tongs', 'braai tongs', 'grill tongs'],
-      'pot': ['pot', 'potjie', 'cooking pot', 'saucepan'],
-      'pap': ['pap', 'maize meal', 'mealie meal'],
-      'milk': ['milk', 'dairy', 'fresh milk'],
-      'chicken': ['chicken', 'poultry', 'fresh chicken'],
-      'sugar': ['sugar', 'white sugar', 'brown sugar'],
-      'cable': ['cable', 'charging cable', 'usb cable', 'extension cable'],
+  // Maps search terms to related furniture concepts
+  synonyms(query) {
+    const map = {
+      'sofa': ['sofa', 'couch', 'sectional', 'loveseat', 'settee'],
+      'couch': ['couch', 'sofa', 'sectional', 'loveseat'],
+      'chair': ['chair', 'armchair', 'accent chair', 'office chair', 'dining chair'],
+      'armchair': ['armchair', 'accent chair', 'chair'],
+      'desk': ['desk', 'workstation', 'writing table', 'standing desk'],
+      'bed': ['bed', 'bed frame', 'bedframe', 'platform bed'],
+      'table': ['table', 'coffee table', 'side table', 'dining table', 'end table'],
+      'wardrobe': ['wardrobe', 'closet', 'armoire'],
+      'dresser': ['dresser', 'chest of drawers', 'drawer unit'],
+      'bookcase': ['bookcase', 'bookshelf', 'shelving'],
+      'shelf': ['shelf', 'bookcase', 'shelving', 'bookshelf'],
+      'rug': ['rug', 'carpet', 'area rug'],
+      'lamp': ['lamp', 'floor lamp', 'table lamp'],
+      'storage': ['storage', 'cabinet', 'organiser', 'shelving'],
+      'outdoor': ['outdoor', 'garden', 'patio'],
+      'kids': ['kids', 'children', 'junior', 'bunk'],
+      'bundle': ['bundle', 'set', 'collection', 'package'],
     };
 
-    const expanded = [query];
-    for (const [key, values] of Object.entries(expansions)) {
-      if (lowerQuery.includes(key)) {
-        expanded.push(...values);
-      }
+    const lower = query.toLowerCase();
+    const terms = new Set([lower]);
+    for (const [key, values] of Object.entries(map)) {
+      if (lower.includes(key)) values.forEach(v => terms.add(v));
     }
-
-    return [...new Set(expanded)];
+    return [...terms];
   }
 
-  /**
-   * Search products with semantic matching
-   */
   async searchProducts(query, filters = {}, location = null) {
-    if (!query || query.trim().length === 0) {
-      return [];
-    }
+    if (!query || query.trim().length === 0) return { results: [], total: 0 };
 
     const normalizedQuery = query.toLowerCase().trim();
-    const expandedTerms = this.expandQuery(normalizedQuery);
-    
-    // Get all products
-    const { products = [] } = await ProductService.getAllProducts();
+    const expandedTerms = this.synonyms(normalizedQuery);
 
-    // Apply semantic search
+    // Split into words; separate "key" words (not stop words) from all words
+    const allWords = normalizedQuery.split(/\s+/).filter(w => w.length > 1);
+    const keyWords = allWords.filter(w => !STOP_WORDS.has(w) && w.length > 2);
+    const stemmedKeyWords = keyWords.map(stem);
+
+    const products = await ProductService.getAll();
+
     const scoredProducts = products.map(product => {
-      let score = 0;
-      const productName = product.name.toLowerCase();
-      const productDesc = (product.description || '').toLowerCase();
-      const productCategory = (product.category || '').toLowerCase();
+      const name = (product.name || '').toLowerCase();
+      const desc = (product.description || '').toLowerCase();
+      const category = (product.category || '').toLowerCase();
+      const subcategory = (product.subcategory || product.furnitureCategory || '').toLowerCase();
+      const brand = (product.brand || '').toLowerCase();
+      const room = (product.room || '').toLowerCase();
+      const style = (product.style || '').toLowerCase();
+      const material = (product.materialPrimary || product.material || '').toLowerCase();
+      const tags = (product.tags || []).join(' ').toLowerCase();
+      const features = (product.features || []).join(' ').toLowerCase();
+      const subtitle = (product.subtitle || '').toLowerCase();
 
-      // Exact match in name (highest score)
-      if (productName.includes(normalizedQuery)) {
-        score += 100;
-      }
+      // Field weights: how much each field matters
+      const fields = [
+        { text: name,        weight: 5,   isName: true },
+        { text: subcategory, weight: 4 },
+        { text: tags,        weight: 3.5 },
+        { text: brand,       weight: 3 },
+        { text: subtitle,    weight: 2 },
+        { text: style,       weight: 2 },
+        { text: material,    weight: 2 },
+        { text: room,        weight: 1.5 },
+        { text: category,    weight: 1.5 },
+        { text: features,    weight: 1 },
+        { text: desc,        weight: 0.8 },
+      ];
 
-      // Expanded term matches
+      let textScore = 0;
+
+      // 1. Whole-phrase match (e.g. full query "living room sofa" in name)
+      const phraseMatchType = textMatch(name, normalizedQuery, stem(normalizedQuery));
+      if (phraseMatchType) textScore += matchScore(phraseMatchType, 300);
+
+      // 2. Expanded synonym terms scored against all fields
       expandedTerms.forEach(term => {
-        if (productName.includes(term)) score += 50;
-        if (productDesc.includes(term)) score += 30;
-        if (productCategory.includes(term)) score += 20;
+        const stemmedTerm = stem(term);
+        fields.forEach(({ text, weight }) => {
+          const m = textMatch(text, term, stemmedTerm);
+          if (m) textScore += matchScore(m, 40 * weight);
+        });
       });
 
-      // Partial word matches
-      const queryWords = normalizedQuery.split(' ');
-      queryWords.forEach(word => {
-        if (word.length > 2) {
-          if (productName.includes(word)) score += 25;
-          if (productDesc.includes(word)) score += 15;
-        }
+      // 3. Per-keyword scoring + count how many key words matched
+      let keyWordsMatched = 0;
+      keyWords.forEach((word, i) => {
+        const stemmedWord = stemmedKeyWords[i];
+        let wordMatched = false;
+        fields.forEach(({ text, weight }) => {
+          const m = textMatch(text, word, stemmedWord);
+          if (m) {
+            textScore += matchScore(m, 20 * weight);
+            wordMatched = true;
+          }
+        });
+        if (wordMatched) keyWordsMatched++;
       });
 
-      // Distance bonus (closer = higher score)
-      if (location && product.storeLocation) {
-        const distance = product.distance || 999;
-        if (distance < 1) score += 30;
-        else if (distance < 3) score += 20;
-        else if (distance < 5) score += 10;
+      // 4. All-keywords-matched bonus (precision signal)
+      if (keyWords.length > 0 && keyWordsMatched === keyWords.length) {
+        textScore += 80 * keyWords.length; // big bonus for matching everything
       }
 
-      // Availability bonus
-      if (product.stock === 'in') score += 15;
-      else if (product.stock === 'low') score += 5;
+      // 5. Multi-word penalty: if fewer than half the key words matched, heavily penalise
+      if (keyWords.length >= 2 && keyWordsMatched < Math.ceil(keyWords.length / 2)) {
+        textScore = Math.round(textScore * 0.15);
+      }
 
-      // Popularity bonus
-      if (product.isTrending) score += 10;
-      if (product.reviewCount > 20) score += 5;
-      if (product.socialProof) score += 5; // "Bought X times today"
-
-      // Discount bonus
-      if (product.isFlashDeal || product.discount) score += 10;
-
-      // Recency bonus (newly added items)
-      if (product.isNew) score += 8;
+      // 6. Quality signals only apply if there's a text match
+      let score = textScore;
+      if (textScore > 0) {
+        if (product.stock === 'in') score += 15;
+        else if (product.stock === 'low') score += 5;
+        if (product.isTrending) score += 10;
+        if ((product.reviewCount || 0) > 100) score += 8;
+        else if ((product.reviewCount || 0) > 20) score += 4;
+        if (product.isFlashDeal || product.discount) score += 8;
+        if (product.isNew) score += 6;
+      }
 
       return { ...product, relevanceScore: score };
     });
 
-    // Filter out zero-score results
-    let results = scoredProducts.filter(p => p.relevanceScore > 0);
+    // Minimum score threshold scales with query length
+    const minScore = keyWords.length >= 2 ? 40 : 1;
+    let results = scoredProducts.filter(p => p.relevanceScore >= minScore);
 
     // Apply filters
-    if (filters.inStock) {
-      results = results.filter(p => p.stock === 'in');
+    if (filters.inStock) results = results.filter(p => p.stock === 'in' || p.stock === 'low');
+    if (filters.lowStock) results = results.filter(p => p.stock === 'low');
+    if (filters.onSale) results = results.filter(p => p.discount || p.isFlashDeal);
+    if (filters.freeDelivery) results = results.filter(p => p.deliveryEligible && (p.leadTimeDaysMin || 0) === 0);
+    if (filters.fastDelivery) results = results.filter(p => p.deliveryEligible && (p.leadTimeDaysMin || 0) <= 2);
+    if (filters.category) results = results.filter(p => p.category === filters.category);
+    if (filters.room) results = results.filter(p => p.room === filters.room);
+    if (filters.minPrice) results = results.filter(p => p.price >= Number(filters.minPrice));
+    if (filters.maxPrice) results = results.filter(p => p.price <= Number(filters.maxPrice));
+
+    // Sort
+    const sortBy = filters.sortBy || 'relevance';
+    switch (sortBy) {
+      case 'price_asc':  results.sort((a, b) => a.price - b.price); break;
+      case 'price_desc': results.sort((a, b) => b.price - a.price); break;
+      case 'popular':    results.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0)); break;
+      case 'rating':     results.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
+      case 'newest':     results.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)); break;
+      default:           results.sort((a, b) => b.relevanceScore - a.relevanceScore); break;
     }
 
-    if (filters.lowStock) {
-      results = results.filter(p => p.stock === 'low');
-    }
-
-    if (filters.onSale) {
-      results = results.filter(p => p.discount || p.isFlashDeal);
-    }
-
-    if (filters.freeDelivery) {
-      // In production, check delivery options
-      results = results.filter(p => p.distance < 3);
-    }
-
-    if (filters.fastDelivery) {
-      results = results.filter(p => p.distance < 2);
-    }
-
-    if (filters.maxDistance) {
-      results = results.filter(p => !p.distance || p.distance <= filters.maxDistance);
-    }
-
-    if (filters.category) {
-      results = results.filter(p => p.category === filters.category);
-    }
-
-    if (filters.minPrice) {
-      results = results.filter(p => p.price >= filters.minPrice);
-    }
-
-    if (filters.maxPrice) {
-      results = results.filter(p => p.price <= filters.maxPrice);
-    }
-
-    // Sort by relevance score, then by distance
-    results.sort((a, b) => {
-      if (b.relevanceScore !== a.relevanceScore) {
-        return b.relevanceScore - a.relevanceScore;
-      }
-      const distA = a.distance || 999;
-      const distB = b.distance || 999;
-      return distA - distB;
-    });
-
-    // Apply sort option
-    if (filters.sortBy) {
-      switch (filters.sortBy) {
-        case 'nearest':
-          results.sort((a, b) => (a.distance || 999) - (b.distance || 999));
-          break;
-        case 'price_asc':
-          results.sort((a, b) => a.price - b.price);
-          break;
-        case 'price_desc':
-          results.sort((a, b) => b.price - a.price);
-          break;
-        case 'popular':
-          results.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
-          break;
-        case 'rating':
-          results.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-          break;
-        default:
-          // Keep relevance sort
-          break;
-      }
-    }
-
-    // Save to recent searches
     this.addRecentSearch(query);
-
-    return results;
+    return { results, total: results.length };
   }
 
-  /**
-   * Get autocomplete suggestions (4-layer system)
-   */
   async getSuggestions(query, location = null) {
     if (!query || query.trim().length < 2) {
-      return {
-        directMatches: [],
-        semanticMatches: [],
-        storeMatches: [],
-        contextualMatches: [],
-      };
+      return { directMatches: [], semanticMatches: [], storeMatches: [], contextualMatches: [] };
     }
 
     const normalizedQuery = query.toLowerCase().trim();
-    const { products = [] } = await ProductService.getAllProducts();
+    const stemmedQuery = stem(normalizedQuery);
+    const products = await ProductService.getAll();
 
-    // Layer 1: Direct matches (predictive expansion)
+    // Layer 1: Direct product name matches (exact + stemmed + fuzzy)
     const directMatches = products
       .filter(p => {
         const name = p.name.toLowerCase();
-        const words = name.split(' ');
-        return name.includes(normalizedQuery) || 
-               words.some(word => word.startsWith(normalizedQuery)) ||
-               normalizedQuery.includes(words[0]);
+        if (name.includes(normalizedQuery)) return true;
+        if (stemmedQuery !== normalizedQuery && name.includes(stemmedQuery)) return true;
+        return name.split(/\s+/).some(w => w.startsWith(normalizedQuery) || (normalizedQuery.length >= 4 && editDistance(w, normalizedQuery) <= 1));
       })
+      .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0))
       .slice(0, 5)
       .map(p => ({
         type: 'product',
         label: p.name,
-        secondary: `${p.storeName} • ${p.distance || 'N/A'}km`,
+        secondary: p.storeName || 'Tsenga Home Furniture',
         icon: '🛍️',
         data: p,
       }));
 
-    // Layer 2: Semantic matches (AI intent understanding)
+    // Layer 2: Semantic / category matches
     const semanticMatches = [];
     const semanticMap = {
-      'braai': ['braai tongs', 'BBQ tools', 'grill utensils', 'charcoal', 'boerewors'],
-      'meat': ['chicken', 'beef', 'lamb', 'pork', 'sausages'],
-      'pizza': ['cheese', 'tomato sauce', 'dough', 'oregano', 'pepperoni'],
-      'sugar': ['white sugar', 'brown sugar', 'sweetener'],
-      'milk': ['dairy', 'fresh milk', 'long life milk'],
-      'bread': ['loaf', 'rolls', 'buns'],
+      'sofa': ['sectional', 'loveseat', 'armchair', 'couch'],
+      'chair': ['armchair', 'accent chair', 'dining chair', 'office chair'],
+      'desk': ['standing desk', 'workstation', 'study desk', 'writing desk'],
+      'bed': ['bed frame', 'platform bed', 'bunk bed', 'king bed'],
+      'table': ['coffee table', 'dining table', 'side table', 'console table'],
+      'storage': ['bookcase', 'wardrobe', 'dresser', 'cabinet'],
+      'office': ['desk', 'office chair', 'bookcase'],
+      'bedroom': ['bed', 'dresser', 'wardrobe', 'bedside table'],
+      'living': ['sofa', 'coffee table', 'armchair', 'bookcase'],
+      'dining': ['dining table', 'dining chairs', 'sideboard', 'bar stool'],
+      'bundle': ['living room bundle', 'bedroom bundle', 'office bundle'],
     };
 
-    // Check for semantic matches
     for (const [key, values] of Object.entries(semanticMap)) {
-      if (normalizedQuery.includes(key)) {
+      if (normalizedQuery.includes(key) || editDistance(normalizedQuery, key) <= 1) {
         values.forEach(term => {
-          const matchingProducts = products.filter(p => 
-            p.name.toLowerCase().includes(term) || 
-            p.category.toLowerCase().includes(term)
-          );
-          if (matchingProducts.length > 0) {
-            semanticMatches.push({
-              type: 'semantic',
-              label: term,
-              secondary: `${matchingProducts.length} items available`,
-              icon: '💡',
-              data: { searchTerm: term },
-            });
+          const count = products.filter(p =>
+            p.name.toLowerCase().includes(term) ||
+            (p.subcategory || '').toLowerCase().includes(term) ||
+            (p.tags || []).join(' ').toLowerCase().includes(term)
+          ).length;
+          if (count > 0) {
+            semanticMatches.push({ type: 'semantic', label: term, secondary: `${count} items`, icon: '💡', data: { searchTerm: term } });
           }
         });
+        break;
       }
     }
 
-    // Also check categories
-    const categories = [...new Set(products.map(p => p.category))];
-    categories.forEach(cat => {
-      if (cat.toLowerCase().includes(normalizedQuery)) {
-        semanticMatches.push({
-          type: 'category',
-          label: cat,
-          secondary: `Browse ${cat.toLowerCase()}`,
-          icon: '📂',
-          data: { category: cat },
-        });
+    // Subcategory name matches
+    const subcategories = [...new Set(products.map(p => p.subcategory || p.furnitureCategory).filter(Boolean))];
+    subcategories.forEach(sub => {
+      const subLower = sub.toLowerCase();
+      if ((subLower.includes(normalizedQuery) || subLower.includes(stemmedQuery)) && !semanticMatches.some(m => m.label === sub)) {
+        const count = products.filter(p => (p.subcategory || p.furnitureCategory) === sub).length;
+        semanticMatches.push({ type: 'category', label: sub, secondary: `Browse (${count})`, icon: '📂', data: { category: sub } });
       }
     });
 
-    // Layer 3: Store relevance
-    const stores = [...new Set(products.map(p => p.storeName))];
-    const storeMatches = stores
-      .filter(store => store.toLowerCase().includes(normalizedQuery))
+    // Layer 3: Store matches
+    const storeMap = new Map();
+    products.forEach(p => { if (p.storeName && p.storeId !== 0) storeMap.set(p.storeName, p.storeId); });
+    const storeMatches = [...storeMap.entries()]
+      .filter(([name]) => name.toLowerCase().includes(normalizedQuery))
       .slice(0, 3)
-      .map(store => {
-        const storeProducts = products.filter(p => p.storeName === store);
-        const avgDistance = storeProducts.reduce((sum, p) => sum + (p.distance || 0), 0) / storeProducts.length;
-        const relevantProducts = storeProducts.filter(p => 
-          p.name.toLowerCase().includes(normalizedQuery) ||
-          p.category.toLowerCase().includes(normalizedQuery)
-        );
-        return {
-          type: 'store',
-          label: store,
-          secondary: `${relevantProducts.length} products • ${avgDistance.toFixed(1)}km away`,
-          icon: '🏪',
-          data: { storeName: store },
-        };
+      .map(([name]) => {
+        const count = products.filter(p => p.storeName === name).length;
+        return { type: 'store', label: name, secondary: `${count} products`, icon: '🏪', data: { storeName: name } };
       });
 
-    // Layer 4: Contextual discovery
-    const contextualMatches = [];
-    
-    // Time-based suggestions
-    const hour = new Date().getHours();
-    if (hour >= 17 && hour <= 20) {
-      if (normalizedQuery.includes('meat') || normalizedQuery.includes('braai')) {
-        contextualMatches.push({
-          type: 'contextual',
-          label: 'Specials on chicken today',
-          secondary: 'Popular meat near you',
-          icon: '🔥',
-          data: { searchTerm: 'chicken specials' },
-        });
-      }
-    }
-
-    // Bundle suggestions
-    if (normalizedQuery.includes('braai') || normalizedQuery.includes('meat')) {
-      contextualMatches.push({
-        type: 'contextual',
-        label: 'Meat bundles',
-        secondary: 'Save more with bundles',
-        icon: '📦',
-        data: { searchTerm: 'braai bundle' },
-      });
-    }
-
-    // Popular near you
-    const popularProducts = products
-      .filter(p => p.isTrending || p.reviewCount > 20)
-      .filter(p => 
-        p.name.toLowerCase().includes(normalizedQuery) ||
-        p.category.toLowerCase().includes(normalizedQuery)
-      )
+    // Layer 4: Trending products matching the query
+    const contextualMatches = products
+      .filter(p => (p.isTrending || (p.reviewCount || 0) > 100) &&
+        textMatch(p.name.toLowerCase(), normalizedQuery, stemmedQuery))
+      .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0))
       .slice(0, 2)
       .map(p => ({
         type: 'contextual',
-        label: `Popular: ${p.name}`,
-        secondary: `Trending in ${location?.suburb || 'your area'}`,
+        label: `Trending: ${p.name}`,
+        secondary: `${p.reviewCount || 0} reviews`,
         icon: '⭐',
         data: p,
       }));
-
-    contextualMatches.push(...popularProducts);
 
     return {
       directMatches: directMatches.slice(0, 5),
@@ -393,47 +344,21 @@ class SearchServiceClass {
     };
   }
 
-  /**
-   * Add to recent searches
-   */
   addRecentSearch(query) {
     const trimmed = query.trim();
     if (!trimmed) return;
-
-    // Remove if exists
     this.recentSearches = this.recentSearches.filter(s => s !== trimmed);
-    // Add to front
     this.recentSearches.unshift(trimmed);
-    // Keep only last 10
     this.recentSearches = this.recentSearches.slice(0, 10);
   }
 
-  /**
-   * Get recent searches
-   */
-  getRecentSearches() {
-    return this.recentSearches.slice(0, 5);
-  }
+  getRecentSearches() { return this.recentSearches.slice(0, 5); }
 
-  /**
-   * Clear a recent search by ID
-   */
-  clearRecentSearch(id) {
-    this.recentSearches = this.recentSearches.filter(s => s.id !== parseInt(id));
-  }
-
-  /**
-   * Remove recent search
-   */
   removeRecentSearch(query) {
     this.recentSearches = this.recentSearches.filter(s => s !== query);
   }
 
-  /**
-   * Get trending searches
-   */
   getTrendingSearches(location = null) {
-    // Filter by location if provided
     if (location) {
       return this.trendingSearches
         .filter(t => !t.location || t.location === location.suburb || t.location === location.city)
@@ -442,60 +367,37 @@ class SearchServiceClass {
     return this.trendingSearches.slice(0, 5);
   }
 
-  /**
-   * Search stores
-   */
-  async searchStores(query, filters = {}, location = null) {
-    const { products = [] } = await ProductService.getAllProducts();
+  async searchStores(query, filters = {}) {
+    const products = await ProductService.getAll();
     const storeMap = new Map();
 
     products.forEach(product => {
+      if (product.storeId === 0) return;
       if (!storeMap.has(product.storeName)) {
-        storeMap.set(product.storeName, {
-          name: product.storeName,
-          storeId: product.storeId,
-          location: product.storeLocation,
-          distance: product.distance,
-          products: [],
-          rating: 0,
-          reviewCount: 0,
-        });
+        storeMap.set(product.storeName, { name: product.storeName, storeId: product.storeId, products: [], totalRating: 0, totalReviews: 0 });
       }
-
       const store = storeMap.get(product.storeName);
       store.products.push(product);
-      if (product.rating) {
-        store.rating = (store.rating * store.reviewCount + product.rating * product.reviewCount) / (store.reviewCount + product.reviewCount);
-        store.reviewCount += product.reviewCount;
+      if (product.rating && product.reviewCount) {
+        store.totalRating += product.rating * product.reviewCount;
+        store.totalReviews += product.reviewCount;
       }
     });
 
-    let stores = Array.from(storeMap.values());
+    let stores = Array.from(storeMap.values()).map(s => ({
+      ...s,
+      rating: s.totalReviews > 0 ? s.totalRating / s.totalReviews : 0,
+      reviewCount: s.totalReviews,
+    }));
 
-    // Filter by query
     if (query) {
-      const normalizedQuery = query.toLowerCase();
-      stores = stores.filter(store => 
-        store.name.toLowerCase().includes(normalizedQuery)
-      );
+      const q = query.toLowerCase();
+      stores = stores.filter(s => s.name.toLowerCase().includes(q));
     }
 
-    // Apply filters
-    if (filters.maxDistance) {
-      stores = stores.filter(s => !s.distance || s.distance <= filters.maxDistance);
-    }
-
-    // Sort
-    if (filters.sortBy === 'nearest') {
-      stores.sort((a, b) => (a.distance || 999) - (b.distance || 999));
-    } else if (filters.sortBy === 'rating') {
-      stores.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    }
-
+    if (filters.sortBy === 'rating') stores.sort((a, b) => b.rating - a.rating);
     return stores;
   }
 }
 
-// Export singleton instance
 export const SearchService = new SearchServiceClass();
-

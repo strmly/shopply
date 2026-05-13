@@ -112,13 +112,13 @@ const StoreIcon = () => (
 export function SellerBannerCompact() {
   const navigate = useNavigate();
   return (
-    <CompactWrap onClick={() => navigate('/seller/dashboard')} style={{ cursor: 'pointer' }}>
+    <CompactWrap onClick={() => navigate('/become-a-seller')} style={{ cursor: 'pointer' }}>
       <CompactIcon><StoreIcon /></CompactIcon>
       <CompactCopy>
         <CompactTitle>Have furniture to sell?</CompactTitle>
         <CompactSub>Join 500+ sellers — list your pieces, reach local buyers.</CompactSub>
       </CompactCopy>
-      <CompactBtn onClick={e => { e.stopPropagation(); navigate('/seller/dashboard'); }}>
+      <CompactBtn onClick={e => { e.stopPropagation(); navigate('/become-a-seller'); }}>
         Start selling
       </CompactBtn>
     </CompactWrap>
@@ -357,10 +357,10 @@ export function SellerBannerFull() {
           <StatLabel>paid out this month</StatLabel>
         </StatBlock>
         <BtnRow>
-          <FullBtn onClick={() => navigate('/seller/dashboard')}>
+          <FullBtn onClick={() => navigate('/become-a-seller')}>
             Become a seller
           </FullBtn>
-          <LearnBtn onClick={() => navigate('/seller/dashboard')}>
+          <LearnBtn onClick={() => navigate('/sell-on-tsenga')}>
             Learn more
           </LearnBtn>
         </BtnRow>

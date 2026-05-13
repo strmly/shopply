@@ -22,5 +22,6 @@ router.get('/trending', (req, res, next) => communityController.getTrending(req,
 router.get('/products/:id/reviews', (req, res, next) => communityController.getProductReviews(req, res, next));
 router.get('/products/:id/rating', (req, res, next) => communityController.getProductRating(req, res, next));
 router.get('/products/:id/questions', (req, res, next) => communityController.getProductQuestions(req, res, next));
+router.post('/products/:id/questions', (req, res, next) => communityController.createQuestion(req, res, next));
 
 export default router;

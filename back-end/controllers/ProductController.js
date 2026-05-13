@@ -200,12 +200,24 @@ export class ProductController {
   async getBundles(req, res, next) {
     try {
       const userLoc = parseUserLoc(req.query);
-      const products = await ProductService.getBundles(parseInt(req.query.limit) || 10);
-      let data = products.map(p => p.toJSON());
+      const result = await ProductService.getBundles({
+        limit: req.query.limit,
+        page: req.query.page,
+        room: req.query.room,
+        sort: req.query.sort,
+      });
+      let data = result.products;
       if (userLoc) {
         data = data.map(p => enrichProduct(p, userLoc)).sort((a, b) => a.distanceKm - b.distanceKm);
       }
-      res.json({ success: true, data, count: data.length });
+      res.json({
+        success: true,
+        data,
+        count: data.length,
+        summary: result.summary,
+        featured: result.featured,
+        pagination: result.pagination,
+      });
     } catch (error) {
       next(error);
     }

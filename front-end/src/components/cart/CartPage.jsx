@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -80,6 +80,7 @@ export const CartPage = ({ location, onClose }) => {
   const [deliveryMethod, setDeliveryMethod] = useState('delivery');
   const [paymentMethod, setPaymentMethod] = useState(null);
   const [selectedVoucherId, setSelectedVoucherId] = useState(null);
+  const cartSyncRef = useRef(null);
 
   useEffect(() => {
     loadCart();
@@ -142,46 +143,81 @@ export const CartPage = ({ location, onClose }) => {
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
+  const readLocalCart = () => {
+    try {
+      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      if (!Array.isArray(cart)) return [];
+
+      const merged = new Map();
+      cart.forEach(item => {
+        if (!item?.id) return;
+        const key = `${item.id}:${JSON.stringify(item.selectedVariant || null)}`;
+        const existing = merged.get(key);
+        if (existing) {
+          existing.quantity += item.quantity || 1;
+        } else {
+          merged.set(key, { ...item, quantity: item.quantity || 1 });
+        }
+      });
+
+      return Array.from(merged.values());
+    } catch {
+      return [];
+    }
+  };
+
+  const uploadLocalCartOnce = (localCart) => {
+    if (cartSyncRef.current) return cartSyncRef.current;
+
+    cartSyncRef.current = (async () => {
+      await fetch(`${API_BASE_URL}/cart?userId=default`, { method: 'DELETE' }).catch(() => {});
+
+      for (const item of localCart) {
+        await fetch(`${API_BASE_URL}/cart/items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'default',
+            productId: item.id,
+            quantity: item.quantity || 1,
+            variant: item.selectedVariant || null,
+            storeId: item.storeId,
+          }),
+        }).catch(() => {});
+      }
+    })().finally(() => {
+      cartSyncRef.current = null;
+    });
+
+    return cartSyncRef.current;
+  };
+
   const loadCart = async () => {
     try {
       setLoading(true);
 
-      const localCart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
-      if (localCart.length > 0) {
-        // Clear backend cart first so re-syncing never doubles quantities
-        await fetch(`${API_BASE_URL}/cart?userId=default`, { method: 'DELETE' }).catch(() => {});
-
-        for (const item of localCart) {
-          try {
-            await fetch(`${API_BASE_URL}/cart/items`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId: 'default',
-                productId: item.id,
-                quantity: item.quantity || 1,
-                variant: item.selectedVariant || null,
-                storeId: item.storeId,
-              }),
-            });
-          } catch {}
-        }
-      }
-
       const locationParam = location ? encodeURIComponent(JSON.stringify(location)) : '';
-      const response = await fetch(`${API_BASE_URL}/cart?userId=default&location=${locationParam}`);
+      const cartUrl = `${API_BASE_URL}/cart?userId=default&location=${locationParam}`;
+      let response = await fetch(cartUrl);
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-      const data = await response.json();
+      let data = await response.json();
       if (data.success) {
+        const localCart = readLocalCart();
+
+        if ((data.data.itemCount || 0) === 0 && localCart.length > 0) {
+          await uploadLocalCartOnce(localCart);
+          response = await fetch(cartUrl);
+          data = await response.json();
+        }
+
         setCart(data.data);
-        localStorage.setItem('tsenga_cart_count', (data.data.itemCount || 0).toString());
-        window.dispatchEvent(new Event('cartUpdated'));
+        syncLocalFromCart(data.data);
       }
     } catch (error) {
       console.error('Error loading cart:', error);
-      const localCart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const localCart = readLocalCart();
       if (localCart.length > 0) {
         const itemsTotal = localCart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 1)), 0);
         setCart({

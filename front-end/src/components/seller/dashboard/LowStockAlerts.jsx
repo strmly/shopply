@@ -1,278 +1,197 @@
-import { useState } from 'react';
 import styled from 'styled-components';
-import { fadeIn } from '../../../theme/animations';
 
-const Container = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.xl};
-  padding: ${props => props.theme.spacing.lg};
-  border: 2px solid ${props => props.theme.colors.border.light};
-  animation: ${fadeIn} 0.4s ease-out;
-  box-shadow: ${props => props.theme.shadows.sm};
+const Card = styled.div`
+  padding: 18px;
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid rgba(228, 231, 236, 0.92);
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: ${props => props.theme.spacing.md};
+  gap: 12px;
+  margin-bottom: 14px;
 `;
 
 const Title = styled.h3`
-  ${props => props.theme.typography.heading3}
+  margin: 0;
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
   font-size: 18px;
+  font-weight: 900;
 `;
 
-const ScrollContainer = styled.div`
-  display: flex;
-  gap: ${props => props.theme.spacing.sm};
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: ${props => props.theme.spacing.xs} 0;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: ${props => props.theme.colors.border.light} transparent;
-
-  &::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${props => props.theme.colors.border.light};
-    border-radius: ${props => props.theme.radii.pill};
-  }
-`;
-
-const StockPill = styled.button`
-  flex: 0 0 auto;
-  display: flex;
+const CountBadge = styled.div`
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.sm};
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
-  background: ${props => {
-    if (props.$isCritical) {
-      return props.theme.colors.dangerSoftBg;
-    }
-    return props.theme.colors.warningSoftBg;
-  }};
-  border: 2px solid ${props => {
-    if (props.$isCritical) {
-      return props.theme.colors.dangerBase;
-    }
-    return props.theme.colors.warningBase;
-  }};
-  border-radius: ${props => props.theme.radii.pill};
-  cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  scroll-snap-align: start;
-  min-width: 220px;
-  animation: ${props => props.$pulse ? 'pulse 2s ease-in-out infinite' : 'none'};
-  box-shadow: ${props => props.theme.shadows.sm};
+  background: ${props => props.$critical ? props.theme.colors.dangerBase : props.theme.colors.primarySoftBg};
+  color: ${props => props.$critical ? '#ffffff' : props.theme.colors.primarySoftText};
+  font-size: 12px;
+  font-weight: 950;
+`;
 
-  @keyframes pulse {
-    0%, 100% {
-      border-color: ${props => {
-        if (props.$isCritical) {
-          return props.theme.colors.dangerBase;
-        }
-        return props.theme.colors.warningBase;
-        }};
-    }
-    50% {
-      border-color: ${props => {
-        if (props.$isCritical) {
-          return props.theme.colors.dangerBase;
-        }
-        return props.theme.colors.warningBase;
-        }};
-      opacity: 0.7;
-    }
-  }
+const List = styled.div`
+  display: grid;
+  gap: 10px;
+`;
+
+const Item = styled.button`
+  width: 100%;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid ${props => props.$critical ? 'rgba(245, 158, 11, 0.3)' : 'rgba(61, 129, 239, 0.16)'};
+  background: ${props => props.$critical
+    ? 'linear-gradient(135deg, #FFF7E6 0%, #F1F7FF 100%)'
+    : props.theme.colors.gradient.soft};
+  cursor: pointer;
+  text-align: left;
+  transition: ${props => props.theme.transitions.swift};
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.md};
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(16, 24, 40, 0.08);
   }
 
-  &:active {
-    transform: translateY(0);
+  @media (max-width: 520px) {
+    grid-template-columns: 44px minmax(0, 1fr);
   }
 `;
 
-const ProductImage = styled.img`
-  width: 40px;
-  height: 40px;
-  border-radius: ${props => props.theme.radii.md};
+const Image = styled.img`
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   object-fit: cover;
-  background: ${props => props.theme.colors.surface};
+  background: #ffffff;
+
+  @media (max-width: 520px) {
+    width: 44px;
+    height: 44px;
+  }
 `;
 
-const ProductInfo = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
+const Placeholder = styled.div`
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: ${props => props.theme.colors.primary};
+  font-size: 12px;
+  font-weight: 950;
+
+  @media (max-width: 520px) {
+    width: 44px;
+    height: 44px;
+  }
 `;
 
 const ProductName = styled.div`
-  ${props => props.theme.typography.body2}
-  font-weight: 600;
-  font-size: 13px;
   color: ${props => props.theme.colors.text.primary};
-  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 900;
   overflow: hidden;
   text-overflow: ellipsis;
-  width: 100%;
+  white-space: nowrap;
 `;
 
-const StockInfo = styled.div`
-  ${props => props.theme.typography.caption}
-  font-size: 11px;
-  color: ${props => {
-    if (props.$isCritical) {
-      return props.theme.colors.dangerBase;
-    }
-    return props.theme.colors.warningBase;
-  }};
-  font-weight: 600;
-  display: flex;
+const ProductMeta = styled.div`
+  margin-top: 4px;
+  color: ${props => props.$critical ? props.theme.colors.warningBase : props.theme.colors.primary};
+  font-size: 12px;
+  font-weight: 850;
+`;
+
+const Action = styled.div`
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-`;
+  background: #ffffff;
+  color: ${props => props.theme.colors.primary};
+  font-size: 12px;
+  font-weight: 950;
+  white-space: nowrap;
 
-const WarningIcon = styled.span`
-  font-size: 16px;
+  @media (max-width: 520px) {
+    display: none;
+  }
 `;
 
 const EmptyState = styled.div`
-  text-align: center;
-  padding: ${props => props.theme.spacing.xl};
+  padding: 24px;
+  border-radius: 18px;
+  background: ${props => props.theme.colors.gradient.soft};
   color: ${props => props.theme.colors.text.secondary};
-  ${props => props.theme.typography.body2}
+  text-align: center;
   font-size: 14px;
+  font-weight: 800;
 `;
 
-const OutOfStockBadge = styled.div`
-  background: ${props => props.theme.colors.dangerBase};
-  color: white;
-  padding: 2px 8px;
-  border-radius: ${props => props.theme.radii.sm};
-  ${props => props.theme.typography.caption}
-  font-size: 10px;
-  font-weight: 700;
-  margin-top: 4px;
-`;
-
-export const LowStockAlerts = ({ 
+export const LowStockAlerts = ({
   lowStockProducts = { products: [], criticalCount: 0 },
-  onProductClick 
+  onProductClick,
 }) => {
-  const [selectedProduct, setSelectedProduct] = useState(null);
-
-  const handleProductClick = (product) => {
-    setSelectedProduct(product);
-    if (onProductClick) {
-      onProductClick(product);
-    }
-  };
-
-  const { products, criticalCount } = lowStockProducts;
+  const { products = [], criticalCount = 0 } = lowStockProducts;
 
   if (products.length === 0) {
     return (
-      <Container>
+      <Card>
         <Header>
-          <Title>Low Stock Alerts</Title>
+          <Title>Stock Alerts</Title>
+          <CountBadge>Healthy</CountBadge>
         </Header>
-        <EmptyState>
-          Stock levels look good 👍
-        </EmptyState>
-      </Container>
+        <EmptyState>Stock levels look healthy. We will surface urgent items here.</EmptyState>
+      </Card>
     );
   }
 
   return (
-    <Container>
+    <Card>
       <Header>
-        <Title>Low Stock Alerts</Title>
-        {criticalCount > 0 && (
-          <div style={{ 
-            background: '#C62850', 
-            color: 'white', 
-            padding: '4px 8px', 
-            borderRadius: '12px', 
-            fontSize: '12px', 
-            fontWeight: 700 
-          }}>
-            {criticalCount} critical
-          </div>
-        )}
+        <Title>Stock Alerts</Title>
+        <CountBadge $critical={criticalCount > 0}>{criticalCount > 0 ? `${criticalCount} critical` : `${products.length} low`}</CountBadge>
       </Header>
 
-      <ScrollContainer>
-        {products.map((product) => {
-          const isOutOfStock = product.stock === 'out' || product.stockQuantity === 0;
-          const isCritical = product.isCritical || isOutOfStock;
-          const stockText = isOutOfStock 
-            ? 'Out of Stock' 
-            : product.stockQuantity !== null 
-              ? `${product.stockQuantity} left`
-              : 'Low stock';
+      <List>
+        {products.slice(0, 5).map((product) => {
+          const isOut = product.stock === 'out' || product.stockQuantity === 0;
+          const isCritical = product.isCritical || isOut;
+          const stockText = isOut ? 'Out of stock' : product.stockQuantity !== null ? `${product.stockQuantity} left` : 'Low stock';
 
           return (
-            <StockPill
+            <Item
               key={product.id}
-              $isCritical={isCritical}
-              $pulse={isCritical}
-              onClick={() => handleProductClick(product)}
-              aria-label={`${product.name}: ${stockText}. ${isCritical ? 'Critical' : 'Low'} stock. Click to update stock.`}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleProductClick(product);
-                }
-              }}
+              type="button"
+              $critical={isCritical}
+              onClick={() => onProductClick?.(product)}
+              aria-label={`${product.name}: ${stockText}. Edit product stock.`}
             >
               {product.image ? (
-                <ProductImage src={product.image} alt={product.name} />
+                <Image src={product.image} alt={product.name} />
               ) : (
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  background: '#F2F4F7',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '20px',
-                }}>
-                  📦
-                </div>
+                <Placeholder>PR</Placeholder>
               )}
-              <ProductInfo>
+              <div>
                 <ProductName>{product.name}</ProductName>
-                <StockInfo $isCritical={isCritical}>
-                  <WarningIcon>⚠️</WarningIcon>
-                  <span>{stockText}</span>
-                </StockInfo>
-                {isOutOfStock && (
-                  <OutOfStockBadge>Add Stock</OutOfStockBadge>
-                )}
-              </ProductInfo>
-            </StockPill>
+                <ProductMeta $critical={isCritical}>{stockText}</ProductMeta>
+              </div>
+              <Action>Update</Action>
+            </Item>
           );
         })}
-      </ScrollContainer>
-    </Container>
+      </List>
+    </Card>
   );
 };

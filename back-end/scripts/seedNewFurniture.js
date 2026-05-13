@@ -169,8 +169,8 @@ function convertToProductModel(generatedProduct) {
     warranty: generatedProduct.warranty,
     features: generatedProduct.features || [],
 
-    // Assign to default seller store
-    storeId: 1,
+    // Catalog products use storeId 0 so they don't appear in any seller's dashboard
+    storeId: 0,
     storeName: 'Tsenga Home Furniture',
   };
 }

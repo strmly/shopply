@@ -25,11 +25,13 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       proxy: {
         '/api': {
-          // Proxy to backend server (development only)
-          // In production, this should be handled by your reverse proxy/load balancer
           target: env.VITE_BACKEND_URL || 'http://localhost:5000',
           changeOrigin: true,
-        }
+        },
+        '/uploads': {
+          target: env.VITE_BACKEND_URL || 'http://localhost:5000',
+          changeOrigin: true,
+        },
       }
     },
     envDir: rootDir, // Tell Vite to look for .env in root directory

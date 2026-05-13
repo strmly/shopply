@@ -128,7 +128,7 @@ export const SellerTopBanner = () => {
             <Dot />
             <BannerText>{msg.text}</BannerText>
             {msg.cta && (
-              <BannerCta onClick={() => navigate('/seller/dashboard')}>
+              <BannerCta onClick={() => navigate('/become-a-seller')}>
                 {msg.cta}
               </BannerCta>
             )}

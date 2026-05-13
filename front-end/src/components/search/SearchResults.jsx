@@ -326,7 +326,20 @@ export const SearchResults = ({
   hasMore = false,
   loadingMore = false,
   totalResults,
+  filters = {},
+  onFilterChange,
 }) => {
+  const toggleFilter = (key, value) => {
+    if (!onFilterChange) return;
+    const current = filters[key];
+    if (current === value || (value === true && current)) {
+      const next = { ...filters };
+      delete next[key];
+      onFilterChange(next);
+    } else {
+      onFilterChange({ ...filters, [key]: value });
+    }
+  };
   if (loading && results.length === 0) {
     return (
       <Container>
@@ -384,14 +397,13 @@ export const SearchResults = ({
         </ResultsHeader>
 
         <FilterChips>
-          <FilterChip $active>In stock</FilterChip>
-          <FilterChip>On sale</FilterChip>
-          <FilterChip>Under R50</FilterChip>
-          <FilterChip>Deliver today</FilterChip>
-          <FilterChip>Free delivery</FilterChip>
-          <FilterChip>Within 1 km</FilterChip>
-          <FilterChip>Highly rated</FilterChip>
-          <FilterChip>Popular nearby</FilterChip>
+          <FilterChip $active={!!filters.inStock} onClick={() => toggleFilter('inStock', true)}>In stock</FilterChip>
+          <FilterChip $active={!!filters.onSale} onClick={() => toggleFilter('onSale', true)}>On sale</FilterChip>
+          <FilterChip $active={filters.maxPrice === 2000} onClick={() => toggleFilter('maxPrice', 2000)}>Under R2 000</FilterChip>
+          <FilterChip $active={!!filters.fastDelivery} onClick={() => toggleFilter('fastDelivery', true)}>Fast delivery</FilterChip>
+          <FilterChip $active={!!filters.freeDelivery} onClick={() => toggleFilter('freeDelivery', true)}>Free delivery</FilterChip>
+          <FilterChip $active={filters.sortBy === 'rating'} onClick={() => toggleFilter('sortBy', 'rating')}>Highly rated</FilterChip>
+          <FilterChip $active={filters.sortBy === 'popular'} onClick={() => toggleFilter('sortBy', 'popular')}>Popular</FilterChip>
         </FilterChips>
       </ResultsHero>
 

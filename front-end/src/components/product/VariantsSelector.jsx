@@ -22,22 +22,22 @@ const VariantsGrid = styled.div`
 
 const VariantChip = styled.button`
   padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
-  border: 2px solid ${props => props.selected 
-    ? props.theme.colors.primary 
+  border: 2px solid ${props => props.$selected
+    ? props.theme.colors.primary
     : props.theme.colors.border.default};
   border-radius: ${props => props.theme.radii.md};
-  background: ${props => props.selected 
-    ? props.theme.colors.primarySoftBg 
+  background: ${props => props.$selected
+    ? props.theme.colors.primarySoftBg
     : props.disabled
       ? props.theme.colors.surface
       : props.theme.colors.background};
-  color: ${props => props.selected 
-    ? props.theme.colors.primary 
+  color: ${props => props.$selected
+    ? props.theme.colors.primary
     : props.disabled
       ? props.theme.colors.text.tertiary
       : props.theme.colors.text.primary};
   ${props => props.theme.typography.body2}
-  font-weight: ${props => props.selected ? 700 : 500};
+  font-weight: ${props => props.$selected ? 700 : 500};
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: ${props => props.theme.transitions.swift};
   opacity: ${props => props.disabled ? 0.5 : 1};
@@ -75,7 +75,7 @@ export const VariantsSelector = ({ variants, selectedVariant, onSelectVariant })
             {variantOptions.map((variant, index) => (
               <VariantChip
                 key={index}
-                selected={selectedVariant?.name === variant.name && selectedVariant?.value === variant.value}
+                $selected={selectedVariant?.name === variant.name && selectedVariant?.value === variant.value}
                 disabled={variant.stock === 'out'}
                 onClick={() => variant.stock !== 'out' && onSelectVariant(variant)}
               >
@@ -89,4 +89,3 @@ export const VariantsSelector = ({ variants, selectedVariant, onSelectVariant })
     </Container>
   );
 };
-

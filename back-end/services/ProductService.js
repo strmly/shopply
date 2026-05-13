@@ -301,18 +301,126 @@ class ProductServiceClass {
   }
 
   /**
-   * Get bundles (products with discounts, flash deals, or trending)
+   * Get furniture bundles with catalog metadata.
    */
-  async getBundles(limit = 10) {
-    return this.products
-      .filter(p => p.discount || p.isFlashDeal || p.isTrending)
-      .sort((a, b) => {
-        // Prioritize flash deals, then by discount amount
-        if (a.isFlashDeal && !b.isFlashDeal) return -1;
-        if (!a.isFlashDeal && b.isFlashDeal) return 1;
-        return (b.discount || 0) - (a.discount || 0);
-      })
-      .slice(0, limit);
+  async getBundles(options = {}) {
+    if (typeof options === 'number') {
+      options = { limit: options };
+    }
+    const limit = Math.max(1, parseInt(options.limit, 10) || 10);
+    const page = Math.max(1, parseInt(options.page, 10) || 1);
+    const room = options.room && options.room !== 'all' ? String(options.room).toLowerCase() : null;
+    const sort = options.sort || 'featured';
+
+    const isBundle = (product) => {
+      const tags = Array.isArray(product.tags) ? product.tags.map(tag => String(tag).toLowerCase()) : [];
+      const name = String(product.name || '').toLowerCase();
+      return tags.includes('bundle') || name.includes('bundle');
+    };
+
+    const roomLabels = {
+      living: 'Living Room',
+      bedroom: 'Bedroom',
+      dining: 'Dining',
+      office: 'Office',
+      outdoor: 'Outdoor',
+      kids: 'Kids',
+      storage: 'Storage',
+    };
+
+    const defaultItemsByRoom = {
+      living: ['Anchor sofa', 'Coffee table', 'Accent lighting'],
+      bedroom: ['Bed frame', 'Storage piece', 'Bedside table'],
+      dining: ['Dining table', 'Chair set', 'Serving storage'],
+      office: ['Work desk', 'Ergonomic chair', 'Storage or lighting'],
+      outdoor: ['Outdoor seating', 'Side table', 'Weather-friendly accent'],
+      kids: ['Study desk', 'Storage', 'Comfort seating'],
+      storage: ['Shelving', 'Drawer storage', 'Room organiser'],
+    };
+
+    const enrichBundle = (product) => {
+      const data = product.toJSON();
+      const originalPrice = Number(data.originalPrice || data.price || 0);
+      const price = Number(data.discountPrice || data.price || 0);
+      const savings = Math.max(0, originalPrice - price);
+      const savingsPercent = originalPrice > 0 ? Math.round((savings / originalPrice) * 100) : Number(data.discount || 0);
+      const bundleRoom = data.room || 'living';
+
+      return {
+        ...data,
+        type: 'bundle',
+        bundleName: data.name,
+        bundleRoom,
+        roomLabel: roomLabels[bundleRoom] || 'Home',
+        includedItems: data.includedItems || defaultItemsByRoom[bundleRoom] || ['Curated furniture', 'Matching accent', 'Delivery-ready set'],
+        bundleSavings: savings,
+        savingsPercent,
+        availabilityLabel: data.stock === 'out' ? 'Sold out' : data.stock === 'low' ? 'Low stock' : 'Available nearby',
+        deliveryPromise: data.leadTimeDaysMax ? `${data.leadTimeDaysMin || 1}-${data.leadTimeDaysMax} day delivery` : 'Local delivery available',
+        curationScore: Math.min(99, Math.round(((data.rating || 4.5) * 18) + Math.min(data.reviewCount || 0, 120) / 10)),
+      };
+    };
+
+    let bundles = this.products
+      .filter(product => isBundle(product) && product.isVisible !== false)
+      .map(enrichBundle);
+
+    if (room) {
+      bundles = bundles.filter(bundle => String(bundle.bundleRoom || '').toLowerCase() === room);
+    }
+
+    const allBundles = this.products
+      .filter(product => isBundle(product) && product.isVisible !== false)
+      .map(enrichBundle);
+
+    const rooms = Object.values(allBundles.reduce((acc, bundle) => {
+      const key = bundle.bundleRoom || 'living';
+      if (!acc[key]) {
+        acc[key] = {
+          id: key,
+          label: bundle.roomLabel,
+          count: 0,
+        };
+      }
+      acc[key].count += 1;
+      return acc;
+    }, {})).sort((a, b) => a.label.localeCompare(b.label));
+
+    bundles.sort((a, b) => {
+      if (sort === 'savings') return (b.bundleSavings || 0) - (a.bundleSavings || 0);
+      if (sort === 'price-low') return (a.price || 0) - (b.price || 0);
+      if (sort === 'rating') return (b.rating || 0) - (a.rating || 0);
+      return (b.curationScore || 0) - (a.curationScore || 0) || (b.savingsPercent || 0) - (a.savingsPercent || 0);
+    });
+
+    const total = bundles.length;
+    const startIndex = (page - 1) * limit;
+    const paginated = bundles.slice(startIndex, startIndex + limit);
+    const highestSavings = allBundles.reduce((max, bundle) => Math.max(max, bundle.bundleSavings || 0), 0);
+
+    return {
+      products: paginated,
+      summary: {
+        total: allBundles.length,
+        filteredTotal: total,
+        highestSavings,
+        averageSavingsPercent: allBundles.length
+          ? Math.round(allBundles.reduce((sum, bundle) => sum + (bundle.savingsPercent || 0), 0) / allBundles.length)
+          : 0,
+        rooms,
+      },
+      featured: allBundles
+        .slice()
+        .sort((a, b) => (b.bundleSavings || 0) - (a.bundleSavings || 0))
+        .slice(0, 3),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: startIndex + limit < total,
+      },
+    };
   }
 
   /**
@@ -491,6 +599,10 @@ class ProductServiceClass {
         error.statusCode = 409;
         throw error;
       }
+    }
+
+    while (this.products.some(p => String(p.id) === String(this.nextId))) {
+      this.nextId += 1;
     }
 
     const product = new Product({
@@ -695,14 +807,20 @@ class ProductServiceClass {
         case 'name_desc':
           products.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
           break;
+        case 'newest':
+          products.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          break;
+        case 'oldest':
+          products.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+          break;
         default:
-          // Default: best sellers
-          products.sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
+          // Default: newest first
+          products.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
           break;
       }
     } else {
-      // Default sort: best sellers
-      products.sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0));
+      // Default sort: newest first
+      products.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     }
 
     // Pagination
@@ -758,7 +876,19 @@ class ProductServiceClass {
 
     const productData = product.toJSON();
     delete productData.id;
-    productData.name = `${productData.name} (Copy)`;
+    delete productData.sku;
+    delete productData.barcode;
+    const baseName = productData.name.replace(/\s+\(Copy(?: \d+)?\)$/i, '');
+    let copyName = `${baseName} (Copy)`;
+    let copyNumber = 2;
+    while (this.products.some(p =>
+      p.storeId === product.storeId &&
+      p.name.toLowerCase().trim() === copyName.toLowerCase().trim()
+    )) {
+      copyName = `${baseName} (Copy ${copyNumber})`;
+      copyNumber += 1;
+    }
+    productData.name = copyName;
     productData.isVisible = false; // Hide duplicated product by default
     productData.salesCount = 0;
     productData.createdAt = new Date();

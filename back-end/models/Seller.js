@@ -69,6 +69,15 @@ export class Seller extends BaseModel {
       orderPrepTimeMinutes: null,
     };
 
+    this.applicationProfile = data.applicationProfile || {
+      inventoryCount: '',
+      sellingTimeline: '',
+      monthlyGoal: '',
+      notes: '',
+      source: '',
+      submittedAt: null,
+    };
+
     // Quality and performance metrics
     this.rating = data.rating || 0;
     this.reviewCount = data.reviewCount || 0;
@@ -187,6 +196,7 @@ export class Seller extends BaseModel {
       kycDocuments: this.kycDocuments,
       bankAccount: this.bankAccount,
       policies: this.policies,
+      applicationProfile: this.applicationProfile,
       rating: this.rating,
       reviewCount: this.reviewCount,
       fulfillmentStats: this.fulfillmentStats,

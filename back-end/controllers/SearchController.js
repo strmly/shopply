@@ -9,8 +9,8 @@ export class SearchController {
    */
   async searchProducts(req, res, next) {
     try {
-      const { q, ...filters } = req.query;
-      const location = req.query.lat && req.query.lng 
+      const { q, page: pageStr, limit: limitStr, ...filters } = req.query;
+      const location = req.query.lat && req.query.lng
         ? { lat: parseFloat(req.query.lat), lng: parseFloat(req.query.lng), suburb: req.query.suburb, city: req.query.city }
         : null;
 
@@ -19,17 +19,29 @@ export class SearchController {
           success: true,
           data: [],
           count: 0,
+          pagination: { total: 0, page: 1, limit: 16, hasMore: false },
           message: 'Please provide a search query',
         });
       }
 
-      const products = await SearchService.searchProducts(q, filters, location);
+      const page = Math.max(1, parseInt(pageStr) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(limitStr) || 16));
+      const offset = (page - 1) * limit;
+
+      const { results, total } = await SearchService.searchProducts(q, filters, location);
+      const pageResults = results.slice(offset, offset + limit);
 
       res.json({
         success: true,
-        data: products.map(p => p.toJSON ? p.toJSON() : p),
-        count: products.length,
+        data: pageResults.map(p => p.toJSON ? p.toJSON() : p),
+        count: pageResults.length,
         query: q,
+        pagination: {
+          total,
+          page,
+          limit,
+          hasMore: offset + limit < total,
+        },
       });
     } catch (error) {
       next(error);

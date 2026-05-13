@@ -1,229 +1,141 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
-import { fadeIn } from '../../../theme/animations';
 
-const slideIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+const pop = keyframes`
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 `;
 
-const bounce = keyframes`
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-`;
-
-const pulse = keyframes`
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-`;
-
-const Container = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.xl};
-  padding: ${props => props.theme.spacing.lg};
-  border: 2px solid ${props => props.theme.colors.border.light};
+const Card = styled.button`
+  width: 100%;
+  padding: 18px;
+  border: 1px solid rgba(228, 231, 236, 0.92);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
   cursor: pointer;
+  text-align: left;
   transition: ${props => props.theme.transitions.swift};
-  animation: ${fadeIn} 0.4s ease-out;
-  position: relative;
-  box-shadow: ${props => props.theme.shadows.sm};
-
-  &:active {
-    transform: scale(0.98);
-  }
 
   &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    box-shadow: ${props => props.theme.shadows.lg};
     transform: translateY(-2px);
+    border-color: rgba(61, 129, 239, 0.26);
+    box-shadow: 0 24px 54px rgba(16, 24, 40, 0.1);
   }
 `;
 
 const Header = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: ${props => props.theme.spacing.md};
+  justify-content: space-between;
+  gap: 12px;
 `;
 
 const Title = styled.h3`
-  ${props => props.theme.typography.heading3}
+  margin: 0;
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
   font-size: 18px;
+  font-weight: 900;
 `;
 
 const Badge = styled.div`
-  background: ${props => {
-    if (props.$count === 0) return props.theme.colors.successBase;
-    if (props.$count <= 4) return props.theme.colors.warningBase;
-    return props.theme.colors.dangerBase;
-  }};
-  color: white;
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.radii.pill};
-  ${props => props.theme.typography.body2}
-  font-weight: 700;
-  font-size: 16px;
-  min-width: 32px;
-  text-align: center;
-  animation: ${props => props.$animate ? bounce : 'none'} 0.5s ease-out,
-             ${props => props.$pulse ? pulse : 'none'} 2s ease-in-out infinite;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: ${props => props.$count > 4 ? props.theme.colors.dangerBase : props.$count > 0 ? props.theme.colors.warningBase : props.theme.colors.successBase};
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 950;
+  animation: ${props => props.$animate ? pop : 'none'} 0.5s ease-out;
 `;
 
-const Subtext = styled.div`
-  ${props => props.theme.typography.body2}
+const Copy = styled.p`
+  margin: 14px 0 0;
   color: ${props => props.theme.colors.text.secondary};
   font-size: 13px;
-  margin-bottom: ${props => props.theme.spacing.sm};
+  line-height: 1.5;
+  font-weight: 750;
 `;
 
-const AlertBar = styled.div`
+const Alert = styled.div`
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 16px;
   background: ${props => props.theme.colors.warningSoftBg};
-  border-left: 3px solid ${props => props.theme.colors.warningBase};
-  padding: ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.radii.sm};
-  ${props => props.theme.typography.caption}
+  border: 1px solid rgba(245, 158, 11, 0.22);
   color: ${props => props.theme.colors.warningBase};
   font-size: 12px;
-  margin-top: ${props => props.theme.spacing.sm};
-  animation: ${slideIn} 0.3s ease-out;
+  font-weight: 850;
 `;
 
-const EmptyState = styled.div`
-  text-align: center;
-  padding: ${props => props.theme.spacing.xl};
-  color: ${props => props.theme.colors.text.secondary};
-  ${props => props.theme.typography.body2}
-  font-size: 14px;
-`;
-
-const CTAButton = styled.button`
-  width: 100%;
-  padding: ${props => props.theme.spacing.md};
+const CTA = styled.div`
+  margin-top: 16px;
+  min-height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
   background: ${props => props.theme.colors.gradient.primary};
-  color: white;
-  border: none;
-  border-radius: ${props => props.theme.radii.md};
-  ${props => props.theme.typography.button}
-  font-weight: 600;
-  cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  margin-top: ${props => props.theme.spacing.md};
-  box-shadow: ${props => props.theme.shadows.sm};
-  min-height: 48px;
-
-  &:hover {
-    background: ${props => props.theme.colors.primaryHover};
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.md};
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: ${props => props.theme.shadows.sm};
-  }
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 14px 28px rgba(61, 129, 239, 0.22);
 `;
 
-export const PendingOrdersWidget = ({ 
+export const PendingOrdersWidget = ({
   pendingOrders = { count: 0, orders: [], urgentCount: 0 },
-  onViewOrders 
+  onViewOrders,
 }) => {
   const navigate = useNavigate();
-  const [badgeAnimate, setBadgeAnimate] = useState(false);
-  const [prevCount, setPrevCount] = useState(pendingOrders.count);
+  const [animate, setAnimate] = useState(false);
+  const [previousCount, setPreviousCount] = useState(pendingOrders.count);
 
   useEffect(() => {
-    if (pendingOrders.count > prevCount) {
-      setBadgeAnimate(true);
-      setTimeout(() => setBadgeAnimate(false), 500);
+    if (pendingOrders.count > previousCount) {
+      setAnimate(true);
+      const timeout = setTimeout(() => setAnimate(false), 500);
+      return () => clearTimeout(timeout);
     }
-    setPrevCount(pendingOrders.count);
-  }, [pendingOrders.count, prevCount]);
-
-  const handleClick = () => {
-    if (onViewOrders) {
-      onViewOrders();
-    } else {
-      navigate('/seller/orders');
-    }
-  };
+    setPreviousCount(pendingOrders.count);
+  }, [pendingOrders.count, previousCount]);
 
   const { count, orders, urgentCount } = pendingOrders;
-  const needsAttention = orders.some(order => order.needsAttention);
-  const oldestOrder = orders.length > 0 ? orders[0] : null;
+  const oldestOrder = orders?.[0];
+  const needsAttention = orders?.some(order => order.needsAttention);
+
+  const handleClick = () => {
+    if (onViewOrders) onViewOrders();
+    else navigate('/seller/orders');
+  };
 
   return (
-    <Container 
+    <Card
+      type="button"
       onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      aria-label={`Pending orders: ${count} ${count === 1 ? 'order' : 'orders'}. ${count > 0 ? `${urgentCount} urgent.` : 'All caught up.'} Click to view orders.`}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          handleClick();
-        }
-      }}
+      aria-label={`${count} pending seller orders. Open order management.`}
     >
       <Header>
         <Title>Pending Orders</Title>
-        <Badge 
-          $count={count} 
-          $animate={badgeAnimate}
-          $pulse={count >= 5}
-          aria-label={`${count} pending ${count === 1 ? 'order' : 'orders'}`}
-        >
-          {count}
-        </Badge>
+        <Badge $count={count} $animate={animate}>{count}</Badge>
       </Header>
 
       {count === 0 ? (
-        <EmptyState>
-          No pending orders.
-          <br />
-          You're all caught up! 🎉
-        </EmptyState>
+        <Copy>All orders are clear. New buyer orders will appear here as soon as they need packing.</Copy>
       ) : (
         <>
-          {count >= 5 && (
-            <Subtext style={{ color: '#C62850', fontWeight: 600 }}>
-              High demand: prioritize packing!
-            </Subtext>
-          )}
-          
+          <Copy>
+            {count === 1 ? '1 order needs' : `${count} orders need`} packing now.
+            {urgentCount > 0 ? ` ${urgentCount} marked urgent.` : ''}
+          </Copy>
           {needsAttention && oldestOrder && (
-            <AlertBar>
-              Order needs attention — placed {oldestOrder.ageMinutes} mins ago
-            </AlertBar>
+            <Alert>Oldest order needs attention, placed {oldestOrder.ageMinutes} minutes ago.</Alert>
           )}
-
-          {count <= 4 && (
-            <Subtext>
-              {count === 1 ? '1 order' : `${count} orders`} need{count === 1 ? 's' : ''} packing now
-            </Subtext>
-          )}
-
-          <CTAButton onClick={(e) => { e.stopPropagation(); handleClick(); }}>
-            View Orders
-          </CTAButton>
+          <CTA>View order queue</CTA>
         </>
       )}
-    </Container>
+    </Card>
   );
 };

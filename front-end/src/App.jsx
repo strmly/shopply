@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HomeScreen } from './components/HomeScreen';
 import { 
@@ -20,6 +20,7 @@ import { CartPage } from './components/cart/CartPage';
 import { CheckoutPage } from './components/checkout/CheckoutPage';
 import { NotificationDetailPage } from './components/notifications/NotificationDetailPage';
 import { ProductDetailPage } from './components/product/ProductDetailPage';
+import { SearchPage } from './components/search';
 import {
   CategoryProductsPage,
   HotProductsPage,
@@ -30,7 +31,7 @@ import {
   FastDeliveryPage,
 } from './components/category';
 import { CommunityBundlePage, CurateBundlePage, TrendingPage } from './components/community';
-import { SellerOnboarding, OrdersManagement, SellerDashboard, AnalyticsPage, StoreFrontPage, StoreHoursPage } from './components/seller';
+import { SellerOnboarding, BecomeSellerPage, SellerLearnMorePage, OrdersManagement, SellerDashboard, SellerMessagesPage, AnalyticsPage, StoreFrontPage, StoreHoursPage } from './components/seller';
 import { ProductListPage, ProductEditor } from './components/seller/products';
 import { OrderDetails } from './components/seller/orders';
 import { 
@@ -55,6 +56,18 @@ const DEFAULT_LOCATION = {
   suburb: 'Sandton',
   city: 'Johannesburg',
   province: 'Gauteng',
+};
+
+const ScrollToTop = () => {
+  const { pathname, search } = useLocation();
+
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [pathname, search]);
+
+  return null;
 };
 
 const App = () => {
@@ -114,6 +127,7 @@ const App = () => {
 
   return (
     <>
+      <ScrollToTop />
       <ToastContainer />
       <Routes>
         <Route path="/" element={<HomeScreen location={location} onLocationChange={handleLocationChange} />} />
@@ -145,6 +159,7 @@ const App = () => {
         <Route path="/reviews" element={<ReviewsPage location={location} />} />
         <Route path="/vouchers" element={<VouchersWalletPage />} />
         <Route path="/cart" element={<CartPage location={location} />} />
+        <Route path="/search" element={<SearchPage location={location} />} />
         <Route path="/checkout" element={<CheckoutPage location={location} />} />
         <Route path="/product/:id" element={<ProductDetailPage location={location} />} />
         <Route path="/notifications/:id" element={<NotificationDetailPage location={location} />} />
@@ -159,8 +174,11 @@ const App = () => {
         <Route path="/trending" element={<TrendingPage location={location} />} />
         <Route path="/community/bundle/:bundleType" element={<CommunityBundlePage location={location} />} />
         <Route path="/community/bundle/:bundleType/curate" element={<CurateBundlePage location={location} />} />
+        <Route path="/sell-on-tsenga" element={<SellerLearnMorePage location={location} />} />
+        <Route path="/become-a-seller" element={<BecomeSellerPage location={location} />} />
         <Route path="/seller/onboarding" element={<SellerOnboarding location={location} />} />
         <Route path="/seller/dashboard" element={<SellerDashboard location={location} />} />
+        <Route path="/seller/messages" element={<SellerMessagesPage location={location} />} />
         <Route path="/seller/analytics" element={<AnalyticsPage location={location} />} />
         <Route path="/seller/products" element={<ProductListPage location={location} />} />
         <Route path="/seller/products/new" element={<ProductEditor location={location} />} />

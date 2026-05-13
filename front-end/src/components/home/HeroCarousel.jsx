@@ -6,17 +6,19 @@ import { useTheme } from '../../hooks/useTheme';
 const CarouselContainer = styled.div`
   position: relative;
   width: 100%;
-  min-height: clamp(430px, 48vw, 520px);
+  min-height: clamp(560px, 58vw, 680px);
   overflow: hidden;
   margin-bottom: ${props => props.theme.spacing.xl};
   background: #ffffff;
 
   @media (max-width: 760px) {
-    min-height: 680px;
+    min-height: auto;
+    display: grid;
+    overflow: visible;
   }
 
   @media (max-width: 420px) {
-    min-height: 650px;
+    min-height: auto;
   }
 `;
 
@@ -30,9 +32,9 @@ const Slide = styled.div`
   background-position: center;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 420px);
-  align-items: center;
+  align-items: start;
   gap: clamp(18px, 4vw, 32px);
-  padding: 52px clamp(14px, 7vw, 88px);
+  padding: 54px clamp(14px, 7vw, 88px) 92px;
   opacity: ${props => props.$active ? 1 : 0};
   transform: translateX(${props => props.$active ? '0' : props.$direction === 'next' ? '18px' : '-18px'});
   transition: opacity 0.45s ease-out, transform 0.45s ease-out;
@@ -40,10 +42,18 @@ const Slide = styled.div`
   pointer-events: ${props => props.$active ? 'auto' : 'none'};
 
   @media (max-width: 760px) {
+    position: relative;
+    grid-area: 1 / 1;
     grid-template-columns: 1fr;
     align-content: start;
-    padding: 28px clamp(14px, 5vw, 24px) 76px;
-    gap: 22px;
+    padding: 28px clamp(14px, 5vw, 24px) 82px;
+    gap: 18px;
+    min-height: 0;
+  }
+
+  @media (max-width: 420px) {
+    padding: 22px 14px 64px;
+    gap: 16px;
   }
 `;
 
@@ -51,6 +61,14 @@ const SlideContent = styled.div`
   color: ${props => props.theme.colors.text.primary};
   max-width: 620px;
   min-width: 0;
+  position: relative;
+  z-index: 2;
+  align-self: center;
+
+  @media (max-width: 760px) {
+    max-width: none;
+    align-self: start;
+  }
 `;
 
 const Eyebrow = styled.div`
@@ -70,6 +88,9 @@ const Eyebrow = styled.div`
   @media (max-width: 420px) {
     max-width: 100%;
     font-size: 10px;
+    padding: 7px 10px;
+    margin-bottom: 12px;
+    overflow-wrap: anywhere;
   }
 `;
 
@@ -83,10 +104,23 @@ const DotMark = styled.span`
 const SlideTitle = styled.h2`
   color: ${props => props.theme.colors.text.primary};
   margin: 0 0 14px;
-  font-size: clamp(32px, 7vw, 72px);
-  line-height: 0.96;
+  font-size: clamp(32px, 6.4vw, 72px);
+  line-height: 1;
   font-weight: 800;
   letter-spacing: 0;
+  max-width: 11ch;
+  overflow-wrap: anywhere;
+
+  @media (max-width: 760px) {
+    max-width: 14ch;
+    font-size: clamp(34px, 10vw, 58px);
+  }
+
+  @media (max-width: 420px) {
+    font-size: clamp(30px, 11vw, 42px);
+    line-height: 1.03;
+    margin-bottom: 12px;
+  }
 `;
 
 const SlideSubtitle = styled.p`
@@ -96,8 +130,13 @@ const SlideSubtitle = styled.p`
   max-width: 520px;
   font-weight: 500;
 
+  @media (max-width: 760px) {
+    max-width: 62ch;
+  }
+
   @media (max-width: 420px) {
     font-size: 14px;
+    line-height: 1.5;
     margin-bottom: 18px;
   }
 `;
@@ -122,6 +161,7 @@ const CTAButton = styled.button`
   @media (max-width: 420px) {
     width: 100%;
     min-height: 48px;
+    padding: 12px 16px;
   }
 `;
 
@@ -137,12 +177,14 @@ const HeroPanel = styled.div`
   box-shadow: 0 30px 70px rgba(16, 24, 40, 0.14);
 
   @media (max-width: 760px) {
-    min-height: 270px;
+    min-height: 0;
+    height: auto;
+    aspect-ratio: 16 / 10;
     border-radius: 22px;
   }
 
   @media (max-width: 420px) {
-    min-height: 230px;
+    aspect-ratio: 1.25;
   }
 `;
 
@@ -159,6 +201,10 @@ const PanelMeta = styled.div`
   padding: 18px;
   display: grid;
   gap: 6px;
+
+  @media (max-width: 420px) {
+    padding: 14px;
+  }
 `;
 
 const PanelLabel = styled.span`
@@ -174,6 +220,11 @@ const PanelTitle = styled.strong`
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+
+  @media (max-width: 420px) {
+    font-size: 16px;
+    line-height: 1.25;
+  }
 `;
 
 const StatsRow = styled.div`
@@ -181,31 +232,48 @@ const StatsRow = styled.div`
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   max-width: 520px;
-  margin-top: 28px;
+  margin-top: 24px;
+  position: relative;
+  z-index: 3;
+
+  @media (max-width: 760px) {
+    max-width: none;
+    grid-template-columns: repeat(3, minmax(92px, 1fr));
+  }
 
   @media (max-width: 520px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     margin-top: 20px;
+  }
+
+  @media (max-width: 360px) {
+    grid-template-columns: 1fr;
   }
 `;
 
 const Stat = styled.div`
   padding: 14px;
-  border: 1px solid ${props => props.theme.colors.border.light};
+  min-width: 0;
+  border: 1px solid rgba(61, 129, 239, 0.14);
   border-radius: 18px;
-  background: rgba(255,255,255,0.72);
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 12px 28px rgba(16, 24, 40, 0.07);
 
   @media (max-width: 420px) {
     padding: 10px 8px;
+    min-height: 70px;
   }
 `;
 
 const StatValue = styled.div`
   ${props => props.theme.typography.heading3}
   font-weight: 800;
+  color: ${props => props.theme.colors.text.primary};
+  white-space: nowrap;
 
   @media (max-width: 420px) {
-    font-size: 18px;
+    font-size: 16px;
   }
 `;
 
@@ -213,6 +281,12 @@ const StatLabel = styled.div`
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
   font-weight: 600;
+  overflow-wrap: anywhere;
+
+  @media (max-width: 420px) {
+    font-size: 10px;
+    line-height: 1.25;
+  }
 `;
 
 const ProgressBar = styled.div`

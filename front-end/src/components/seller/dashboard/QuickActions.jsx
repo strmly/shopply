@@ -1,190 +1,174 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { fadeIn } from '../../../theme/animations';
 
 const Container = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.xl};
+  background: #ffffff;
+  border-radius: 24px;
   padding: ${props => props.theme.spacing.lg};
-  border: 2px solid ${props => props.theme.colors.border.light};
+  border: 1px solid rgba(228, 231, 236, 0.92);
   animation: ${fadeIn} 0.4s ease-out;
-  box-shadow: ${props => props.theme.shadows.sm};
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
 `;
 
 const Title = styled.h3`
-  ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
+  font-weight: 800;
   font-size: 18px;
-  margin-bottom: ${props => props.theme.spacing.md};
+  margin: 0 0 ${props => props.theme.spacing.md} 0;
 `;
 
 const ActionsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: ${props => props.theme.spacing.md};
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const ActionButton = styled.button`
-  padding: ${props => props.theme.spacing.lg};
-  background: ${props => props.theme.colors.background};
-  border: 2px solid ${props => 
-    props.$highlight 
-      ? props.theme.colors.primary 
-      : props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.xl};
+  min-height: 112px;
+  padding: 16px;
+  background: ${props => props.$highlight ? props.theme.colors.primarySoftBg : props.theme.colors.gradient.soft};
+  border: 1px solid ${props => props.$highlight ? props.theme.colors.primary : 'rgba(61, 129, 239, 0.12)'};
+  border-radius: 20px;
   cursor: pointer;
   transition: ${props => props.theme.transitions.swift};
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: ${props => props.theme.spacing.sm};
-  min-height: 110px;
+  text-align: left;
+  display: grid;
+  align-content: space-between;
+  gap: 12px;
   position: relative;
-  box-shadow: ${props => props.theme.shadows.sm};
-
-  ${props => props.$highlight && `
-    box-shadow: 0 0 0 4px ${props.theme.colors.primarySoftBg};
-  `}
-
-  ${props => props.$glow && `
-    animation: glow 2s ease-in-out infinite;
-    @keyframes glow {
-      0%, 100% {
-        box-shadow: 0 0 0 4px ${props.theme.colors.primarySoftBg};
-      }
-      50% {
-        box-shadow: 0 0 0 8px ${props.theme.colors.primarySoftBg};
-      }
-    }
-  `}
+  box-shadow: 0 12px 26px rgba(16, 24, 40, 0.06);
 
   &:hover {
     border-color: ${props => props.theme.colors.primary};
-    background: ${props => props.theme.colors.primarySoftBg};
     transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.md};
-  }
-
-  &:active {
-    transform: translateY(0) scale(0.98);
+    box-shadow: 0 18px 34px rgba(16, 24, 40, 0.1);
   }
 `;
 
 const ActionIcon = styled.div`
-  font-size: 40px;
-  line-height: 1;
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: ${props => props.theme.colors.gradient.primary};
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 12px 24px rgba(61, 129, 239, 0.2);
 `;
 
 const ActionLabel = styled.div`
-  ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
+  font-weight: 850;
   font-size: 14px;
-  text-align: center;
+  line-height: 1.2;
+`;
+
+const Helper = styled.div`
+  color: ${props => props.$warning ? props.theme.colors.warningBase : props.theme.colors.text.secondary};
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.3;
 `;
 
 const HighlightBadge = styled.div`
   position: absolute;
-  top: -8px;
-  right: -8px;
+  top: 12px;
+  right: 12px;
   background: ${props => props.theme.colors.gradient.primary};
   color: white;
-  width: 24px;
+  min-width: 24px;
   height: 24px;
-  border-radius: 50%;
+  padding: 0 8px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow: ${props => props.theme.shadows.md};
+  font-size: 11px;
+  font-weight: 950;
 `;
 
-export const QuickActions = ({ 
-  navigate, 
+export const QuickActions = ({
+  navigate,
   productCount = 0,
-  isStoreClosed = false 
+  isStoreClosed = false,
 }) => {
-  const [actions, setActions] = useState([
-    { 
-      icon: '📦', 
-      label: 'Manage Products', 
-      route: '/seller/products',
-      highlight: productCount === 0,
-      glow: productCount === 0,
-    },
-    { 
-      icon: '➕', 
-      label: 'Add Product', 
-      route: '/seller/products/new',
-    },
-    { 
-      icon: '🎯', 
-      label: 'Promotions', 
-      route: '/seller/promotions',
-    },
-    { 
-      icon: '🏪', 
-      label: 'View Store', 
-      route: '/seller/store',
-    },
-    { 
-      icon: '⏰', 
-      label: 'Manage Hours', 
-      route: '/seller/settings/hours',
-      glow: isStoreClosed,
-    },
-  ]);
+  const [actions, setActions] = useState([]);
 
   useEffect(() => {
-    // Reorder actions based on context
-    const reordered = [...actions].sort((a, b) => {
-      // Highlighted actions first
+    const baseActions = [
+      {
+        icon: 'PR',
+        label: 'Manage Products',
+        helper: productCount === 0 ? 'Add your first listing' : `${productCount} products live`,
+        route: '/seller/products',
+        highlight: productCount === 0,
+      },
+      {
+        icon: 'AD',
+        label: 'Add Product',
+        helper: 'Create a new listing',
+        route: '/seller/products/new',
+      },
+      {
+        icon: 'PM',
+        label: 'Promotions',
+        helper: 'Deals, bundles, campaigns',
+        route: '/seller/promotions',
+      },
+      {
+        icon: 'ST',
+        label: 'View Store',
+        helper: 'Preview buyer storefront',
+        route: '/seller/store',
+      },
+      {
+        icon: 'HR',
+        label: 'Manage Hours',
+        helper: isStoreClosed ? 'Store currently closed' : 'Keep availability fresh',
+        route: '/seller/settings/hours',
+        highlight: isStoreClosed,
+        warning: isStoreClosed,
+      },
+      {
+        icon: 'MS',
+        label: 'Messages',
+        helper: 'Reply to buyers',
+        route: '/seller/messages',
+      },
+    ];
+
+    setActions(baseActions.sort((a, b) => {
       if (a.highlight && !b.highlight) return -1;
       if (!a.highlight && b.highlight) return 1;
-      // Glowing actions next
-      if (a.glow && !b.glow) return -1;
-      if (!a.glow && b.glow) return 1;
       return 0;
-    });
-    setActions(reordered);
+    }));
   }, [productCount, isStoreClosed]);
-
-  const handleActionClick = (route) => {
-    if (navigate) {
-      navigate(route);
-    }
-  };
 
   return (
     <Container>
       <Title>Quick Actions</Title>
       <ActionsGrid>
-        {actions.map((action, index) => (
+        {actions.map((action) => (
           <ActionButton
-            key={index}
+            key={action.route}
             $highlight={action.highlight}
-            $glow={action.glow}
-            onClick={() => handleActionClick(action.route)}
+            onClick={() => navigate?.(action.route)}
             aria-label={action.label}
             type="button"
           >
-            {action.highlight && <HighlightBadge>!</HighlightBadge>}
+            {action.highlight && <HighlightBadge>Now</HighlightBadge>}
             <ActionIcon>{action.icon}</ActionIcon>
-            <ActionLabel>{action.label}</ActionLabel>
-            {action.glow && action.label === 'Manage Hours' && (
-              <div style={{
-                fontSize: '11px',
-                color: '#F59E0B',
-                fontWeight: 600,
-                marginTop: '-4px',
-              }}>
-                Store closed
-              </div>
-            )}
+            <div>
+              <ActionLabel>{action.label}</ActionLabel>
+              <Helper $warning={action.warning}>{action.helper}</Helper>
+            </div>
           </ActionButton>
         ))}
       </ActionsGrid>

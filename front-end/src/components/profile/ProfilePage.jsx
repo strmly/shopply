@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../../context/UserContext';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { ProfileHeader } from './ProfileHeader';
@@ -52,53 +52,9 @@ const SideColumn = styled.aside`
   }
 `;
 
-import API_BASE_URL from '@config/api';
-
 export const ProfilePage = ({ location }) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadUserProfile();
-  }, []);
-
-  const loadUserProfile = async () => {
-    try {
-      setLoading(true);
-      const userId = 'default'; // In production, get from auth context
-      
-      const response = await fetch(`${API_BASE_URL}/profile/${userId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setUser(data.data);
-      } else {
-        console.error('Error loading profile:', data.message);
-        // Fallback to default user
-        setUser({
-          id: userId,
-          name: 'Guest User',
-          email: 'guest@example.com',
-        });
-      }
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-      // Fallback to default user on error
-      setUser({
-        id: 'default',
-        name: 'Guest User',
-        email: 'guest@example.com',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user, loading } = useUser();
 
   if (loading) {
     return (

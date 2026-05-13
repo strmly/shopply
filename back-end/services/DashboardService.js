@@ -12,6 +12,7 @@ class DashboardServiceClass {
     // Simple in-memory cache (in production, use Redis or similar)
     this.cache = new Map();
     this.cacheTimeout = 30000; // 30 seconds
+    this.messageStore = new Map();
   }
 
   /**
@@ -59,35 +60,66 @@ class DashboardServiceClass {
 
     try {
       // Get seller's store info
-      const seller = await SellerService.getSellerById(numericSellerId);
+      let effectiveSellerId = numericSellerId;
+      let seller = await SellerService.getSellerById(effectiveSellerId);
       if (!seller) {
-        throw new Error('Seller not found');
+        seller = await SellerService.seedDefaultSeller();
+        effectiveSellerId = seller.id;
       }
 
       // Get store ID (assuming seller has a store)
-      const storeId = seller.storeSetup?.name ? numericSellerId : null;
+      const storeId = seller.storeSetup?.name ? effectiveSellerId : null;
 
       // Use cache key for this seller
-      const cacheKey = `seller-${numericSellerId}-dashboard`;
+      const cacheKey = `seller-${effectiveSellerId}-dashboard`;
 
       return this.getCached(cacheKey, () => {
         // Get today's revenue
-        const revenueData = this.getTodayRevenue(numericSellerId, storeId);
+        const revenueData = this.getTodayRevenue(effectiveSellerId, storeId);
 
         // Get pending orders
-        const pendingOrders = this.getPendingOrders(numericSellerId, storeId);
+        const pendingOrders = this.getPendingOrders(effectiveSellerId, storeId);
 
         // Get hourly revenue for sparkline
-        const hourlyRevenue = this.getHourlyRevenue(numericSellerId, storeId);
+        const hourlyRevenue = this.getHourlyRevenue(effectiveSellerId, storeId);
 
         // Get revenue comparison
-        const revenueComparison = this.getRevenueComparison(numericSellerId, storeId);
+        const revenueComparison = this.getRevenueComparison(effectiveSellerId, storeId);
+
+        const products = storeId ? ProductService.products.filter(p => String(p.storeId) === String(storeId)) : [];
+        const activeProducts = products.filter(p => p.isVisible !== false && p.stock !== 'out').length;
+        const totalStock = products.reduce((sum, product) => sum + (Number(product.stockQuantity) || 0), 0);
 
         return {
+          seller: {
+            id: seller.id,
+            storeName: seller.storeSetup?.name || seller.legalBusinessName || 'Tsenga Seller',
+            storeType: seller.storeBasicInfo?.storeType || 'Furniture seller',
+            status: seller.onboardingStatus || 'draft',
+            rating: seller.rating || 0,
+            reviewCount: seller.reviewCount || 0,
+          },
+          store: {
+            id: storeId,
+            name: seller.storeSetup?.name || 'Your store',
+            description: seller.storeSetup?.description || '',
+            isOpen: this.isStoreOpen(seller.storeSetup?.hours),
+            productCount: products.length,
+            activeProducts,
+            totalStock,
+          },
           revenue: revenueData,
           pendingOrders,
           hourlyRevenue,
           revenueComparison,
+          quickStats: {
+            products: products.length,
+            activeProducts,
+            pendingOrders: pendingOrders.count,
+            urgentOrders: pendingOrders.urgentCount,
+            unreadMessages: 0,
+            stockUnits: totalStock,
+          },
         };
       });
     } catch (error) {
@@ -539,38 +571,164 @@ class DashboardServiceClass {
   }
 
   /**
-   * Get messages for seller (mock implementation)
-   * In production, this would integrate with a messaging service
+   * Get messages for seller. This demo store keeps conversations in memory,
+   * which gives the UI real read/reply behavior without adding persistence.
    */
   getMessages(sellerId) {
-    // Mock messages - in production, this would come from a messaging service
-    const now = new Date();
-    
+    const key = String(sellerId || 1);
+    if (!this.messageStore.has(key)) {
+      this.messageStore.set(key, this.createSeedMessages());
+    }
+
+    const messages = this.messageStore.get(key)
+      .slice()
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
     return {
-      unreadCount: 2,
-      totalCount: 2,
-      messages: [
-        {
-          id: '1',
-          customerName: 'Sipho',
-          customerId: 'customer-1',
-          preview: 'Is the chicken fresh?',
-          timestamp: new Date(now.getTime() - 10 * 60000), // 10 minutes ago
-          isRead: false,
-          type: 'question',
-        },
-        {
-          id: '2',
-          customerName: 'Thandi',
-          customerId: 'customer-2',
-          preview: 'Can I pick up at 5?',
-          timestamp: new Date(now.getTime() - 30 * 60000), // 30 minutes ago
-          isRead: false,
-          type: 'question',
-        },
-      ],
-      activeConversations: 2,
+      unreadCount: messages.filter(message => !message.isRead).length,
+      totalCount: messages.length,
+      messages,
+      activeConversations: messages.length,
     };
+  }
+
+  createSeedMessages() {
+    const now = new Date();
+
+    return [
+      {
+        id: 'msg-1',
+        customerName: 'Lerato M.',
+        customerId: 'customer-1',
+        preview: 'Is the oak dining table available for pickup today?',
+        timestamp: new Date(now.getTime() - 10 * 60000).toISOString(),
+        isRead: false,
+        type: 'question',
+        productName: 'Oak Dining Table',
+        thread: [
+          {
+            id: 'msg-1-a',
+            from: 'customer',
+            body: 'Is the oak dining table available for pickup today?',
+            timestamp: new Date(now.getTime() - 10 * 60000).toISOString(),
+          },
+        ],
+      },
+      {
+        id: 'msg-2',
+        customerName: 'Thabo K.',
+        customerId: 'customer-2',
+        preview: 'Can you confirm the sofa dimensions before delivery?',
+        timestamp: new Date(now.getTime() - 30 * 60000).toISOString(),
+        isRead: false,
+        type: 'order',
+        productName: 'KIVIK Sofa',
+        thread: [
+          {
+            id: 'msg-2-a',
+            from: 'customer',
+            body: 'Can you confirm the sofa dimensions before delivery?',
+            timestamp: new Date(now.getTime() - 30 * 60000).toISOString(),
+          },
+        ],
+      },
+      {
+        id: 'msg-3',
+        customerName: 'Amina S.',
+        customerId: 'customer-3',
+        preview: 'Thanks, the bedroom set looks perfect.',
+        timestamp: new Date(now.getTime() - 4 * 60 * 60000).toISOString(),
+        isRead: true,
+        type: 'follow-up',
+        productName: 'Queen Bedroom Set',
+        thread: [
+          {
+            id: 'msg-3-a',
+            from: 'customer',
+            body: 'Thanks, the bedroom set looks perfect.',
+            timestamp: new Date(now.getTime() - 4 * 60 * 60000).toISOString(),
+          },
+        ],
+      },
+    ];
+  }
+
+  markMessageRead(sellerId, messageId) {
+    const data = this.getMessages(sellerId);
+    const key = String(sellerId || 1);
+    const message = data.messages.find(item => item.id === messageId);
+
+    if (!message) {
+      return null;
+    }
+
+    this.messageStore.set(key, this.messageStore.get(key).map(item => (
+      item.id === messageId ? { ...item, isRead: true } : item
+    )));
+
+    return this.getMessages(sellerId);
+  }
+
+  markAllMessagesRead(sellerId) {
+    const data = this.getMessages(sellerId);
+    const key = String(sellerId || 1);
+    this.messageStore.set(key, data.messages.map(item => ({ ...item, isRead: true })));
+    return this.getMessages(sellerId);
+  }
+
+  replyToMessage(sellerId, messageId, body) {
+    const text = String(body || '').trim();
+    if (!text) {
+      throw new Error('Reply body is required');
+    }
+
+    const data = this.getMessages(sellerId);
+    const key = String(sellerId || 1);
+    const message = data.messages.find(item => item.id === messageId);
+
+    if (!message) {
+      return null;
+    }
+
+    const now = new Date().toISOString();
+    this.messageStore.set(key, this.messageStore.get(key).map(item => {
+      if (item.id !== messageId) return item;
+
+      return {
+        ...item,
+        isRead: true,
+        preview: text,
+        timestamp: now,
+        thread: [
+          ...(item.thread || []),
+          {
+            id: `${messageId}-reply-${Date.now()}`,
+            from: 'seller',
+            body: text,
+            timestamp: now,
+          },
+        ],
+      };
+    }));
+
+    return this.getMessages(sellerId);
+  }
+
+  isStoreOpen(hours) {
+    if (!hours) return true;
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const now = new Date();
+    const today = days[now.getDay()];
+    const config = hours[today];
+    if (!config || config.closed) return false;
+
+    const current = now.getHours() * 60 + now.getMinutes();
+    const [openHour = 0, openMinute = 0] = String(config.open || '00:00').split(':').map(Number);
+    const [closeHour = 23, closeMinute = 59] = String(config.close || '23:59').split(':').map(Number);
+    const open = openHour * 60 + openMinute;
+    const close = closeHour * 60 + closeMinute;
+
+    return current >= open && current <= close;
   }
 
   /**

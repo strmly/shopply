@@ -109,6 +109,20 @@ const AddToCartButton = styled.button`
   }
 `;
 
+const FlashLabel = styled.span`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.dangerBase};
+  font-weight: 800;
+  font-size: 11px;
+`;
+
+const OriginalPrice = styled.span`
+  ${props => props.theme.typography.caption}
+  color: ${props => props.theme.colors.text.secondary};
+  text-decoration: line-through;
+  font-size: 13px;
+`;
+
 const Ripple = styled.span`
   position: absolute;
   border-radius: 50%;
@@ -116,6 +130,10 @@ const Ripple = styled.span`
   transform: scale(0);
   animation: ${ripple} 0.6s ease-out;
   pointer-events: none;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
 `;
 
 export const AddToCartBar = ({ product, selectedVariant, quantity, onAddToCart, stock, selectedStore }) => {
@@ -127,7 +145,9 @@ export const AddToCartBar = ({ product, selectedVariant, quantity, onAddToCart, 
   const isOutOfStock = stock === 'out';
   const hasVariants = product.variants && product.variants.length > 0;
   const needsVariantSelection = hasVariants && !selectedVariant;
-  const totalPrice = (product.price * quantity).toFixed(2);
+  const isFlashDeal = product.flashDealPrice != null;
+  const unitPrice = isFlashDeal ? product.flashDealPrice : product.price;
+  const totalPrice = (unitPrice * quantity).toFixed(2);
 
   const handleClick = () => {
     if (isOutOfStock || needsVariantSelection) return;
@@ -146,7 +166,13 @@ export const AddToCartBar = ({ product, selectedVariant, quantity, onAddToCart, 
       <BarContent>
         <PriceSection>
           <Price>R{totalPrice}</Price>
-          <PriceSubtext>incl. VAT</PriceSubtext>
+          {isFlashDeal && (
+            <>
+              <FlashLabel>Flash Deal</FlashLabel>
+              <OriginalPrice>R{(product.price * quantity).toFixed(2)}</OriginalPrice>
+            </>
+          )}
+          {!isFlashDeal && <PriceSubtext>incl. VAT</PriceSubtext>}
           {selectedStore && <StoreName>From {selectedStore.name}</StoreName>}
         </PriceSection>
 
