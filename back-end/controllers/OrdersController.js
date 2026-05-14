@@ -1,5 +1,6 @@
 import OrdersService from '../services/OrdersService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { notificationService } from '../services/NotificationService.js';
 
 /**
  * Orders Controller
@@ -193,6 +194,14 @@ export class OrdersController {
       }
 
       const result = await OrdersService.cancelOrder(orderId, userId, reason);
+
+      notificationService.notify(
+        userId,
+        'order',
+        'Order Cancelled',
+        `Your order #${orderId} has been cancelled.${reason ? ` Reason: ${reason}` : ''} Any charge will be refunded shortly.`,
+        { actionUrl: `/orders/${orderId}`, metadata: { orderId } }
+      );
 
       res.json({
         success: true,

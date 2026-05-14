@@ -1,4 +1,12 @@
 import SellerOrderService from '../services/SellerOrderService.js';
+import { notificationService } from '../services/NotificationService.js';
+
+const STATUS_NOTIFICATIONS = {
+  preparing: ['Order Being Prepared', 'Great news — the seller has started preparing your order and it will be ready soon.'],
+  courier_assigned: ['Courier On The Way', 'A courier has been assigned to your order and is heading your way. Estimated arrival: 45 min.'],
+  completed: ['Order Delivered', 'Your order has been delivered successfully. We hope you love it!'],
+  cancelled: ['Order Cancelled', 'Your order has been cancelled by the seller. If you were charged, a refund will be processed.'],
+};
 
 /**
  * Seller Order Controller
@@ -98,7 +106,18 @@ export class SellerOrderController {
       
       const order = SellerOrderService.updateOrderStatus(orderId, sellerId, status);
       const slaStatus = SellerOrderService.calculateSLAStatus(order);
-      
+
+      const notifPayload = STATUS_NOTIFICATIONS[status];
+      if (notifPayload && (order.buyerId || order.userId)) {
+        notificationService.notify(
+          order.buyerId || order.userId,
+          'order',
+          notifPayload[0],
+          notifPayload[1],
+          { actionUrl: `/orders/${orderId}`, metadata: { orderId } }
+        );
+      }
+
       res.json({
         success: true,
         message: `Order status updated from ${order.statusHistory?.[order.statusHistory.length - 2]?.from || 'previous'} to ${status}`,

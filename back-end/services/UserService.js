@@ -1,15 +1,31 @@
 import { User } from '../models/User.js';
+import { hashPassword } from '../utils/crypto.js';
 
-/**
- * User Service
- * Handles business logic for users
- */
 class UserServiceClass {
-  // In a real app, this would interact with a database
-  // For now, using in-memory storage as an example
   constructor() {
     this.users = [];
     this.nextId = 1;
+  }
+
+  async seedDefaultUsers() {
+    if (this.users.length > 0) return;
+    const seeds = [
+      { id: 1, name: 'Admin', email: 'admin@shopply.com', role: 'admin', password: 'Admin@123' },
+      { id: 2, name: 'Demo Seller', email: 'seller@shopply.com', role: 'seller', password: 'Seller@123' },
+      { id: 3, name: 'Demo Buyer', email: 'buyer@shopply.com', role: 'buyer', password: 'Buyer@123' },
+    ];
+    for (const s of seeds) {
+      await this.createUser({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        mobile: '',
+        role: s.role,
+        status: 'active',
+        passwordHash: hashPassword(s.password),
+        onboardingCompleted: true,
+      });
+    }
   }
 
   /**

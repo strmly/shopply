@@ -15,6 +15,7 @@ import { CheckoutBar } from './CheckoutBar';
 import { EmptyCartState } from './EmptyCartState';
 import { BottomNavigation } from '../home/BottomNavigation';
 import { VoucherSelector } from '../vouchers/VoucherSelector';
+import { CartItemSkeleton } from '../ui/Skeleton';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -404,7 +405,9 @@ export const CartPage = ({ location, onClose }) => {
     return (
       <Container>
         <CartHeader itemCount={0} onClose={onClose} />
-        <LoadingContainer>Loading cart...</LoadingContainer>
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {[0, 1, 2].map(i => <CartItemSkeleton key={i} />)}
+        </div>
       </Container>
     );
   }

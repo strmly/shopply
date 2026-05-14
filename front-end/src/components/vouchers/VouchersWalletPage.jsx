@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { VoucherCard } from './VoucherCard.jsx';
@@ -7,34 +7,42 @@ import { BottomNavigation } from '../home/BottomNavigation';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 52%, #ffffff 100%);
   animation: ${fadeIn} 0.3s ease-in;
   padding-bottom: 80px;
 `;
 
 const Header = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
-  padding: ${props => props.theme.spacing.lg} ${props => props.theme.spacing.xl};
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.98), rgba(241,247,255,0.94)) padding-box,
+    ${props => props.theme.colors.gradient.primary} border-box;
+  border: 1px solid transparent;
+  border-radius: 0 0 28px 28px;
+  padding: clamp(20px, 5vw, 34px) min(5vw, 48px);
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 24px 62px rgba(16, 24, 40, 0.1);
 `;
 
 const HeaderContent = styled.div`
   display: flex;
   align-items: center;
   gap: ${props => props.theme.spacing.md};
-  max-width: 600px;
+  max-width: 920px;
   margin: 0 auto;
 `;
 
 const BackButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 24px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  font-size: 22px;
+  font-weight: 900;
   cursor: pointer;
-  padding: ${props => props.theme.spacing.xs};
+  padding: 0;
   color: ${props => props.theme.colors.text.primary};
   display: flex;
   align-items: center;
@@ -42,15 +50,16 @@ const BackButton = styled.button`
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading1}
   color: ${props => props.theme.colors.text.primary};
-  font-size: 24px;
-  font-weight: 700;
+  font-size: clamp(32px, 7vw, 52px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
   flex: 1;
 `;
 
 const Content = styled.div`
-  max-width: 600px;
+  max-width: 920px;
   margin: 0 auto;
   padding: ${props => props.theme.spacing.xl};
 `;
@@ -59,7 +68,7 @@ const Tabs = styled.div`
   display: flex;
   gap: ${props => props.theme.spacing.xs};
   margin-bottom: ${props => props.theme.spacing.lg};
-  border-bottom: 2px solid ${props => props.theme.colors.border.light};
+  border-bottom: 0;
   overflow-x: auto;
   scrollbar-width: none;
   &::-webkit-scrollbar {
@@ -85,7 +94,7 @@ const Tab = styled.button`
       : 'transparent'};
   margin-bottom: -2px;
   transition: all 0.2s ease;
-  border-radius: ${props => props.theme.radii.md} ${props => props.theme.radii.md} 0 0;
+  border-radius: 999px;
   white-space: nowrap;
   
   &:hover {
@@ -143,7 +152,11 @@ import API_BASE_URL from '@config/api';
 
 export const VouchersWalletPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('active');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = ['active', 'used', 'expired', 'all'].includes(searchParams.get('tab'))
+    ? searchParams.get('tab')
+    : 'active';
+  const [activeTab, setActiveTab] = useState(requestedTab);
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
   const userId = 'default';
@@ -180,6 +193,11 @@ export const VouchersWalletPage = () => {
     }
   };
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
+
   const tabs = [
     { id: 'active', label: 'Active' },
     { id: 'used', label: 'Used' },
@@ -196,7 +214,7 @@ export const VouchersWalletPage = () => {
     <Container>
       <Header>
         <HeaderContent>
-          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <BackButton onClick={() => navigate(-1)}>&lt;</BackButton>
           <Title>Vouchers</Title>
         </HeaderContent>
       </Header>
@@ -207,7 +225,7 @@ export const VouchersWalletPage = () => {
             <Tab
               key={tab.id}
               $active={activeTab === tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
             >
               {tab.label}
             </Tab>

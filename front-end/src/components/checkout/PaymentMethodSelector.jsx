@@ -100,6 +100,14 @@ const ErrorText = styled.div`
 export const PaymentMethodSelector = ({ paymentMethod, onPaymentMethodChange, error }) => {
   const savedCard = localStorage.getItem('tsenga_saved_card');
   const cardNumber = savedCard ? JSON.parse(savedCard).last4 : null;
+  const handleAddDemoCard = () => {
+    localStorage.setItem('tsenga_saved_card', JSON.stringify({
+      brand: 'Visa',
+      last4: '4242',
+      addedAt: new Date().toISOString(),
+    }));
+    onPaymentMethodChange('card');
+  };
 
   return (
     <Card error={!!error}>
@@ -108,23 +116,21 @@ export const PaymentMethodSelector = ({ paymentMethod, onPaymentMethodChange, er
       </Title>
       
       <OptionGroup>
-        {cardNumber && (
-          <Option 
-            selected={paymentMethod === 'card'}
-            onClick={() => onPaymentMethodChange('card')}
-          >
-            <OptionLeft>
-              <Radio
-                type="radio"
-                name="paymentMethod"
-                value="card"
-                checked={paymentMethod === 'card'}
-                onChange={() => onPaymentMethodChange('card')}
-              />
-              <OptionText>Card ending {cardNumber}</OptionText>
-            </OptionLeft>
-          </Option>
-        )}
+        <Option 
+          selected={paymentMethod === 'card'}
+          onClick={() => onPaymentMethodChange('card')}
+        >
+          <OptionLeft>
+            <Radio
+              type="radio"
+              name="paymentMethod"
+              value="card"
+              checked={paymentMethod === 'card'}
+              onChange={() => onPaymentMethodChange('card')}
+            />
+            <OptionText>{cardNumber ? `Card ending ${cardNumber}` : 'Secure card payment'}</OptionText>
+          </OptionLeft>
+        </Option>
 
         <Option 
           selected={paymentMethod === 'mobile_money'}
@@ -159,8 +165,8 @@ export const PaymentMethodSelector = ({ paymentMethod, onPaymentMethodChange, er
         </Option>
       </OptionGroup>
 
-      <AddButton onClick={() => alert('Add new card feature coming soon')}>
-        + Add New Card
+      <AddButton type="button" onClick={handleAddDemoCard}>
+        + Add Demo Card
       </AddButton>
 
       {error && <ErrorText>{error}</ErrorText>}

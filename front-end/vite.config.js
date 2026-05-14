@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react()],
+    optimizeDeps: {
+      include: ['socket.io-client'],
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),

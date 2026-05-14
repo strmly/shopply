@@ -10,7 +10,7 @@ import { toast } from '../ui/Toast';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 50%, #ffffff 100%);
   animation: ${fadeIn} 0.5s ease-in;
   padding-bottom: 100px;
 `;
@@ -19,9 +19,10 @@ const Header = styled.header`
   position: sticky;
   top: 0;
   z-index: 100;
-  background: ${props => props.theme.colors.background};
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(61, 129, 239, 0.12);
+  padding: 14px min(5vw, 32px);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -35,12 +36,16 @@ const HeaderLeft = styled.div`
 `;
 
 const BackButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 24px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  font-size: 22px;
+  font-weight: 900;
   cursor: pointer;
   color: ${props => props.theme.colors.text.primary};
-  padding: ${props => props.theme.spacing.xs};
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -53,10 +58,10 @@ const BackButton = styled.button`
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading2}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 22px;
+  font-weight: 900;
+  font-size: clamp(22px, 5vw, 32px);
+  line-height: 1;
   margin: 0;
 `;
 
@@ -65,7 +70,7 @@ const SaveButton = styled.button`
   background: ${props =>
     props.disabled
       ? props.theme.colors.neutral[200]
-      : props.theme.colors.primary};
+      : props.theme.colors.gradient.primary};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
   border-radius: ${props => props.theme.radii.pill};
@@ -84,7 +89,7 @@ const SaveButton = styled.button`
 
 const Content = styled.main`
   padding: ${props => props.theme.spacing.xl};
-  max-width: 100%;
+  max-width: 780px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -95,6 +100,11 @@ const Section = styled.section`
   display: flex;
   flex-direction: column;
   gap: ${props => props.theme.spacing.lg};
+  padding: clamp(16px, 3vw, 24px);
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.07);
 `;
 
 const AvatarWrapper = styled.div`
@@ -126,13 +136,14 @@ const AvatarCircle = styled.div`
   height: 104px;
   border-radius: 999px;
   overflow: hidden;
-  background: ${props => props.theme.colors.neutral[100]};
-  border: 2px solid ${props => props.theme.colors.border.subtle};
+  background: ${props => props.theme.colors.gradient.primary};
+  border: 2px solid #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 40px;
-  color: ${props => props.theme.colors.text.secondary};
+  color: #ffffff;
+  font-weight: 900;
 `;
 
 const AvatarImage = styled.img`
@@ -416,7 +427,7 @@ export const EditProfilePage = () => {
         <Header>
           <HeaderLeft>
             <BackButton onClick={() => navigate(-1)} aria-label="Back">
-              ←
+              &lt;
             </BackButton>
             <Title>Edit Profile</Title>
           </HeaderLeft>
@@ -434,7 +445,7 @@ export const EditProfilePage = () => {
       <Header>
         <HeaderLeft>
           <BackButton onClick={() => navigate(-1)} aria-label="Back">
-            ←
+            &lt;
           </BackButton>
           <Title>Edit Profile</Title>
         </HeaderLeft>

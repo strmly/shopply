@@ -1,57 +1,47 @@
-/**
- * Authentication Middleware
- * Placeholder for authentication logic
- * Implement JWT or session-based authentication here
- */
+import { verifyToken } from '../utils/jwt.js';
+import { UserService } from '../services/UserService.js';
+import { ROLES } from '../config/roles.js';
 
-/**
- * Authenticate user middleware
- * Verifies JWT token or session
- */
 export const authenticate = async (req, res, next) => {
   try {
-    // TODO: Implement authentication logic
-    // Example: Verify JWT token from Authorization header
-    // const token = req.headers.authorization?.split(' ')[1];
-    // if (!token) {
-    //   return res.status(401).json({ success: false, message: 'No token provided' });
-    // }
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // req.user = decoded;
-    
+    // 1. JWT from Authorization header
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const payload = verifyToken(authHeader.slice(7));
+      if (payload?.userId) {
+        req.user = { userId: payload.userId, role: payload.role || ROLES.BUYER };
+        return next();
+      }
+    }
+
+    // 2. Backward-compat: userId from body/query (existing frontend code)
+    const rawId = req.body?.userId || req.query?.userId;
+    if (rawId) {
+      const numId = rawId === 'default' ? 1 : parseInt(rawId);
+      const user = await UserService.getUserById(numId).catch(() => null);
+      req.user = { userId: numId, role: user?.role || ROLES.BUYER };
+      return next();
+    }
+
+    // 3. Guest
+    req.user = { userId: null, role: ROLES.GUEST };
     next();
-  } catch (error) {
-    res.status(401).json({
-      success: false,
-      message: 'Authentication failed',
-    });
+  } catch {
+    req.user = { userId: null, role: ROLES.GUEST };
+    next();
   }
 };
 
-/**
- * Authorize user middleware
- * Checks if user has required role/permission
- */
-export const authorize = (...roles) => {
-  return (req, res, next) => {
-    // TODO: Implement authorization logic
-    // if (!req.user) {
-    //   return res.status(401).json({ success: false, message: 'Not authenticated' });
-    // }
-    // if (!roles.includes(req.user.role)) {
-    //   return res.status(403).json({ success: false, message: 'Not authorized' });
-    // }
-    next();
-  };
+export const requireAuth = (req, res, next) => {
+  if (!req.user || req.user.role === ROLES.GUEST || !req.user.userId) {
+    return res.status(401).json({ success: false, message: 'Authentication required' });
+  }
+  next();
 };
 
-
-
-
-
-
-
-
-
-
-
+export const authorize = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ success: false, message: 'Insufficient permissions' });
+  }
+  next();
+};

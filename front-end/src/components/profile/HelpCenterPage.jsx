@@ -1,178 +1,179 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import API_BASE_URL from '@config/api';
 import { fadeIn } from '../../theme/animations';
 import { BottomNavigation } from '../home/BottomNavigation';
 import Input from '../ui/Input';
 
-import API_BASE_URL from '@config/api';
-
-const Container = styled.div`
+const Page = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
-  animation: ${fadeIn} 0.5s ease-in;
-  padding-bottom: 100px;
+  padding-bottom: 104px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 48%, #ffffff 100%);
+  animation: ${fadeIn} 0.35s ease;
 `;
 
-const Header = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: ${props => props.theme.colors.background};
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  display: flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.md};
+const Shell = styled.main`
+  width: min(960px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 18px 0 28px;
+
+  @media (max-width: 560px) {
+    width: min(100% - 22px, 960px);
+  }
+`;
+
+const Hero = styled.section`
+  display: grid;
+  gap: 16px;
+  padding: clamp(18px, 4vw, 30px);
+  border-radius: 28px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.98), rgba(241,247,255,0.94)) padding-box,
+    ${props => props.theme.colors.gradient.primary} border-box;
+  box-shadow: 0 24px 62px rgba(16, 24, 40, 0.1);
 `;
 
 const BackButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 24px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  background: #ffffff;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 22px;
+  font-weight: 900;
   cursor: pointer;
-  color: ${props => props.theme.colors.text.primary};
-  padding: ${props => props.theme.spacing.xs};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: ${props => props.theme.transitions.swift};
-
-  &:hover {
-    color: ${props => props.theme.colors.primary};
-    transform: translateX(-2px);
-  }
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading2}
-  color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 22px;
   margin: 0;
+  color: ${props => props.theme.colors.text.primary};
+  font-size: clamp(32px, 7vw, 54px);
+  line-height: 1;
+  letter-spacing: 0;
+  font-weight: 900;
 `;
 
-const Content = styled.main`
-  padding: ${props => props.theme.spacing.xl};
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.lg};
-`;
-
-const SectionLabel = styled.div`
-  ${props => props.theme.typography.caption}
+const Subtext = styled.p`
+  margin: 0;
+  max-width: 680px;
   color: ${props => props.theme.colors.text.secondary};
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 15px;
+  line-height: 1.6;
+  font-weight: 750;
 `;
 
-const CategoriesGrid = styled.div`
+const SearchBox = styled.div`
+  max-width: 680px;
+`;
+
+const Section = styled.section`
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+`;
+
+const SectionTitle = styled.h2`
+  margin: 0;
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 22px;
+  font-weight: 900;
+`;
+
+const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: ${props => props.theme.spacing.md};
-`;
+  gap: 12px;
 
-const CategoryCard = styled.button`
-  padding: ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.radii.lg};
-  background: ${props => props.theme.colors.surface};
-  border: 1px solid ${props => props.theme.colors.border.light};
-  text-align: left;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  transition: ${props => props.theme.transitions.swift};
-
-  &:hover {
-    border-color: ${props => props.theme.colors.primary};
-    box-shadow: ${props => props.theme.shadows.sm};
-    transform: translateY(-1px);
+  @media (max-width: 680px) {
+    grid-template-columns: 1fr;
   }
 `;
 
-const CategoryTitle = styled.div`
-  ${props => props.theme.typography.body1}
-  color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-`;
-
-const CategoryDescription = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 12px;
-`;
-
-const EmptyState = styled.div`
-  border-radius: ${props => props.theme.radii.lg};
-  border: 1px dashed ${props => props.theme.colors.border.default};
-  padding: ${props => props.theme.spacing.lg};
-  text-align: center;
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.text.secondary};
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.sm};
-  align-items: center;
-  justify-content: center;
-`;
-
-const EmptyTitle = styled.div`
-  font-weight: 500;
-  color: ${props => props.theme.colors.text.primary};
-`;
-
-const EmptyButton = styled.button`
-  margin-top: ${props => props.theme.spacing.sm};
-  padding: 8px 16px;
-  border-radius: ${props => props.theme.radii.pill};
-  border: none;
-  background: ${props => props.theme.colors.gradient.primary};
-  color: ${props => props.theme.colors.text.inverse};
+const Card = styled.button`
+  min-height: 126px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(16, 24, 40, 0.06);
+  text-align: left;
   cursor: pointer;
-  ${props => props.theme.typography.button}
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(61, 129, 239, 0.28);
+    background: ${props => props.theme.colors.primarySoftBg};
+  }
+`;
+
+const CardTitle = styled.div`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 16px;
+  font-weight: 900;
+`;
+
+const CardText = styled.div`
+  color: ${props => props.theme.colors.text.secondary};
   font-size: 13px;
+  line-height: 1.45;
+  font-weight: 750;
+`;
+
+const ResultList = styled.div`
+  display: grid;
+  gap: 8px;
+`;
+
+const Result = styled.button`
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+`;
+
+const Badge = styled.span`
+  min-height: 28px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  transition: ${props => props.theme.transitions.swift};
-
-  &:hover {
-    background: ${props => props.theme.colors.primaryHover};
-    transform: translateY(-0.5px);
-  }
-`;
-
-const SearchResults = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const ResultItem = styled.button`
-  padding: 10px 0;
-  border: none;
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.text.primary};
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const ResultTitle = styled.span`
-  font-weight: 500;
-`;
-
-const ResultCategory = styled.span`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
+  padding: 0 9px;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.primarySoftBg};
+  color: ${props => props.theme.colors.primarySoftText};
   font-size: 11px;
+  font-weight: 900;
+`;
+
+const SupportPanel = styled.div`
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(61, 129, 239, 0.16);
+  background: ${props => props.theme.colors.gradient.soft};
+`;
+
+const Button = styled.button`
+  width: fit-content;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.gradient.primary};
+  color: #ffffff;
+  font-weight: 900;
+  cursor: pointer;
 `;
 
 export const HelpCenterPage = () => {
@@ -184,114 +185,102 @@ export const HelpCenterPage = () => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/help/categories`);
-        const json = await res.json();
-        if (json.success) {
-          setCategories(json.data || []);
-        }
-      } catch (e) {
-        console.error('Error loading help categories', e);
+        const response = await fetch(`${API_BASE_URL}/help/categories`);
+        const data = await response.json();
+        if (data.success) setCategories(data.data || []);
+      } catch {
+        setCategories([]);
       }
     };
     loadCategories();
   }, []);
 
   useEffect(() => {
-    const timeout = setTimeout(async () => {
+    const id = setTimeout(async () => {
       const trimmed = query.trim();
       if (!trimmed) {
         setResults([]);
         return;
       }
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/help/search?q=${encodeURIComponent(trimmed)}`
-        );
-        const json = await res.json();
-        if (json.success) {
-          setResults(json.data || []);
-        }
-      } catch (e) {
-        console.error('Error searching help articles', e);
-      }
-    }, 300);
 
-    return () => clearTimeout(timeout);
+      try {
+        const response = await fetch(`${API_BASE_URL}/help/search?q=${encodeURIComponent(trimmed)}`);
+        const data = await response.json();
+        if (data.success) setResults(data.data || []);
+      } catch {
+        setResults([]);
+      }
+    }, 250);
+
+    return () => clearTimeout(id);
   }, [query]);
 
-  const handleCategoryPress = (categoryId) => {
-    navigate(`/support/help/category/${categoryId}`);
-  };
-
-  const handleArticlePress = (articleId) => {
-    navigate(`/support/help/article/${articleId}`);
-  };
-
-  const handleContactPress = () => {
-    navigate('/support/contact');
-  };
-
   return (
-    <Container>
-      <Header>
-        <BackButton onClick={() => navigate(-1)} aria-label="Back">
-          ←
-        </BackButton>
-        <Title>Help Center</Title>
-      </Header>
+    <Page>
+      <Shell>
+        <Hero>
+          <BackButton onClick={() => navigate(-1)} aria-label="Back">&lt;</BackButton>
+          <div>
+            <Title>Help and support</Title>
+            <Subtext>Find answers for orders, returns, sellers, payments, and account settings.</Subtext>
+          </div>
+          <SearchBox>
+            <Input
+              placeholder="Search help articles"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </SearchBox>
+        </Hero>
 
-      <Content>
-        <Input
-          placeholder="Search for help…"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-        />
-
-        {query.trim() && results.length > 0 && (
-          <SearchResults>
-            {results.map(article => (
-              <ResultItem
-                key={article.id}
-                type="button"
-                onClick={() => handleArticlePress(article.id)}
-              >
-                <ResultTitle>{article.title}</ResultTitle>
-                <ResultCategory>Article</ResultCategory>
-              </ResultItem>
-            ))}
-          </SearchResults>
+        {query.trim() && (
+          <Section>
+            <SectionTitle>Search results</SectionTitle>
+            <ResultList>
+              {results.length > 0 ? results.map((article) => (
+                <Result key={article.id} onClick={() => navigate(`/support/help/article/${article.id}`)}>
+                  <div>
+                    <CardTitle>{article.title}</CardTitle>
+                    <CardText>{article.summary}</CardText>
+                  </div>
+                  <Badge>Article</Badge>
+                </Result>
+              )) : (
+                <SupportPanel>
+                  <CardTitle>No matching articles yet</CardTitle>
+                  <CardText>Try another search or contact support and we will help you directly.</CardText>
+                  <Button onClick={() => navigate('/support/contact')}>Contact support</Button>
+                </SupportPanel>
+              )}
+            </ResultList>
+          </Section>
         )}
-
-        <div>
-          <SectionLabel>Browse by topic</SectionLabel>
-          <CategoriesGrid>
-            {categories.map(category => (
-              <CategoryCard
-                key={category.id}
-                type="button"
-                onClick={() => handleCategoryPress(category.id)}
-              >
-                <CategoryTitle>{category.title}</CategoryTitle>
-                <CategoryDescription>{category.description}</CategoryDescription>
-              </CategoryCard>
-            ))}
-          </CategoriesGrid>
-        </div>
 
         {!query.trim() && (
-          <EmptyState>
-            <EmptyTitle>Can’t find what you’re looking for?</EmptyTitle>
-            <div>Our team is here to help.</div>
-            <EmptyButton type="button" onClick={handleContactPress}>
-              Contact Support
-            </EmptyButton>
-          </EmptyState>
-        )}
-      </Content>
+          <>
+            <Section>
+              <SectionTitle>Browse by topic</SectionTitle>
+              <Grid>
+                {categories.map((category) => (
+                  <Card key={category.id} onClick={() => navigate(`/support/help/category/${category.id}`)}>
+                    <CardTitle>{category.title}</CardTitle>
+                    <CardText>{category.description}</CardText>
+                  </Card>
+                ))}
+              </Grid>
+            </Section>
 
+            <Section>
+              <SupportPanel>
+                <CardTitle>Need a hand from Tsenga?</CardTitle>
+                <CardText>Our support flow is ready for order, return, account, and seller questions.</CardText>
+                <Button onClick={() => navigate('/support/contact')}>Contact support</Button>
+              </SupportPanel>
+            </Section>
+          </>
+        )}
+      </Shell>
       <BottomNavigation currentPath="/profile" />
-    </Container>
+    </Page>
   );
 };
-
-

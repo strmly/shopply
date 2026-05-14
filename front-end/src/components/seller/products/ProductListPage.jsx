@@ -4,7 +4,7 @@ import styled, { keyframes } from 'styled-components';
 import { fadeIn } from '../../../theme/animations';
 import { TopNavigation } from '../../home/TopNavigation';
 import { BottomNavigation } from '../../home/BottomNavigation';
-import { SkeletonCard, SkeletonText } from '../../ui/Skeleton';
+import { Skeleton, SkeletonCard, SkeletonText } from '../../ui/Skeleton';
 import { toast } from '../../ui/Toast';
 import API_BASE_URL from '@config/api';
 
@@ -737,10 +737,17 @@ export const ProductListPage = ({ location }) => {
         {loading && products.length === 0 ? (
           <ProductGrid>
             {Array.from({ length: 6 }).map((_, index) => (
-              <SkeletonCard key={index} style={{ minHeight: 360, borderRadius: 24 }}>
-                <SkeletonText $size="large" $width="70%" />
-                <SkeletonText $width="50%" />
-                <SkeletonText $width="90%" />
+              <SkeletonCard key={index} style={{ overflow: 'hidden', borderRadius: 24, display: 'flex', flexDirection: 'column' }}>
+                <Skeleton $height="190px" $radius="0" />
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <SkeletonText $size="small" $width="40%" />
+                  <SkeletonText $size="large" $width="80%" />
+                  <SkeletonText $width="55%" />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
+                    <SkeletonText $size="large" $width="35%" />
+                    <Skeleton $width="32px" $height="32px" $circle />
+                  </div>
+                </div>
               </SkeletonCard>
             ))}
           </ProductGrid>

@@ -1,8 +1,6 @@
-import { AddressService } from '../services/AddressService.js';
+import { addressService } from '../services/AddressService.js';
 import { validateAddressId } from '../utils/addressValidation.js';
 import { getAddressSuggestions } from '../utils/addressUtils.js';
-
-const addressService = new AddressService();
 
 /**
  * Address Controller

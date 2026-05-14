@@ -1,4 +1,5 @@
 import express from 'express';
+import { authenticate } from '../middleware/auth.js';
 import userRoutes from './userRoutes.js';
 import authRoutes from './authRoutes.js';
 import addressRoutes from './addressRoutes.js';
@@ -28,8 +29,12 @@ import whatsappRoutes from './whatsappRoutes.js';
 import legalRoutes from './legalRoutes.js';
 import furnitureRoutes from './furnitureRoutes.js';
 import uploadRoutes from './uploadRoutes.js';
+import storefrontRoutes from './storefrontRoutes.js';
 
 const router = express.Router();
+
+// Populate req.user on every request (never blocks — sets guest if no token)
+router.use(authenticate);
 
 // Mount all route modules
 router.use('/users', userRoutes);
@@ -38,6 +43,7 @@ router.use('/addresses', addressRoutes);
 router.use('/products', productRoutes);
 router.use('/search', searchRoutes);
 router.use('/furniture', furnitureRoutes);
+router.use('/stores', storefrontRoutes);
 router.use('/cart', cartRoutes);
 router.use('/checkout', checkoutRoutes);
 router.use('/orders', orderTrackingRoutes);

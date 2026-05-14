@@ -1,36 +1,27 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import API_BASE_URL from '@config/api';
+import { can as canFn } from '@config/roles';
+import { getAuthUser, getRole, getToken, clearAuthUser } from '../utils/authState';
+import apiFetch from '../utils/apiClient';
 
 const STORAGE_KEY = 'shopply_user';
-const AUTH_STORAGE_KEY = 'tsenga_auth_user';
-const USER_ID = 'default';
-
-const ensureGuestAuth = (userData) => {
-  try {
-    const existing = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!existing) {
-      const authUser = { ...userData, signedIn: true, registered: true, signedInAt: new Date().toISOString() };
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
-      window.dispatchEvent(new Event('authChanged'));
-    }
-  } catch {}
-};
 
 const DEFAULT_USER = {
-  id: USER_ID,
-  name: 'Guest User',
+  id: null,
+  name: 'Guest',
   firstName: 'Guest',
-  lastName: 'User',
-  email: 'guest@example.com',
+  lastName: '',
+  email: '',
   mobile: '',
   avatarUrl: '',
-  role: 'buyer',
+  role: 'guest',
   isSeller: false,
 };
 
 const UserContext = createContext({
   user: DEFAULT_USER,
   loading: true,
+  role: 'guest',
+  can: () => false,
   updateUser: async () => {},
   refreshUser: async () => {},
 });
@@ -39,55 +30,85 @@ export const useUser = () => useContext(UserContext);
 
 const splitName = (name = '') => {
   const parts = name.trim().split(/\s+/);
-  if (parts.length === 0) return { firstName: 'Guest', lastName: 'User' };
+  if (parts.length === 0) return { firstName: '', lastName: '' };
   if (parts.length === 1) return { firstName: parts[0], lastName: '' };
   return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
 };
 
-export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    try {
-      const cached = localStorage.getItem(STORAGE_KEY);
-      const initial = cached ? { ...DEFAULT_USER, ...JSON.parse(cached) } : DEFAULT_USER;
-      ensureGuestAuth(initial);
-      return initial;
-    } catch {
-      ensureGuestAuth(DEFAULT_USER);
-      return DEFAULT_USER;
-    }
-  });
-  const [loading, setLoading] = useState(true);
+const buildUser = (data) => {
+  if (!data) return null;
+  const { firstName, lastName } = splitName(data.name || '');
+  return {
+    ...DEFAULT_USER,
+    ...data,
+    firstName: data.firstName || firstName,
+    lastName: data.lastName || lastName,
+  };
+};
 
-  const applyProfile = (data) => {
-    const { firstName, lastName } = splitName(data.name || '');
-    const merged = {
-      ...DEFAULT_USER,
-      ...data,
-      firstName: data.firstName || firstName,
-      lastName: data.lastName || lastName,
-    };
+const getInitialUser = () => {
+  try {
+    const authUser = getAuthUser();
+    if (authUser?.token) return buildUser(authUser);
+    const cached = localStorage.getItem(STORAGE_KEY);
+    if (cached) return { ...DEFAULT_USER, ...JSON.parse(cached) };
+  } catch {}
+  return DEFAULT_USER;
+};
+
+export const UserProvider = ({ children }) => {
+  const [user, setUser] = useState(getInitialUser);
+  const [loading, setLoading] = useState(true);
+  const [authRole, setAuthRole] = useState(() => getRole());
+
+  const applyUser = useCallback((data) => {
+    const merged = buildUser(data) || DEFAULT_USER;
     setUser(merged);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-    ensureGuestAuth(merged);
     return merged;
-  };
+  }, []);
 
+  // Fetch fresh data from /api/auth/me using the JWT
   const refreshUser = useCallback(async () => {
+    if (!getToken()) {
+      setLoading(false);
+      return;
+    }
     try {
-      const res = await fetch(`${API_BASE_URL}/profile/${USER_ID}`);
+      const res = await apiFetch('/auth/me');
       const d = await res.json();
-      if (d.success && d.data) applyProfile(d.data);
+      if (d.success && d.data?.user) applyUser(d.data.user);
     } catch {
-      // keep cached value
+      // keep current state
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applyUser]);
 
   useEffect(() => { refreshUser(); }, [refreshUser]);
 
+  // React to sign-in / sign-out events
+  useEffect(() => {
+    const handler = () => {
+      const authUser = getAuthUser();
+      setAuthRole(getRole());
+      if (authUser?.token) {
+        setUser(buildUser(authUser) || DEFAULT_USER);
+        refreshUser();
+      } else {
+        setUser(DEFAULT_USER);
+        localStorage.removeItem(STORAGE_KEY);
+        setLoading(false);
+      }
+    };
+    window.addEventListener('authChanged', handler);
+    return () => window.removeEventListener('authChanged', handler);
+  }, [refreshUser]);
+
   const updateUser = useCallback(async (patch) => {
-    // Optimistic update
+    const authUser = getAuthUser();
+    const userId = authUser?.id || 'default';
+
     const next = { ...user, ...patch };
     if (patch.firstName !== undefined || patch.lastName !== undefined) {
       next.name = [patch.firstName ?? user.firstName, patch.lastName ?? user.lastName]
@@ -96,10 +117,8 @@ export const UserProvider = ({ children }) => {
     setUser(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 
-    // Persist to backend
-    await fetch(`${API_BASE_URL}/profile/${USER_ID}`, {
+    await apiFetch(`/profile/${userId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: next.name,
         email: next.email,
@@ -109,8 +128,10 @@ export const UserProvider = ({ children }) => {
     });
   }, [user]);
 
+  const role = (authRole && authRole !== 'guest') ? authRole : (user.role || 'guest');
+
   return (
-    <UserContext.Provider value={{ user, loading, updateUser, refreshUser }}>
+    <UserContext.Provider value={{ user, loading, role, can: (p) => canFn(role, p), updateUser, refreshUser }}>
       {children}
     </UserContext.Provider>
   );

@@ -9,6 +9,7 @@ export { SupportHelp } from './SupportHelp';
 export { LegalAbout } from './LegalAbout';
 export { SellerSection } from './SellerSection';
 export { EditProfilePage } from './EditProfilePage';
+export { VerifyEmailPage } from './VerifyEmailPage';
 export { ChangePasswordPage } from './ChangePasswordPage';
 export { NotificationSettingsPage } from './NotificationSettingsPage';
 export { LanguageSettingsPage } from './LanguageSettingsPage';

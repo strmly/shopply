@@ -1,4 +1,6 @@
 import { ProductService } from '../services/ProductService.js';
+import { SellerService } from '../services/SellerService.js';
+import { getStoreById } from '../services/StoreService.js';
 
 const SA_STORE_CITIES = [
   { suburb: 'Sandton', city: 'Johannesburg', province: 'Gauteng', lat: -26.1076, lng: 28.0567 },
@@ -41,6 +43,39 @@ function enrichProduct(product, userLoc) {
 function parseUserLoc(query) {
   const { lat, lng } = query;
   return lat && lng ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
+}
+
+async function getSellerContactForProduct(product) {
+  const storeId = product?.storeId;
+  const store = getStoreById(storeId) || getStoreById(String(storeId));
+  let seller = null;
+
+  if (store?.sellerId) {
+    seller = await SellerService.getSellerById(store.sellerId);
+  }
+
+  if (!seller && storeId) {
+    seller = await SellerService.getSellerById(storeId);
+  }
+
+  if (!seller && parseInt(storeId, 10) === 1) {
+    seller = await SellerService.seedDefaultSeller();
+  }
+
+  const whatsappNumber = seller?.storeBasicInfo?.storePhone
+    || seller?.phone
+    || store?.phone
+    || product?.sellerPhone
+    || product?.storePhone
+    || '';
+
+  return {
+    sellerId: seller?.id || store?.sellerId || storeId || null,
+    storePhone: store?.phone || seller?.storeBasicInfo?.storePhone || seller?.phone || '',
+    whatsappNumber,
+    contactEmail: seller?.storeBasicInfo?.contactEmail || seller?.email || store?.email || '',
+    responseMinutes: seller?.responseStats?.avgResponseMinutes || null,
+  };
 }
 
 /**
@@ -104,9 +139,15 @@ export class ProductController {
         });
       }
 
+      const productData = product.toJSON();
+      const sellerContact = await getSellerContactForProduct(productData);
+
       res.json({
         success: true,
-        data: product.toJSON(),
+        data: {
+          ...productData,
+          sellerContact,
+        },
       });
     } catch (error) {
       next(error);

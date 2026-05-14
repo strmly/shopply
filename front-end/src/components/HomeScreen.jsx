@@ -12,12 +12,12 @@ import { BundlesSection } from './home/BundlesSection';
 import { ProductGrid } from './home/ProductGrid';
 import { BottomNavigation } from './home/BottomNavigation';
 import { ModeIndicator } from './home/ModeIndicator';
-import { InlineSearch } from './home/InlineSearch';
 import { TrendingInArea, CommunityRecommendations } from './community';
 import { SellerBannerCompact, SellerBannerFull } from './home/SellerBanner';
 import { SellerTopBanner } from './home/SellerTopBanner';
 import { NotificationsPanel } from './ui';
 import { LocationPickerModal } from './home/LocationPickerModal';
+import { ProductGridSkeleton } from './ui/Skeleton';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -88,7 +88,6 @@ export const HomeScreen = ({ location, onLocationChange }) => {
   const [topRated, setTopRated] = useState([]);
   const [feedProducts, setFeedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -215,6 +214,8 @@ export const HomeScreen = ({ location, onLocationChange }) => {
     toast.success(`${product.name} added to cart`);
   };
 
+  const openSearch = () => navigate('/search');
+
   if (loading) {
     return (
       <Container>
@@ -224,22 +225,16 @@ export const HomeScreen = ({ location, onLocationChange }) => {
           onLocationClick={() => setShowLocationPicker(true)}
           onSearch={(query) => console.log('Search:', query)}
           onNotificationClick={() => setShowNotifications(true)}
-          onSearchClick={() => setShowSearch(true)}
+          onSearchClick={openSearch}
           unreadCount={unreadCount}
         />
-        <LoadingContainer>Loading products...</LoadingContainer>
+        <div style={{ padding: '24px clamp(14px, 5vw, 48px)' }}>
+          <ProductGridSkeleton count={6} />
+        </div>
         <BottomNavigation
           currentPath="/"
-          onSearchClick={() => setShowSearch(true)}
+          onSearchClick={openSearch}
         />
-        {showSearch && (
-          <InlineSearch
-            location={location}
-            onClose={() => setShowSearch(false)}
-            onProductClick={handleProductClick}
-            onAddToCart={handleAddToCart}
-          />
-        )}
         {showLocationPicker && (
           <LocationPickerModal
             currentLocation={location}
@@ -264,7 +259,7 @@ export const HomeScreen = ({ location, onLocationChange }) => {
         onNotificationClick={() => setShowNotifications(true)}
         onProductClick={handleProductClick}
         onAddToCart={handleAddToCart}
-        onSearchClick={() => setShowSearch(true)}
+        onSearchClick={openSearch}
         unreadCount={unreadCount}
       />
       
@@ -383,17 +378,8 @@ export const HomeScreen = ({ location, onLocationChange }) => {
       <ModeIndicator onToggle={() => navigate('/profile')} />
       <BottomNavigation 
         currentPath="/" 
-        onSearchClick={() => setShowSearch(true)}
+        onSearchClick={openSearch}
       />
-
-      {showSearch && (
-        <InlineSearch
-          location={location}
-          onClose={() => setShowSearch(false)}
-          onProductClick={handleProductClick}
-          onAddToCart={handleAddToCart}
-        />
-      )}
 
       <NotificationsPanel
         isOpen={showNotifications}

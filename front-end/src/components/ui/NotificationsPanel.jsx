@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { API_BASE_URL } from '../../config/api.js';
 
 const Overlay = styled.div`
@@ -207,6 +207,33 @@ const EmptyText = styled.p`
   font-weight: 900;
 `;
 
+const DeleteButton = styled.button`
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(228, 231, 236, 0.9);
+  background: #ffffff;
+  color: ${props => props.theme.colors.text.secondary};
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0;
+  transition: all 0.15s ease;
+  box-shadow: 0 6px 14px rgba(16, 24, 40, 0.08);
+
+  &:hover {
+    background: #fff0f0;
+    border-color: #fca5a5;
+    color: #ef4444;
+  }
+`;
+
 const NotificationItem = styled.div`
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
@@ -229,6 +256,10 @@ const NotificationItem = styled.div`
     transform: translateY(-2px);
     border-color: rgba(61, 129, 239, 0.32);
     box-shadow: 0 20px 42px rgba(16, 24, 40, 0.1);
+  }
+
+  &:hover ${DeleteButton} {
+    opacity: 1;
   }
 
   ${props => !props.$read && `
@@ -334,14 +365,54 @@ const NotificationType = styled.span`
   }};
 `;
 
-const LoadingState = styled.div`
+const shimmer = keyframes`
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+`;
+
+const SkeletonBase = styled.div`
+  background: linear-gradient(105deg, #eef2f7 0%, rgba(255,255,255,0.88) 50%, #eef2f7 100%);
+  background-size: 800px 100%;
+  animation: ${shimmer} 1.4s infinite linear;
+  border-radius: ${props => props.$radius || '10px'};
+  height: ${props => props.$h || '14px'};
+  width: ${props => props.$w || '100%'};
+`;
+
+const SkeletonItem = styled.div`
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(228, 231, 236, 0.78);
+`;
+
+const FilterTabs = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 320px;
-  padding: 44px 24px;
-  color: ${props => props.theme.colors.text.secondary};
+  gap: 6px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(228, 231, 236, 0.64);
+  background: rgba(255, 255, 255, 0.72);
+`;
+
+const FilterTab = styled.button`
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid ${props => props.$active ? 'rgba(61, 129, 239, 0.3)' : 'rgba(228, 231, 236, 0.9)'};
+  background: ${props => props.$active ? props.theme.colors.primarySoftBg : '#ffffff'};
+  color: ${props => props.$active ? props.theme.colors.primarySoftText : props.theme.colors.text.secondary};
+  font-size: 12px;
   font-weight: 900;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: rgba(61, 129, 239, 0.28);
+    color: ${props => props.theme.colors.primarySoftText};
+  }
 `;
 
 const getTypeInitial = (type) => {
@@ -374,8 +445,8 @@ export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBas
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [filter, setFilter] = useState('all');
 
-  // Use provided apiBaseUrl or fall back to centralized config
   const baseUrl = apiBaseUrl || API_BASE_URL;
 
   useEffect(() => {
@@ -390,12 +461,8 @@ export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBas
       setLoading(true);
       const response = await fetch(`${baseUrl}/notifications/user/${userId}`);
       const data = await response.json();
-
-      if (data.success) {
-        setNotifications(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
+      if (data.success) setNotifications(data.data || []);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -405,53 +472,49 @@ export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBas
     try {
       const response = await fetch(`${baseUrl}/notifications/user/${userId}/count`);
       const data = await response.json();
-
-      if (data.success) {
-        setUnreadCount(data.data?.count || 0);
-      }
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
+      if (data.success) setUnreadCount(data.data?.count || 0);
+    } catch {}
   };
 
   const handleNotificationClick = async (notification) => {
-    // Mark as read if not already read
     if (!notification.read) {
       try {
-        await fetch(`${baseUrl}/notifications/${notification.id}/read`, {
-          method: 'PUT',
-        });
-        // Update local state
-        setNotifications(prev =>
-          prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-        );
+        await fetch(`${baseUrl}/notifications/${notification.id}/read`, { method: 'PUT' });
+        setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: true } : n));
         setUnreadCount(prev => Math.max(0, prev - 1));
-      } catch (error) {
-        console.error('Error marking notification as read:', error);
-      }
+        window.dispatchEvent(new Event('notificationUpdated'));
+      } catch {}
     }
-
-    // Navigate to notification detail page
     onClose();
     navigate(`/notifications/${notification.id}`);
   };
 
   const handleMarkAllRead = async () => {
     try {
-      await fetch(`${baseUrl}/notifications/user/${userId}/read-all`, {
-        method: 'PUT',
-      });
-      // Update local state
+      await fetch(`${baseUrl}/notifications/user/${userId}/read-all`, { method: 'PUT' });
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    }
+      window.dispatchEvent(new Event('notificationUpdated'));
+    } catch {}
+  };
+
+  const handleDelete = async (e, notificationId) => {
+    e.stopPropagation();
+    try {
+      await fetch(`${baseUrl}/notifications/${notificationId}`, { method: 'DELETE' });
+      setNotifications(prev => {
+        const removed = prev.find(n => n.id === notificationId);
+        if (removed && !removed.read) setUnreadCount(c => Math.max(0, c - 1));
+        return prev.filter(n => n.id !== notificationId);
+      });
+      window.dispatchEvent(new Event('notificationUpdated'));
+    } catch {}
   };
 
   if (!isOpen) return null;
 
   const hasUnread = notifications.some(n => !n.read);
+  const displayed = filter === 'unread' ? notifications.filter(n => !n.read) : notifications;
 
   return (
     <>
@@ -465,32 +528,41 @@ export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBas
           <CloseButton onClick={onClose} aria-label="Close notifications">x</CloseButton>
         </Header>
 
+        <FilterTabs>
+          <FilterTab $active={filter === 'all'} onClick={() => setFilter('all')}>All</FilterTab>
+          <FilterTab $active={filter === 'unread'} onClick={() => setFilter('unread')}>
+            Unread{unreadCount > 0 ? ` (${unreadCount})` : ''}
+          </FilterTab>
+        </FilterTabs>
+
         {notifications.length > 0 && (
           <ActionsBar>
-            <MarkAllReadButton
-              onClick={handleMarkAllRead}
-              disabled={!hasUnread}
-            >
+            <MarkAllReadButton onClick={handleMarkAllRead} disabled={!hasUnread}>
               Mark all as read
             </MarkAllReadButton>
-            {unreadCount > 0 && (
-              <UnreadPill>
-                {unreadCount} unread
-              </UnreadPill>
-            )}
+            {unreadCount > 0 && <UnreadPill>{unreadCount} unread</UnreadPill>}
           </ActionsBar>
         )}
 
         <NotificationsList>
           {loading ? (
-            <LoadingState>Loading notifications...</LoadingState>
-          ) : notifications.length === 0 ? (
+            [0, 1, 2].map(i => (
+              <SkeletonItem key={i}>
+                <SkeletonBase $h="42px" $w="42px" $radius="16px" />
+                <div style={{ display: 'grid', gap: '8px', paddingTop: '4px' }}>
+                  <SkeletonBase $h="14px" $w="65%" />
+                  <SkeletonBase $h="12px" />
+                  <SkeletonBase $h="12px" $w="80%" />
+                </div>
+              </SkeletonItem>
+            ))
+          ) : displayed.length === 0 ? (
             <EmptyState>
               <EmptyIcon aria-hidden="true" />
-              <EmptyText>No notifications yet</EmptyText>
+              <EmptyText>{filter === 'unread' ? 'All caught up!' : 'No notifications yet'}</EmptyText>
             </EmptyState>
           ) : (
-            notifications.map(notification => (
+            displayed.map(notification => (
               <NotificationItem
                 key={notification.id}
                 $read={notification.read}
@@ -499,18 +571,21 @@ export const NotificationsPanel = ({ isOpen, onClose, userId = 'default', apiBas
                 <TypeMark $type={notification.type}>{getTypeInitial(notification.type)}</TypeMark>
                 <NotificationContent>
                   <NotificationHeader>
-                    <NotificationTitle>
-                      {notification.title}
-                    </NotificationTitle>
-                    <NotificationTime>
-                      {formatTime(notification.createdAt)}
-                    </NotificationTime>
+                    <NotificationTitle>{notification.title}</NotificationTitle>
+                    <NotificationTime>{formatTime(notification.createdAt)}</NotificationTime>
                   </NotificationHeader>
                   <NotificationMessage>{notification.message}</NotificationMessage>
                   <NotificationType $type={notification.type}>
                     {notification.type}
                   </NotificationType>
                 </NotificationContent>
+                <DeleteButton
+                  onClick={(e) => handleDelete(e, notification.id)}
+                  aria-label="Delete notification"
+                  title="Delete"
+                >
+                  ×
+                </DeleteButton>
               </NotificationItem>
             ))
           )}

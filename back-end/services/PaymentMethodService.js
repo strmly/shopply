@@ -325,3 +325,5 @@ export class PaymentMethodService {
   }
 }
 
+export const paymentMethodService = new PaymentMethodService();
+

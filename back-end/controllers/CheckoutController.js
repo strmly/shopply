@@ -1,4 +1,5 @@
 import CheckoutService from '../services/CheckoutService.js';
+import { notificationService } from '../services/NotificationService.js';
 
 /**
  * Checkout Controller
@@ -10,7 +11,7 @@ export class CheckoutController {
    */
   async createOrder(req, res, next) {
     try {
-      const { userId, location, deliveryAddress, deliveryMethod, deliverySpeed, paymentMethod, contactInfo, orderInstructions } = req.body;
+      const { userId, location, deliveryAddress, deliveryMethod, deliverySpeed, paymentMethod, contactInfo, orderInstructions, voucherId } = req.body;
 
       if (!userId) {
         return res.status(400).json({
@@ -26,7 +27,16 @@ export class CheckoutController {
         paymentMethod: paymentMethod || 'card',
         contactInfo: contactInfo || {},
         orderInstructions: orderInstructions || null,
+        voucherId: voucherId || null,
       }, location);
+
+      notificationService.notify(
+        userId,
+        'order',
+        'Order Confirmed',
+        `Your order #${order.id} has been confirmed and is being prepared by the seller.`,
+        { actionUrl: `/orders/${order.id}`, metadata: { orderId: String(order.id) } }
+      );
 
       res.status(201).json({
         success: true,

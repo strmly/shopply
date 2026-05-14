@@ -9,6 +9,8 @@ export class User extends BaseModel {
     this.id = data.id || null;
     this.name = data.name || '';
     this.email = data.email || '';
+    this.emailVerified = Boolean(data.emailVerified);
+    this.emailVerifiedAt = data.emailVerifiedAt || null;
     this.mobile = data.mobile || '';
     this.avatarUrl = data.avatarUrl || '';
     // Authentication-related fields (never exposed directly via API)
@@ -27,6 +29,8 @@ export class User extends BaseModel {
         reminders: true,
       },
     };
+    this.role = data.role || 'buyer';
+    this.status = data.status || 'active';
     this.onboardingCompleted = data.onboardingCompleted || false;
     this.createdAt = data.createdAt || new Date();
     this.updatedAt = data.updatedAt || new Date();

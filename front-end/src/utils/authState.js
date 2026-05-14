@@ -36,7 +36,18 @@ export const saveAuthUser = (user) => {
 export const clearAuthUser = () => {
   if (!canUseStorage()) return;
   window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  window.localStorage.removeItem('shopply_user'); // clear cached profile too
   window.dispatchEvent(new Event('authChanged'));
+};
+
+export const getToken = () => {
+  const user = getAuthUser();
+  return user?.token || null;
+};
+
+export const getRole = () => {
+  const user = getAuthUser();
+  return user?.role || 'guest';
 };
 
 export { AUTH_STORAGE_KEY };

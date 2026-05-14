@@ -59,8 +59,8 @@ const ETAText = styled.div`
 const StyledPlaceOrderButton = styled.button`
   padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
   background: ${props => {
-    if (props.disabled) return props.theme.colors.surface;
-    return props.theme.colors.primary;
+    if (props.disabled) return props.theme.colors.neutral[300];
+    return props.theme.colors.gradient.primary;
   }};
   color: ${props => props.theme.colors.text.inverse};
   border: none;
@@ -71,10 +71,11 @@ const StyledPlaceOrderButton = styled.button`
   cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
   transition: ${props => props.theme.transitions.swift};
   min-width: 160px;
+  box-shadow: ${props => props.disabled ? 'none' : '0 16px 30px rgba(61, 129, 239, 0.24)'};
   animation: ${props => props.pulse && !props.disabled ? css`${pulse} 2s ease-in-out infinite` : 'none'};
 
   &:hover:not(:disabled) {
-    background: ${props => props.theme.colors.primaryHover};
+    background: ${props => props.theme.colors.gradient.primary};
     transform: translateY(-1px);
     box-shadow: ${props => props.theme.shadows.md};
   }

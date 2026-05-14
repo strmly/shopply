@@ -4,6 +4,7 @@ import { HomeScreen } from './components/HomeScreen';
 import { 
   ProfilePage, 
   EditProfilePage,
+  VerifyEmailPage,
   ChangePasswordPage,
   NotificationSettingsPage,
   LanguageSettingsPage,
@@ -32,6 +33,7 @@ import {
 } from './components/category';
 import { CommunityBundlePage, CurateBundlePage, TrendingPage } from './components/community';
 import { SellerOnboarding, BecomeSellerPage, SellerLearnMorePage, OrdersManagement, SellerDashboard, SellerMessagesPage, AnalyticsPage, StoreFrontPage, StoreHoursPage } from './components/seller';
+import { ProtectedRoute, UnauthorizedPage, SignInPage } from './components/auth';
 import { ProductListPage, ProductEditor } from './components/seller/products';
 import { OrderDetails } from './components/seller/orders';
 import { 
@@ -48,7 +50,8 @@ import { PaymentMethodsPage, AddPaymentMethodPage } from './components/payment';
 import { ReturnsHubPage, ReturnDetailPage } from './components/returns';
 import { ReviewsPage } from './components/reviews';
 import { VouchersWalletPage } from './components/vouchers';
-import ToastContainer from './components/ui/Toast';
+import ToastContainer, { toast } from './components/ui/Toast';
+import { socket, joinUserRoom } from './utils/notificationSocket';
 
 const DEFAULT_LOCATION = {
   lat: -26.1076,
@@ -115,6 +118,20 @@ const App = () => {
     localStorage.setItem('tsenga_location', JSON.stringify(newLocation));
   };
 
+  // Real-time notification socket
+  useEffect(() => {
+    joinUserRoom('default');
+
+    const handleNew = (notification) => {
+      window.dispatchEvent(new Event('notificationUpdated'));
+      const typeLabel = { order: 'Order update', promotion: 'Deal alert', system: 'System', info: 'Update' };
+      toast.info(`${typeLabel[notification.type] || 'Update'}: ${notification.title}`, 5000);
+    };
+
+    socket.on('notification:new', handleNew);
+    return () => socket.off('notification:new', handleNew);
+  }, []);
+
   // Initialize default seller store ID for guest access
   useEffect(() => {
     if (!localStorage.getItem('sellerStoreId')) {
@@ -133,6 +150,7 @@ const App = () => {
         <Route path="/" element={<HomeScreen location={location} onLocationChange={handleLocationChange} />} />
         <Route path="/profile" element={<ProfilePage location={location} />} />
         <Route path="/account/edit-profile" element={<EditProfilePage />} />
+        <Route path="/account/verify-email" element={<VerifyEmailPage />} />
         <Route path="/account/change-password" element={<ChangePasswordPage />} />
         <Route path="/account/notifications" element={<NotificationSettingsPage />} />
         <Route path="/account/language" element={<LanguageSettingsPage />} />
@@ -176,23 +194,27 @@ const App = () => {
         <Route path="/community/bundle/:bundleType/curate" element={<CurateBundlePage location={location} />} />
         <Route path="/sell-on-tsenga" element={<SellerLearnMorePage location={location} />} />
         <Route path="/become-a-seller" element={<BecomeSellerPage location={location} />} />
-        <Route path="/seller/onboarding" element={<SellerOnboarding location={location} />} />
-        <Route path="/seller/dashboard" element={<SellerDashboard location={location} />} />
-        <Route path="/seller/messages" element={<SellerMessagesPage location={location} />} />
-        <Route path="/seller/analytics" element={<AnalyticsPage location={location} />} />
-        <Route path="/seller/products" element={<ProductListPage location={location} />} />
-        <Route path="/seller/products/new" element={<ProductEditor location={location} />} />
-        <Route path="/seller/products/:id/edit" element={<ProductEditor location={location} />} />
-        <Route path="/seller/orders" element={<OrdersManagement location={location} />} />
-        <Route path="/seller/orders/:orderId" element={<OrderDetails location={location} />} />
-        <Route path="/seller/promotions" element={<PromotionsHomePage location={location} />} />
-        <Route path="/seller/promotions/calendar" element={<CampaignCalendar location={location} />} />
-        <Route path="/seller/promotions/discount/create" element={<CreateDiscountPage location={location} />} />
-        <Route path="/seller/promotions/flash/create" element={<FlashDealSetupPage location={location} />} />
-        <Route path="/seller/promotions/bundle/create" element={<BundleCreatorPage location={location} />} />
-        <Route path="/seller/store" element={<StoreFrontPage location={location} />} />
-        <Route path="/seller/settings/hours" element={<StoreHoursPage />} />
-        {/* Add more routes as needed */}
+        <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+        {/* Seller routes — require seller or admin role */}
+        <Route path="/seller/onboarding" element={<ProtectedRoute roles={['seller', 'admin']}><SellerOnboarding location={location} /></ProtectedRoute>} />
+        <Route path="/seller/dashboard" element={<ProtectedRoute roles={['seller', 'admin']}><SellerDashboard location={location} /></ProtectedRoute>} />
+        <Route path="/seller/messages" element={<ProtectedRoute roles={['seller', 'admin']}><SellerMessagesPage location={location} /></ProtectedRoute>} />
+        <Route path="/seller/analytics" element={<ProtectedRoute roles={['seller', 'admin']}><AnalyticsPage location={location} /></ProtectedRoute>} />
+        <Route path="/seller/products" element={<ProtectedRoute roles={['seller', 'admin']}><ProductListPage location={location} /></ProtectedRoute>} />
+        <Route path="/seller/products/new" element={<ProtectedRoute roles={['seller', 'admin']}><ProductEditor location={location} /></ProtectedRoute>} />
+        <Route path="/seller/products/:id/edit" element={<ProtectedRoute roles={['seller', 'admin']}><ProductEditor location={location} /></ProtectedRoute>} />
+        <Route path="/seller/orders" element={<ProtectedRoute roles={['seller', 'admin']}><OrdersManagement location={location} /></ProtectedRoute>} />
+        <Route path="/seller/orders/:orderId" element={<ProtectedRoute roles={['seller', 'admin']}><OrderDetails location={location} /></ProtectedRoute>} />
+        <Route path="/seller/promotions" element={<ProtectedRoute roles={['seller', 'admin']}><PromotionsHomePage location={location} /></ProtectedRoute>} />
+        <Route path="/seller/promotions/calendar" element={<ProtectedRoute roles={['seller', 'admin']}><CampaignCalendar location={location} /></ProtectedRoute>} />
+        <Route path="/seller/promotions/discount/create" element={<ProtectedRoute roles={['seller', 'admin']}><CreateDiscountPage location={location} /></ProtectedRoute>} />
+        <Route path="/seller/promotions/flash/create" element={<ProtectedRoute roles={['seller', 'admin']}><FlashDealSetupPage location={location} /></ProtectedRoute>} />
+        <Route path="/seller/promotions/bundle/create" element={<ProtectedRoute roles={['seller', 'admin']}><BundleCreatorPage location={location} /></ProtectedRoute>} />
+        <Route path="/store/:storeId" element={<StoreFrontPage location={location} />} />
+        <Route path="/seller/store" element={<ProtectedRoute roles={['seller', 'admin']}><StoreFrontPage location={location} /></ProtectedRoute>} />
+        <Route path="/seller/settings/hours" element={<ProtectedRoute roles={['seller', 'admin']}><StoreHoursPage /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

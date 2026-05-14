@@ -353,21 +353,30 @@ const ClearButton = styled.button`
 `;
 
 const CancelButton = styled.button`
-  background: ${props => props.theme.colors.gradient.primary};
-  border: none;
-  color: ${props => props.theme.colors.text.inverse};
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  color: ${props => props.theme.colors.text.primary};
   border-radius: 999px;
-  ${props => props.theme.typography.body2}
+  font-size: 22px;
   font-weight: 900;
   cursor: pointer;
-  min-height: 50px;
-  padding: 0 18px;
+  padding: 0;
   transition: ${props => props.theme.transitions.swift};
-  box-shadow: 0 16px 30px rgba(16, 24, 40, 0.16);
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.1);
 
   &:hover {
-    background: ${props => props.theme.colors.gradient.primary};
-    transform: translateY(-1px);
+    background: ${props => props.theme.colors.primarySoftBg};
+    color: ${props => props.theme.colors.primary};
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 `;
 
@@ -704,7 +713,11 @@ export const SearchPage = ({ location, onBack }) => {
     if (onBack) {
       onBack();
     } else {
-      navigate(-1);
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate('/');
+      }
     }
   };
 
@@ -757,7 +770,7 @@ export const SearchPage = ({ location, onBack }) => {
                 <SearchAffordance>Nearby</SearchAffordance>
               )}
             </SearchWrapper>
-            <CancelButton onClick={handleBack}>Cancel</CancelButton>
+            <CancelButton onClick={handleBack} aria-label="Go back">&lt;</CancelButton>
           </SearchBarContainer>
           {searchState === 'results' && (
             <ControlsRow>
@@ -854,4 +867,3 @@ export const SearchPage = ({ location, onBack }) => {
     </Container>
   );
 };
-

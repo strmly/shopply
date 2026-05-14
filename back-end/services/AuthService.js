@@ -1,56 +1,32 @@
-import crypto from 'crypto';
 import { UserService } from './UserService.js';
+import { hashPassword, verifyPassword } from '../utils/crypto.js';
+import { signToken } from '../utils/jwt.js';
+import { sendOtpEmail } from './EmailService.js';
 
 const otpStore = new Map();
-const OTP_TTL_MS = 5 * 60 * 1000;
+const OTP_TTL_MS     = 5  * 60 * 1000;
+const VERIFIED_TTL_MS = 10 * 60 * 1000;
 const MAX_OTP_ATTEMPTS = 5;
+
+// Prune expired OTP records every minute
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of otpStore) {
+    if (record.expiresAt < now) otpStore.delete(key);
+  }
+}, 60 * 1000);
 
 const normalizeMobile = (mobile) => String(mobile || '').replace(/[^\d+]/g, '');
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 const buildOtpKey = (channel, value, purpose = 'auth') => `${purpose}:${channel}:${value}`;
 
-const safeUser = (user) => {
+export const safeUser = (user) => {
   if (!user) return null;
   const json = user.toJSON ? user.toJSON() : { ...user };
   delete json.passwordHash;
   delete json.passwordUpdatedAt;
   delete json.passwordHistory;
   return json;
-};
-
-const hashPassword = (plainPassword, salt = null) => {
-  const actualSalt = salt || crypto.randomBytes(16).toString('hex');
-  const iterations = 100000;
-  const hash = crypto.pbkdf2Sync(
-    plainPassword,
-    actualSalt,
-    iterations,
-    64,
-    'sha512'
-  ).toString('hex');
-
-  return `${actualSalt}:${hash}:${iterations}`;
-};
-
-const verifyPassword = (user, plainPassword) => {
-  if (!user?.passwordHash) return false;
-
-  const parts = user.passwordHash.split(':');
-  if (parts.length !== 3) {
-    const legacyHash = crypto.createHash('sha256').update(plainPassword).digest('hex');
-    return user.passwordHash === legacyHash;
-  }
-
-  const [salt, storedHash, iterations] = parts;
-  const hash = crypto.pbkdf2Sync(
-    plainPassword,
-    salt,
-    parseInt(iterations, 10),
-    64,
-    'sha512'
-  ).toString('hex');
-
-  return hash === storedHash;
 };
 
 const validatePassword = (password) => {
@@ -101,9 +77,7 @@ class AuthServiceClass {
   }
 
   async sendEmailOtp(email, otp, purpose = 'verify') {
-    // Wire a production email provider here, for example SendGrid, SES, or Postmark.
-    console.log(`[auth] Email ${purpose} code for ${email}: ${otp}`);
-    return { sent: true, provider: 'console' };
+    return sendOtpEmail(email, otp, purpose);
   }
 
   async startPhoneAuth({ mobile, name }) {
@@ -122,6 +96,12 @@ class AuthServiceClass {
         isNewUser: false,
         user: safeUser(user),
       };
+    }
+
+    if (!user && String(name || '').trim().length < 2) {
+      const error = new Error('Please enter your full name to create an account.');
+      error.statusCode = 400;
+      throw error;
     }
 
     const otp = this.generateOtp();
@@ -188,6 +168,7 @@ class AuthServiceClass {
       verified: true,
       userId: user.id,
       verifiedAt: Date.now(),
+      expiresAt: Date.now() + VERIFIED_TTL_MS,
     });
 
     return {
@@ -212,6 +193,12 @@ class AuthServiceClass {
         isNewUser: false,
         user: safeUser(user),
       };
+    }
+
+    if (!user && String(name || '').trim().length < 2) {
+      const error = new Error('Please enter your full name to create an account.');
+      error.statusCode = 400;
+      throw error;
     }
 
     const otp = this.generateOtp();
@@ -278,11 +265,111 @@ class AuthServiceClass {
       verified: true,
       userId: user.id,
       verifiedAt: Date.now(),
+      expiresAt: Date.now() + VERIFIED_TTL_MS,
     });
 
     return {
       requiresPasswordSetup: !user.passwordHash,
       user: safeUser(user),
+    };
+  }
+
+  async startProfileEmailVerification({ userId = 'default', email }) {
+    const normalizedEmail = normalizeEmail(email);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      const error = new Error('Enter a valid email address');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    let user = await UserService.getUserById(userId);
+    if (!user) {
+      user = await UserService.createUser({
+        id: userId === 'default' ? 1 : undefined,
+        name: 'Tsenga Shopper',
+        email: normalizedEmail,
+        emailVerified: false,
+        avatarUrl: '',
+        mobile: '',
+      });
+    } else if (normalizeEmail(user.email) !== normalizedEmail) {
+      user = await UserService.updateUser(user.id, {
+        email: normalizedEmail,
+        emailVerified: false,
+        emailVerifiedAt: null,
+      });
+    }
+
+    if (user.emailVerified && normalizeEmail(user.email) === normalizedEmail) {
+      return {
+        alreadyVerified: true,
+        email: normalizedEmail,
+        user: safeUser(user),
+      };
+    }
+
+    const otp = this.generateOtp();
+    otpStore.set(buildOtpKey('profile-email', `${user.id}:${normalizedEmail}`), {
+      otp,
+      channel: 'email',
+      identifier: normalizedEmail,
+      userId: user.id,
+      expiresAt: Date.now() + OTP_TTL_MS,
+      attempts: 0,
+      verified: false,
+    });
+
+    await this.sendEmailOtp(normalizedEmail, otp, 'verification');
+
+    return {
+      sent: true,
+      email: normalizedEmail,
+      expiresInSeconds: OTP_TTL_MS / 1000,
+      devCode: process.env.NODE_ENV === 'production' ? undefined : otp,
+    };
+  }
+
+  async verifyProfileEmail({ userId = 'default', email, code }) {
+    const normalizedEmail = normalizeEmail(email);
+    const user = await UserService.getUserById(userId);
+    if (!user) {
+      const error = new Error('User not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const key = buildOtpKey('profile-email', `${user.id}:${normalizedEmail}`);
+    const record = otpStore.get(key);
+    if (!record || record.expiresAt < Date.now()) {
+      const error = new Error('Verification code expired. Request a new code.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (record.attempts >= MAX_OTP_ATTEMPTS) {
+      const error = new Error('Too many attempts. Request a new code.');
+      error.statusCode = 429;
+      throw error;
+    }
+
+    record.attempts += 1;
+    if (record.otp !== String(code || '').trim()) {
+      const error = new Error('Verification code is incorrect.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const updatedUser = await UserService.updateUser(user.id, {
+      email: normalizedEmail,
+      emailVerified: true,
+      emailVerifiedAt: new Date(),
+    });
+
+    otpStore.delete(key);
+
+    return {
+      verified: true,
+      user: safeUser(updatedUser),
     };
   }
 
@@ -314,14 +401,22 @@ class AuthServiceClass {
       throw error;
     }
 
+    const history = user.passwordHistory || [];
+    if (user.passwordHash) history.push(user.passwordHash);
+    if (history.some(h => verifyPassword({ passwordHash: h }, password))) {
+      const error = new Error("Choose a password you haven't used before.");
+      error.statusCode = 400;
+      throw error;
+    }
+
     const updatedUser = await UserService.updateUser(user.id, {
       passwordHash: hashPassword(password),
       passwordUpdatedAt: new Date(),
-      passwordHistory: user.passwordHash ? [user.passwordHash].slice(-3) : [],
+      passwordHistory: history.slice(-3),
     });
 
     otpStore.delete(buildOtpKey(channel, identifier));
-    return { user: safeUser(updatedUser), token: `demo-token-${updatedUser.id}-${Date.now()}` };
+    return { user: safeUser(updatedUser), token: signToken({ userId: updatedUser.id, role: updatedUser.role || 'buyer' }) };
   }
 
   async signIn({ mobile, email, password }) {
@@ -337,7 +432,7 @@ class AuthServiceClass {
       throw error;
     }
 
-    return { user: safeUser(user), token: `demo-token-${user.id}-${Date.now()}` };
+    return { user: safeUser(user), token: signToken({ userId: user.id, role: user.role || 'buyer' }) };
   }
 
   async forgotPassword({ mobile, email }) {
@@ -425,6 +520,11 @@ class AuthServiceClass {
 
     const passwordHistory = user.passwordHistory || [];
     if (user.passwordHash) passwordHistory.push(user.passwordHash);
+    if (passwordHistory.some(h => verifyPassword({ passwordHash: h }, password))) {
+      const error = new Error("Choose a password you haven't used before.");
+      error.statusCode = 400;
+      throw error;
+    }
 
     const updatedUser = await UserService.updateUser(user.id, {
       passwordHash: hashPassword(password),
@@ -433,7 +533,7 @@ class AuthServiceClass {
     });
 
     otpStore.delete(buildOtpKey(channel, identifier, 'reset'));
-    return { user: safeUser(updatedUser), token: `demo-token-${updatedUser.id}-${Date.now()}` };
+    return { user: safeUser(updatedUser), token: signToken({ userId: updatedUser.id, role: updatedUser.role || 'buyer' }) };
   }
 }
 

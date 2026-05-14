@@ -1,9 +1,12 @@
 import express from 'express';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { appConfig } from './config/app.js';
+import { UserService } from './services/UserService.js';
 import { logger, errorHandler, notFound } from './middleware/index.js';
 import apiRoutes from './routes/index.js';
 import { seedFurnitureMarketplace } from './scripts/seedFurnitureMarketplace.js';
@@ -11,17 +14,35 @@ import CommunityService from './services/CommunityService.js';
 import { SellerService } from './services/SellerService.js';
 import { ProductService } from './services/ProductService.js';
 import redisClient from './config/redis.js';
+import { setIo } from './socket.js';
 
 // Get root directory (two levels up from back-end/server.js)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
-// Load .env from root directory
+// Load .env — back-end/.env takes priority, fall back to project root
+dotenv.config({ path: path.join(__dirname, '.env') });
 dotenv.config({ path: path.join(rootDir, '.env') });
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = appConfig.port;
+
+// Socket.io — attach to HTTP server and make io available to services
+const io = new SocketIOServer(httpServer, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+});
+setIo(io);
+
+io.on('connection', (socket) => {
+  socket.on('join', (userId) => {
+    if (userId) socket.join(`user:${userId}`);
+  });
+  socket.on('leave', (userId) => {
+    if (userId) socket.leave(`user:${userId}`);
+  });
+});
 
 // Middleware
 app.use(cors(appConfig.cors));
@@ -51,6 +72,11 @@ seedNewFurniture()
 // seedProducts().catch(err => {
 //   console.error('Failed to seed products:', err);
 // });
+
+// Seed default users on startup
+UserService.seedDefaultUsers().catch(err => {
+  console.error('Failed to seed default users:', err);
+});
 
 // Seed default seller on startup
 SellerService.seedDefaultSeller().catch(err => {
@@ -126,7 +152,7 @@ app.use(notFound);
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
   console.log(`Environment: ${appConfig.env}`);
 });

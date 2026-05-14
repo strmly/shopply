@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 
 const Header = styled.header`
@@ -83,6 +84,7 @@ const CountPill = styled.div`
 `;
 
 export const CartHeader = ({ itemCount, onClose }) => {
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -94,10 +96,24 @@ export const CartHeader = ({ itemCount, onClose }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const handleBack = () => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate('/');
+  };
+
   return (
     <Header $scrolled={scrolled}>
       <HeaderContent>
-        <BackButton onClick={onClose} aria-label={onClose ? 'Close cart' : 'Go back'}>
+        <BackButton onClick={handleBack} aria-label={onClose ? 'Close cart' : 'Go back'}>
           {onClose ? 'x' : '<'}
         </BackButton>
 

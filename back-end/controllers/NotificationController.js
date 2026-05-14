@@ -1,6 +1,4 @@
-import { NotificationService } from '../services/NotificationService.js';
-
-const notificationService = new NotificationService();
+import { notificationService } from '../services/NotificationService.js';
 
 /**
  * Notification Controller

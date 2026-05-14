@@ -7,6 +7,8 @@ const profileController = new ProfileController();
 /**
  * Profile Routes
  */
+router.get('/:userId/summary', (req, res, next) => profileController.getProfileSummary(req, res, next));
+router.get('/:userId/quick-actions', (req, res, next) => profileController.getQuickActions(req, res, next));
 router.get('/:userId', (req, res, next) => profileController.getProfile(req, res, next));
 router.put('/:userId', (req, res, next) => profileController.updateProfile(req, res, next));
 router.post('/:userId/change-password', (req, res, next) => profileController.changePassword(req, res, next));

@@ -3,8 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import API_BASE_URL from '@config/api';
 import { AuthModal } from '../auth';
-import { isSignedIn } from '../../utils/authState';
+import { isSignedIn, getAuthUser } from '../../utils/authState';
 import { useUser } from '../../context/UserContext';
+import { useAuth } from '../../hooks/useAuth';
 
 /* ─── Shell ───────────────────────────────────────────── */
 
@@ -88,21 +89,41 @@ const BrandText = styled.span`
 `;
 
 const BackButton = styled.button`
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border-radius: 999px;
-  border: 1px solid rgba(228, 231, 236, 0.9);
-  background: #ffffff;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  background: rgba(255, 255, 255, 0.92);
   color: ${props => props.theme.colors.text.primary};
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 20px;
-  transition: background 0.15s ease;
+  font-weight: 900;
+  transition: ${props => props.theme.transitions.swift};
   flex-shrink: 0;
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.1);
 
-  &:hover { background: ${props => props.theme.colors.background}; }
+  &:hover {
+    background: ${props => props.theme.colors.primarySoftBg};
+    color: ${props => props.theme.colors.primary};
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+const PageBackRow = styled.div`
+  max-width: 1180px;
+  margin: 12px auto 0;
+  padding: 0 min(5vw, 48px);
+
+  @media (max-width: 560px) {
+    margin-top: 10px;
+  }
 `;
 
 const PageTitleWrap = styled.div`
@@ -989,6 +1010,7 @@ export const TopNavigation = ({
   const navigate = useNavigate();
   const routerLocation = useLocation();
   const { user: contextUser } = useUser();
+  const { role } = useAuth();
   const [cartCount, setCartCount] = useState(cartCountProp || 0);
   const [cartPreview, setCartPreview] = useState(null);
   const [cartLoading, setCartLoading] = useState(false);
@@ -1096,11 +1118,12 @@ export const TopNavigation = ({
   };
 
   const loadProfilePreview = async () => {
+    const profileId = getAuthUser()?.id || 'default';
     setProfileLoading(true);
     try {
       const [profileResponse, prefsResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/profile/default`),
-        fetch(`${API_BASE_URL}/profile/default/preferences`),
+        fetch(`${API_BASE_URL}/profile/${profileId}`),
+        fetch(`${API_BASE_URL}/profile/${profileId}/preferences`),
       ]);
       const [profileData, prefsData] = await Promise.all([
         profileResponse.json(),
@@ -1139,7 +1162,11 @@ export const TopNavigation = ({
     loadNotificationPreview();
     loadProfilePreview();
     const interval = setInterval(loadNotificationPreview, 30000);
-    return () => clearInterval(interval);
+    window.addEventListener('notificationUpdated', loadNotificationPreview);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notificationUpdated', loadNotificationPreview);
+    };
   }, []);
 
   useEffect(() => {
@@ -1279,18 +1306,12 @@ export const TopNavigation = ({
         <MainCluster>
           {isTitleMode ? (
             <>
-              {canShowBack && (
-                <BackButton onClick={handleBackClick} aria-label="Go back">&lt;</BackButton>
-              )}
               <PageTitleWrap>
                 <PageTitle>{title}</PageTitle>
               </PageTitleWrap>
             </>
           ) : (
             <>
-              {canShowBack && (
-                <BackButton onClick={handleBackClick} aria-label="Go back">&lt;</BackButton>
-              )}
               <BrandButton type="button" onClick={() => navigate('/')} aria-label="Home">
                 <BrandGlyph>T</BrandGlyph>
                 <BrandText>Tsenga</BrandText>
@@ -1566,7 +1587,11 @@ export const TopNavigation = ({
 
                   <HoverFooter>
                     <HoverBtn onClick={() => handleProfileRoute('/profile')}>Account hub</HoverBtn>
-                    <HoverBtn $primary onClick={() => handleProfileRoute('/seller/dashboard')}>Seller tools</HoverBtn>
+                    {(role === 'seller' || role === 'admin') ? (
+                      <HoverBtn $primary onClick={() => handleProfileRoute('/seller/dashboard')}>Seller tools</HoverBtn>
+                    ) : (
+                      <HoverBtn $primary onClick={() => handleProfileRoute('/become-a-seller')}>Become a seller</HoverBtn>
+                    )}
                   </HoverFooter>
                 </>
               ) : (
@@ -1586,6 +1611,11 @@ export const TopNavigation = ({
         </Actions>
       </NavContent>
     </NavContainer>
+    {canShowBack && (
+      <PageBackRow>
+        <BackButton onClick={handleBackClick} aria-label="Go back">&lt;</BackButton>
+      </PageBackRow>
+    )}
     <AuthModal
       isOpen={showAuthModal}
       onClose={() => setShowAuthModal(false)}

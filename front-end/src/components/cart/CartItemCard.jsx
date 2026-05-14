@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { fadeIn } from '../../theme/animations';
+import API_BASE_URL from '@config/api';
 
 const slideOut = keyframes`
   from {
@@ -259,12 +260,98 @@ const ActionButton = styled.button`
   }
 `;
 
+const WhatsAppButton = styled.a`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: #128c7e;
+  border: 1px solid #128c7e;
+  color: #ffffff;
+  ${props => props.theme.typography.caption}
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 12px 22px rgba(18, 140, 126, 0.2);
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    background: #075e54;
+    border-color: #075e54;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px rgba(18, 140, 126, 0.28);
+  }
+
+  &[aria-disabled='true'] {
+    pointer-events: none;
+    opacity: 0.6;
+    filter: grayscale(1);
+    box-shadow: none;
+  }
+`;
+
+const normalizeWhatsAppNumber = (value = '') => {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = `27${digits.slice(1)}`;
+  if (digits.length === 9) digits = `27${digits}`;
+  return digits;
+};
+
+const buildWhatsAppHref = (product, contact) => {
+  const rawNumber = contact?.whatsappNumber
+    || contact?.storePhone
+    || product?.sellerContact?.whatsappNumber
+    || product?.sellerContact?.storePhone
+    || product?.whatsappNumber
+    || product?.storePhone
+    || product?.sellerPhone
+    || '';
+  const number = normalizeWhatsAppNumber(rawNumber);
+  if (!number) return '';
+
+  const message = [
+    `Hi ${product?.storeName || 'there'},`,
+    `I have ${product?.name || 'this product'} in my Tsenga cart.`,
+    'Is it still available?',
+  ].join('\n');
+
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+};
+
 export const CartItemCard = ({ item, onUpdateQuantity, onRemove }) => {
   const navigate = useNavigate();
   const [removing, setRemoving] = useState(false);
+  const [sellerContact, setSellerContact] = useState(item.sellerContact || item.product?.sellerContact || null);
   const product = item.product || item;
   const quantity = item.quantity || 1;
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
+  const productId = item.productId || product.id;
+
+  useEffect(() => {
+    if (sellerContact?.whatsappNumber || !productId) return;
+
+    let active = true;
+    fetch(`${API_BASE_URL}/products/${productId}`)
+      .then(response => response.ok ? response.json() : null)
+      .then(json => {
+        if (!active || !json?.success) return;
+        setSellerContact(json.data?.sellerContact || null);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [productId, sellerContact?.whatsappNumber]);
+
+  const whatsappHref = useMemo(
+    () => buildWhatsAppHref(product, sellerContact),
+    [product, sellerContact]
+  );
 
   const handleRemove = () => {
     setRemoving(true);
@@ -340,6 +427,15 @@ export const CartItemCard = ({ item, onUpdateQuantity, onRemove }) => {
         </ControlsRow>
 
         <ActionButtons>
+          <WhatsAppButton
+            href={whatsappHref || undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-disabled={!whatsappHref}
+            title={whatsappHref ? 'WhatsApp this seller' : 'Seller WhatsApp number unavailable'}
+          >
+            WhatsApp seller
+          </WhatsAppButton>
           <ActionButton>Save for later</ActionButton>
           {product.stock === 'out' && <ActionButton>Find replacement</ActionButton>}
         </ActionButtons>

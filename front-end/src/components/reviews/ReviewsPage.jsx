@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { BottomNavigation } from '../home/BottomNavigation';
@@ -10,25 +10,31 @@ import { toast } from '../ui/Toast';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 52%, #ffffff 100%);
   animation: ${fadeIn} 0.5s ease-in;
   padding-bottom: 100px;
 `;
 
 const Header = styled.div`
-  background: ${props => props.theme.colors.surface};
-  padding: ${props => props.theme.spacing.xl};
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.98), rgba(241,247,255,0.94)) padding-box,
+    ${props => props.theme.colors.gradient.primary} border-box;
+  border: 1px solid transparent;
+  border-radius: 0 0 28px 28px;
+  padding: clamp(20px, 5vw, 34px) min(5vw, 48px);
   padding-top: calc(${props => props.theme.spacing.xl} + env(safe-area-inset-top));
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
   position: sticky;
   top: 0;
   z-index: 10;
+  box-shadow: 0 24px 62px rgba(16, 24, 40, 0.1);
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading1}
   color: ${props => props.theme.colors.text.primary};
-  font-size: 28px;
+  font-size: clamp(32px, 7vw, 52px);
+  line-height: 1;
+  letter-spacing: 0;
+  font-weight: 900;
   margin: 0 0 ${props => props.theme.spacing.md} 0;
 `;
 
@@ -46,10 +52,10 @@ const Tabs = styled.div`
 const Tab = styled.button`
   padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
   border: none;
-  border-radius: ${props => props.theme.radii.md};
+  border-radius: 999px;
   background: ${props => props.$active 
-    ? props.theme.colors.primary 
-    : props.theme.colors.background};
+    ? props.theme.colors.gradient.primary 
+    : '#ffffff'};
   color: ${props => props.$active 
     ? props.theme.colors.text.inverse 
     : props.theme.colors.text.secondary};
@@ -61,9 +67,8 @@ const Tab = styled.button`
   position: relative;
   
   &:hover {
-    background: ${props => props.$active 
-      ? props.theme.colors.primaryHover 
-      : props.theme.colors.surface};
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(61, 129, 239, 0.14);
   }
 `;
 
@@ -78,7 +83,9 @@ const TabBadge = styled.span`
 `;
 
 const Content = styled.div`
-  padding: ${props => props.theme.spacing.xl};
+  width: min(920px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: ${props => props.theme.spacing.xl} 0;
 `;
 
 const ReviewsList = styled.div`
@@ -131,7 +138,11 @@ import API_BASE_URL from '@config/api';
 
 export const ReviewsPage = ({ userId = 'default' }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('to-review');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = ['to-review', 'my-reviews'].includes(searchParams.get('tab'))
+    ? searchParams.get('tab')
+    : 'to-review';
+  const [activeTab, setActiveTab] = useState(requestedTab);
   const [pendingReviews, setPendingReviews] = useState([]);
   const [userReviews, setUserReviews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,6 +151,11 @@ export const ReviewsPage = ({ userId = 'default' }) => {
   useEffect(() => {
     loadData();
   }, [userId, activeTab]);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
 
   const loadData = async () => {
     try {
@@ -357,7 +373,7 @@ export const ReviewsPage = ({ userId = 'default' }) => {
         <Tabs>
           <Tab 
             $active={activeTab === 'to-review'} 
-            onClick={() => setActiveTab('to-review')}
+            onClick={() => handleTabChange('to-review')}
           >
             To Review
             {pendingReviews.length > 0 && (
@@ -366,7 +382,7 @@ export const ReviewsPage = ({ userId = 'default' }) => {
           </Tab>
           <Tab 
             $active={activeTab === 'my-reviews'} 
-            onClick={() => setActiveTab('my-reviews')}
+            onClick={() => handleTabChange('my-reviews')}
           >
             My Reviews
           </Tab>

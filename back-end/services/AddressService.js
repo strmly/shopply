@@ -317,6 +317,8 @@ export class AddressService {
   }
 }
 
+export const addressService = new AddressService();
+
 
 
 

@@ -18,6 +18,7 @@ import { FrequentlyBoughtTogether } from './FrequentlyBoughtTogether';
 import { RelatedProducts } from './RelatedProducts';
 import { MultiStoreSelector } from './MultiStoreSelector';
 import { ComplementaryEssentials } from './ComplementaryEssentials';
+import { ProductDetailSkeleton } from '../ui/Skeleton';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -350,7 +351,7 @@ export const ProductDetailPage = ({ location }) => {
     return (
       <Container>
         <ProductDetailHeader onBack={handleBack} cartCount={cartCount} />
-        <LoadingContainer>Loading product...</LoadingContainer>
+        <ProductDetailSkeleton />
       </Container>
     );
   }

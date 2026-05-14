@@ -2,6 +2,7 @@ import Order from '../models/Order.js';
 import { CartService } from './CartService.js';
 import { ProductService } from './ProductService.js';
 import { VoucherService } from './VoucherService.js';
+import SellerOrderService from './SellerOrderService.js';
 
 class CheckoutService {
   constructor() {
@@ -190,7 +191,8 @@ class CheckoutService {
     }
 
     // Calculate cart totals first
-    const cartTotals = cart.totals || CartService.calculateCartTotals(cart);
+    const calculatedCart = CartService.calculateCartTotals(cart);
+    const cartTotals = calculatedCart.totals || {};
     let finalDiscount = cart.discount || 0;
     let voucherId = orderData.voucherId || cart.voucherId || null;
     let voucher = null;
@@ -212,18 +214,30 @@ class CheckoutService {
       }
     }
 
-    // Recalculate totals with voucher discount
+    const deliveryMethod = orderData.deliveryMethod || cart.deliveryMethod || 'delivery';
+    const deliverySpeed = orderData.deliverySpeed || 'standard';
+    const deliveryFee = deliveryMethod === 'delivery'
+      ? (cartTotals.deliveryFee || 0) + (deliverySpeed === 'express' ? 20 : 0)
+      : 0;
+    const smallOrderFee = cartTotals.smallOrderFee || 0;
+    const serviceFee = cartTotals.serviceFee || 0;
+
+    // Recalculate totals with checkout delivery choice and voucher discount
     const finalTotals = {
       ...cartTotals,
+      deliveryFee,
+      smallOrderFee,
+      serviceFee,
       discount: finalDiscount,
-      total: Math.max(0, cartTotals.subtotal - finalDiscount),
+      subtotal: parseFloat(((cartTotals.itemsTotal || 0) + deliveryFee + smallOrderFee + serviceFee).toFixed(2)),
+      total: parseFloat(Math.max(0, (cartTotals.itemsTotal || 0) + deliveryFee + smallOrderFee + serviceFee - finalDiscount).toFixed(2)),
     };
 
     // Calculate ETA
     const eta = this.calculateETA(
-      cart.storeGroups,
-      orderData.deliveryMethod || cart.deliveryMethod || 'delivery',
-      orderData.deliverySpeed || 'standard',
+      calculatedCart.storeGroups,
+      deliveryMethod,
+      deliverySpeed,
       location
     );
 
@@ -231,10 +245,10 @@ class CheckoutService {
     const order = new Order({
       userId,
       items: cart.items,
-      storeGroups: cart.storeGroups || this.groupItemsByStore(cart.items),
+      storeGroups: calculatedCart.storeGroups || this.groupItemsByStore(cart.items),
       deliveryAddress: orderData.deliveryAddress || cart.deliveryAddress || location,
-      deliveryMethod: orderData.deliveryMethod || cart.deliveryMethod || 'delivery',
-      deliverySpeed: orderData.deliverySpeed || 'standard',
+      deliveryMethod,
+      deliverySpeed,
       paymentMethod: orderData.paymentMethod || cart.paymentMethod,
       paymentDetails: orderData.paymentDetails || null,
       contactInfo: orderData.contactInfo || {},
@@ -376,25 +390,40 @@ class CheckoutService {
       throw new Error('Order not found');
     }
 
-    // Mock payment processing
-    // In production, integrate with payment gateway
+    // Mock payment processing. In production, integrate with a payment gateway.
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Simulate payment success (90% success rate)
-    const success = Math.random() > 0.1;
+    const method = paymentDetails?.method || order.paymentMethod || 'card';
+    const success = !paymentDetails?.forceFailure;
 
     if (success) {
       order.status = 'confirmed';
       order.confirmedAt = new Date();
-      order.paymentDetails = paymentDetails;
+      order.paymentDetails = {
+        ...paymentDetails,
+        method,
+        paidAt: new Date(),
+      };
+      order.sellerOrders = this.createSellerOrders(order);
       return {
         success: true,
         order,
-        transactionId: `TXN${Date.now()}`,
+        transactionId: method === 'cash' ? null : `TXN${Date.now()}`,
       };
     } else {
       throw new Error('Payment processing failed. Please try again.');
     }
+  }
+
+  createSellerOrders(order) {
+    const groups = order.storeGroups?.length ? order.storeGroups : this.groupItemsByStore(order.items || []);
+    return groups
+      .map(group => {
+        const storeId = group.storeId || group.items?.[0]?.storeId || group.items?.[0]?.product?.storeId || 1;
+        const sellerId = group.sellerId || storeId;
+        return SellerOrderService.createFromMainOrder(order, sellerId, storeId);
+      })
+      .filter(Boolean);
   }
 }
 

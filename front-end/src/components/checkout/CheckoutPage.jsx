@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -17,14 +17,158 @@ import { OrderConfirmation } from './OrderConfirmation';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
+  background:
+    linear-gradient(180deg, #ffffff 0%, #ffffff 48%, #f8fafc 100%);
   animation: ${fadeIn} 0.3s ease-in;
-  padding-bottom: 120px; /* Space for sticky button */
+  padding-bottom: 150px;
 `;
 
 const Content = styled.div`
-  max-width: 100%;
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 18px min(5vw, 48px) 0;
+`;
+
+const Hero = styled.section`
+  margin-bottom: 18px;
+  padding: clamp(20px, 4vw, 34px);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(61, 129, 239, 0.14), rgba(255,255,255,0.98) 42%, rgba(245, 158, 11, 0.12)),
+    #ffffff;
+  border: 1px solid rgba(228, 231, 236, 0.86);
+  box-shadow:
+    0 24px 68px rgba(16, 24, 40, 0.1),
+    inset 0 1px 0 rgba(255,255,255,0.92);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: end;
+
+  @media (max-width: 760px) {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+`;
+
+const Eyebrow = styled.div`
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+`;
+
+const Title = styled.h1`
+  margin: 0;
+  color: ${props => props.theme.colors.text.primary};
+  font-size: clamp(30px, 5vw, 52px);
+  line-height: 0.98;
+  font-weight: 900;
+`;
+
+const HeroCopy = styled.p`
+  max-width: 640px;
+  margin: 12px 0 0;
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 15px;
+  line-height: 1.7;
+  font-weight: 650;
+`;
+
+const TrustRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+
+  @media (max-width: 760px) {
+    justify-content: flex-start;
+  }
+`;
+
+const TrustPill = styled.span`
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(228, 231, 236, 0.9);
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 12px;
+  font-weight: 900;
+`;
+
+const CheckoutGrid = styled.div`
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
+  gap: 22px;
+  align-items: start;
+
+  @media (max-width: 980px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const MainColumn = styled.div`
+  min-width: 0;
+`;
+
+const SideColumn = styled.aside`
+  position: sticky;
+  top: 92px;
+  min-width: 0;
+
+  @media (max-width: 980px) {
+    position: static;
+  }
+`;
+
+const Notice = styled.div`
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: ${props => props.$danger ? 'rgba(198, 40, 80, 0.08)' : props.theme.colors.primarySoftBg};
+  border: 1px solid ${props => props.$danger ? 'rgba(198, 40, 80, 0.2)' : 'rgba(61, 129, 239, 0.18)'};
+  color: ${props => props.$danger ? props.theme.colors.dangerBase : props.theme.colors.primarySoftText};
+  font-size: 13px;
+  font-weight: 800;
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 48px 24px;
+  border-radius: 28px;
+  background: #ffffff;
+  border: 1px solid rgba(228, 231, 236, 0.86);
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.08);
+`;
+
+const EmptyTitle = styled.h2`
+  margin: 0 0 8px;
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 26px;
+  font-weight: 900;
+`;
+
+const EmptyCopy = styled.p`
+  margin: 0 0 22px;
+  color: ${props => props.theme.colors.text.secondary};
+  font-weight: 650;
+`;
+
+const ShopButton = styled.button`
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.gradient.primary};
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 16px 30px rgba(61, 129, 239, 0.22);
 `;
 
 const LoadingContainer = styled.div`
@@ -45,6 +189,10 @@ export const CheckoutPage = ({ location, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState(null);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const cartSyncRef = useRef(null);
+  const localCartUploadedRef = useRef(false);
   
   // Form state
   const [deliveryAddress, setDeliveryAddress] = useState(null);
@@ -93,7 +241,16 @@ export const CheckoutPage = ({ location, onClose }) => {
       if (data.success) {
         setCart(data.data);
         setDeliveryMethod(data.data.deliveryMethod || 'delivery');
-        setPaymentMethod(data.data.paymentMethod);
+        if ((data.data.itemCount || 0) === 0 && !localCartUploadedRef.current) {
+          const localCart = readLocalCart();
+          if (localCart.length > 0) {
+            localCartUploadedRef.current = true;
+            await uploadLocalCartOnce(localCart);
+            return loadCart();
+          }
+        }
+
+        setPaymentMethod(data.data.paymentMethod || 'cash');
         setPromoCode(data.data.promoCode || '');
       }
     } catch (error) {
@@ -101,6 +258,40 @@ export const CheckoutPage = ({ location, onClose }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const readLocalCart = () => {
+    try {
+      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      return Array.isArray(cart) ? cart.filter(item => item?.id) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const uploadLocalCartOnce = (localCart) => {
+    if (cartSyncRef.current) return cartSyncRef.current;
+
+    cartSyncRef.current = (async () => {
+      await fetch(`${API_BASE_URL}/cart?userId=default`, { method: 'DELETE' }).catch(() => {});
+      for (const item of localCart) {
+        await fetch(`${API_BASE_URL}/cart/items`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: 'default',
+            productId: item.id,
+            quantity: item.quantity || 1,
+            variant: item.selectedVariant || null,
+            storeId: item.storeId,
+          }),
+        }).catch(() => {});
+      }
+    })().finally(() => {
+      cartSyncRef.current = null;
+    });
+
+    return cartSyncRef.current;
   };
 
   const loadDeliveryAddress = () => {
@@ -163,6 +354,8 @@ export const CheckoutPage = ({ location, onClose }) => {
     }
 
     try {
+      setPlacingOrder(true);
+      setSubmitError('');
       // Create order
       const orderResponse = await fetch(`${API_BASE_URL}/checkout/order`, {
         method: 'POST',
@@ -224,12 +417,14 @@ export const CheckoutPage = ({ location, onClose }) => {
           }
         } catch (paymentError) {
           console.error('Payment error:', paymentError);
-          alert('Order created but payment failed. Please contact support.');
+          setSubmitError('Order was created, but payment could not be completed. Please try again or choose cash on delivery.');
         }
       }
     } catch (error) {
       console.error('Error placing order:', error);
-      alert(`Failed to place order: ${error.message}`);
+      setSubmitError(error.message || 'Failed to place order');
+    } finally {
+      setPlacingOrder(false);
     }
   };
 
@@ -237,7 +432,20 @@ export const CheckoutPage = ({ location, onClose }) => {
     return (
       <Container>
         <CheckoutHeader onClose={onClose} />
-        <LoadingContainer>Loading checkout...</LoadingContainer>
+        <Content>
+          <Hero>
+            <div>
+              <Eyebrow>Secure checkout</Eyebrow>
+              <Title>Preparing your order</Title>
+              <HeroCopy>Checking cart stock, delivery windows, and seller availability.</HeroCopy>
+            </div>
+            <TrustRow>
+              <TrustPill>Local sellers</TrustPill>
+              <TrustPill>Protected checkout</TrustPill>
+            </TrustRow>
+          </Hero>
+          <LoadingContainer>Loading checkout...</LoadingContainer>
+        </Content>
       </Container>
     );
   }
@@ -247,22 +455,11 @@ export const CheckoutPage = ({ location, onClose }) => {
       <Container>
         <CheckoutHeader onClose={onClose} />
         <Content>
-          <div style={{ textAlign: 'center', padding: '48px 24px' }}>
-            <p style={{ marginBottom: '24px', color: '#666' }}>Your cart is empty</p>
-            <button
-              onClick={() => navigate('/')}
-              style={{
-                padding: '12px 24px',
-                background: '#007AFF',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-              }}
-            >
-              Start Shopping
-            </button>
-          </div>
+          <EmptyState>
+            <EmptyTitle>Your cart is empty</EmptyTitle>
+            <EmptyCopy>Add a few beautiful pieces, then come back to checkout.</EmptyCopy>
+            <ShopButton onClick={() => navigate('/search')}>Start shopping</ShopButton>
+          </EmptyState>
         </Content>
       </Container>
     );
@@ -277,70 +474,102 @@ export const CheckoutPage = ({ location, onClose }) => {
     );
   }
 
+  const baseTotals = cart.totals || {};
+  const effectiveDeliveryFee = deliveryMethod === 'delivery'
+    ? (baseTotals.deliveryFee || 0) + (deliverySpeed === 'express' ? 20 : 0)
+    : 0;
+  const effectiveTotals = {
+    ...baseTotals,
+    deliveryFee: effectiveDeliveryFee,
+    subtotal: Number(((baseTotals.itemsTotal || 0) + effectiveDeliveryFee + (baseTotals.smallOrderFee || 0) + (baseTotals.serviceFee || 0)).toFixed(2)),
+    total: Number(Math.max(0, (baseTotals.itemsTotal || 0) + effectiveDeliveryFee + (baseTotals.smallOrderFee || 0) + (baseTotals.serviceFee || 0) - (baseTotals.discount || 0)).toFixed(2)),
+  };
+
   return (
     <Container>
       <CheckoutHeader onClose={onClose} />
       
       <Content>
-        <OrderSummaryCard cart={cart} />
-        
-        <DeliveryAddressConfirmation
-          address={deliveryAddress}
-          onChange={() => navigate('/')} // Navigate to address selection
-          error={errors.deliveryAddress}
-        />
-        
-        <DeliveryOptions
-          deliveryMethod={deliveryMethod}
-          deliverySpeed={deliverySpeed}
-          onDeliveryMethodChange={setDeliveryMethod}
-          onDeliverySpeedChange={setDeliverySpeed}
-          cart={cart}
-          location={location}
-        />
-        
-        <PaymentMethodSelector
-          paymentMethod={paymentMethod}
-          onPaymentMethodChange={setPaymentMethod}
-          error={errors.paymentMethod}
-        />
-        
-        <ContactInformation
-          contactInfo={contactInfo}
-          onContactInfoChange={setContactInfo}
-          error={errors.phone}
-        />
-        
-        <OrderInstructions
-          instructions={orderInstructions}
-          onInstructionsChange={setOrderInstructions}
-        />
-        
-        <DiscountCodeInput
-          promoCode={promoCode}
-          onPromoCodeChange={setPromoCode}
-          cart={cart}
-        />
-        
-        <FeeBreakdown totals={cart.totals} />
-        
-        <ReviewConfirmSection
-          deliveryAddress={deliveryAddress}
-          deliveryMethod={deliveryMethod}
-          deliverySpeed={deliverySpeed}
-          paymentMethod={paymentMethod}
-          contactInfo={contactInfo}
-          storeCount={cart.storeGroups?.length || 1}
-          eta={cart.storeGroups?.[0]?.eta || 'Today, 4-6 PM'}
-        />
+        <Hero>
+          <div>
+            <Eyebrow>Tsenga checkout</Eyebrow>
+            <Title>Confirm the good stuff.</Title>
+            <HeroCopy>
+              Review delivery, payment, and contact details before your order is sent to each seller.
+            </HeroCopy>
+          </div>
+          <TrustRow>
+            <TrustPill>{cart.itemCount || 0} item{cart.itemCount === 1 ? '' : 's'}</TrustPill>
+            <TrustPill>{cart.storeGroups?.length || 1} seller{(cart.storeGroups?.length || 1) === 1 ? '' : 's'}</TrustPill>
+            <TrustPill>{cart.storeGroups?.[0]?.eta || 'Today'}</TrustPill>
+          </TrustRow>
+        </Hero>
+
+        {submitError && <Notice $danger>{submitError}</Notice>}
+        {placingOrder && <Notice>Placing your order and confirming seller handoff...</Notice>}
+
+        <CheckoutGrid>
+          <MainColumn>
+            <DeliveryAddressConfirmation
+              address={deliveryAddress}
+              onChange={() => navigate('/addresses')}
+              error={errors.deliveryAddress}
+            />
+
+            <DeliveryOptions
+              deliveryMethod={deliveryMethod}
+              deliverySpeed={deliverySpeed}
+              onDeliveryMethodChange={setDeliveryMethod}
+              onDeliverySpeedChange={setDeliverySpeed}
+              cart={cart}
+              location={location}
+            />
+
+            <PaymentMethodSelector
+              paymentMethod={paymentMethod}
+              onPaymentMethodChange={setPaymentMethod}
+              error={errors.paymentMethod}
+            />
+
+            <ContactInformation
+              contactInfo={contactInfo}
+              onContactInfoChange={setContactInfo}
+              error={errors.phone}
+            />
+
+            <OrderInstructions
+              instructions={orderInstructions}
+              onInstructionsChange={setOrderInstructions}
+            />
+          </MainColumn>
+
+          <SideColumn>
+            <OrderSummaryCard cart={cart} />
+            <DiscountCodeInput
+              promoCode={promoCode}
+              onPromoCodeChange={setPromoCode}
+              cart={cart}
+            />
+            <FeeBreakdown totals={effectiveTotals} />
+            <ReviewConfirmSection
+              deliveryAddress={deliveryAddress}
+              deliveryMethod={deliveryMethod}
+              deliverySpeed={deliverySpeed}
+              paymentMethod={paymentMethod}
+              contactInfo={contactInfo}
+              storeCount={cart.storeGroups?.length || 1}
+              eta={cart.storeGroups?.[0]?.eta || 'Today, 4-6 PM'}
+            />
+          </SideColumn>
+        </CheckoutGrid>
       </Content>
       
       <PlaceOrderButton
-        total={cart.totals?.total || 0}
+        total={effectiveTotals.total || 0}
         eta={cart.storeGroups?.[0]?.eta || 'Today, 4-6 PM'}
-        isValid={isValid}
+        isValid={isValid && !placingOrder}
         errors={errors}
-        onPlaceOrder={handlePlaceOrder}
+        onPlaceOrder={placingOrder ? undefined : handlePlaceOrder}
       />
     </Container>
   );

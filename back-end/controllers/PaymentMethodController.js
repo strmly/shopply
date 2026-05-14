@@ -1,6 +1,4 @@
-import { PaymentMethodService } from '../services/PaymentMethodService.js';
-
-const paymentMethodService = new PaymentMethodService();
+import { paymentMethodService } from '../services/PaymentMethodService.js';
 
 /**
  * Payment Method Controller

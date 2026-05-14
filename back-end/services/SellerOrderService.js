@@ -213,7 +213,10 @@ class SellerOrderServiceClass {
   createFromMainOrder(mainOrder, sellerId, storeId) {
     // Extract items for this seller
     const sellerItems = mainOrder.items.filter(item => 
-      item.sellerId === sellerId || item.sellerId === parseInt(sellerId) || item.storeId === storeId
+      item.sellerId === sellerId ||
+      item.sellerId === parseInt(sellerId) ||
+      item.storeId === storeId ||
+      item.storeId === parseInt(storeId)
     );
     
     if (sellerItems.length === 0) {
@@ -221,7 +224,10 @@ class SellerOrderServiceClass {
     }
     
     // Calculate totals for this seller's portion
-    const itemsTotal = sellerItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const itemsTotal = sellerItems.reduce((sum, item) => {
+      const price = item.price || item.product?.price || 0;
+      return sum + (price * (item.quantity || 1));
+    }, 0);
     const deliveryFee = mainOrder.deliveryMethod === 'delivery' ? 20 : 0;
     const serviceFee = -(itemsTotal * 0.12); // 12% service fee (deducted)
     const sellerEarnings = itemsTotal + deliveryFee + serviceFee;

@@ -1,6 +1,8 @@
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { ProductCard } from '../home/ProductCard';
+import { ProductGridSkeleton } from '../ui/Skeleton';
+import { WaveLoader } from '../ui/LoadingSpinner';
 
 const Container = styled.div`
   max-width: 1180px;
@@ -343,10 +345,7 @@ export const SearchResults = ({
   if (loading && results.length === 0) {
     return (
       <Container>
-        <LoadingContainer>
-          <LoadingMark>T</LoadingMark>
-          Searching nearby stores...
-        </LoadingContainer>
+        <ProductGridSkeleton count={8} />
       </Container>
     );
   }
@@ -420,17 +419,16 @@ export const SearchResults = ({
         </ProductsGrid>
       </ProductsSurface>
 
-      {hasMore && (
-        <LoadMoreButton
-          onClick={onLoadMore}
-          disabled={loadingMore}
-        >
-          {loadingMore ? 'Loading...' : 'Load more'}
+      {hasMore && !loadingMore && (
+        <LoadMoreButton onClick={onLoadMore}>
+          Load more
         </LoadMoreButton>
       )}
 
-      {loadingMore && !hasMore && (
-        <LoadingText>Loading more products...</LoadingText>
+      {loadingMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '24px' }}>
+          <WaveLoader />
+        </div>
       )}
     </Container>
   );
