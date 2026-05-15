@@ -338,6 +338,147 @@ const formatMoney = (value) => `R${Number(value || 0).toLocaleString('en-ZA', {
   maximumFractionDigits: 0,
 })}`;
 
+// ── Demand Signal Widget ───────────────────────────────────────────────────
+
+const DemandCard = styled.div`
+  padding: 20px;
+  border-radius: 24px;
+  background: #ffffff;
+  border: 1px solid rgba(228, 231, 236, 0.92);
+  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.07);
+  animation: ${riseIn} 0.38s ease-out both;
+`;
+
+const DemandTitle = styled.div`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 16px;
+  font-weight: 950;
+`;
+
+const DemandSubtitle = styled.div`
+  margin-top: 3px;
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+`;
+
+const DemandList = styled.div`
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+`;
+
+const DemandRow = styled.div`
+  display: grid;
+  gap: 6px;
+`;
+
+const DemandRowTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`;
+
+const DemandCategoryName = styled.span`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 13px;
+  font-weight: 850;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const DemandMeta = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  font-weight: 850;
+`;
+
+const TrendArrow = styled.span`
+  font-size: 13px;
+  color: ${props => props.$up ? props.theme.colors.successBase : props.theme.colors.dangerBase};
+`;
+
+const DemandBarTrack = styled.div`
+  height: 6px;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.primarySoftBg};
+  overflow: hidden;
+`;
+
+const DemandBarFill = styled.div`
+  height: 100%;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.gradient.primary};
+  width: ${props => props.$pct}%;
+  transition: width 0.6s ease-out;
+`;
+
+const DemandFooter = styled.div`
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(228, 231, 236, 0.8);
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 11px;
+  font-weight: 850;
+`;
+
+const DemandSignalWidget = ({ sellerId }) => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    if (!sellerId) return;
+    fetch(`${API_BASE_URL}/hyperlocal/seller-demand?sellerId=${sellerId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json?.success && json?.data) setData(json.data);
+      })
+      .catch(() => {});
+  }, [sellerId]);
+
+  if (!data) return null;
+
+  const topCategories = (data.topCategories || []).slice(0, 5);
+  const maxViews = Math.max(...topCategories.map(c => c.views), 1);
+
+  return (
+    <DemandCard>
+      <DemandTitle>Demand near your store</DemandTitle>
+      <DemandSubtitle>What shoppers near you are browsing today</DemandSubtitle>
+      <DemandList>
+        {topCategories.map((cat) => (
+          <DemandRow key={cat.category}>
+            <DemandRowTop>
+              <DemandCategoryName>{cat.category}</DemandCategoryName>
+              <DemandMeta>
+                {cat.views} views
+                <TrendArrow $up={cat.trend === 'up'}>
+                  {cat.trend === 'up' ? '↑' : '↓'}
+                </TrendArrow>
+              </DemandMeta>
+            </DemandRowTop>
+            <DemandBarTrack>
+              <DemandBarFill $pct={Math.round((cat.views / maxViews) * 100)} />
+            </DemandBarTrack>
+          </DemandRow>
+        ))}
+      </DemandList>
+      {data.tierLabel && (
+        <DemandFooter>Based on activity within {data.tierLabel}</DemandFooter>
+      )}
+    </DemandCard>
+  );
+};
+
+// ── End Demand Signal Widget ───────────────────────────────────────────────
+
 export const SellerDashboard = ({ location }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -642,6 +783,9 @@ export const SellerDashboard = ({ location }) => {
                 productCount={productCount}
                 isStoreClosed={isStoreClosed}
               />
+            </Module>
+            <Module $delay={0.28}>
+              <DemandSignalWidget sellerId={getSellerId()} />
             </Module>
           </Stack>
         </Workspace>

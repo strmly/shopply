@@ -29,16 +29,56 @@ function editDistance(a, b) {
 }
 
 /**
+ * Standard DP Levenshtein (no early-exit optimisation) — used for the
+ * typo-tolerant fuzzy fallback so we can check distance ≤ 2 reliably.
+ */
+function levenshtein(a, b) {
+  const m = a.length;
+  const n = b.length;
+  // Allocate a (m+1) × (n+1) matrix
+  const dp = Array.from({ length: m + 1 }, (_, i) => {
+    const row = new Array(n + 1);
+    row[0] = i;
+    return row;
+  });
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+/**
  * Returns 'exact' | 'stem' | 'fuzzy' | null
- * Checks if `term` appears in `text` (already lowercase)
+ * Checks if `term` appears in `text` (already lowercase).
+ *
+ * Match priority:
+ *  1. Exact substring match
+ *  2. Stemmed substring match
+ *  3. Single-edit-distance fuzzy (existing behaviour)
+ *  4. Typo-tolerant fallback: Levenshtein ≤ min(2, floor(len/3)) for words >= 4 chars
  */
 export function matchTerm(text, term) {
   const stemmed = stem(term);
   if (text.includes(term)) return 'exact';
   if (stemmed !== term && text.includes(stemmed)) return 'stem';
   if (term.length >= 4) {
-    for (const w of text.split(/\W+/).filter(w => w.length >= 4)) {
+    const words = text.split(/\W+/).filter(w => w.length >= 4);
+    // Pass 1: edit distance of exactly 1 (original behaviour)
+    for (const w of words) {
       if (editDistance(w, term) === 1 || (stemmed !== term && editDistance(w, stemmed) === 1)) return 'fuzzy';
+    }
+    // Pass 2: typo-tolerant — allow up to min(2, floor(termLen/3)) edits
+    const maxDist = Math.min(2, Math.floor(term.length / 3));
+    if (maxDist >= 2) {
+      for (const w of words) {
+        if (levenshtein(w, term) <= maxDist) return 'fuzzy';
+        if (stemmed !== term && levenshtein(w, stemmed) <= maxDist) return 'fuzzy';
+      }
     }
   }
   return null;

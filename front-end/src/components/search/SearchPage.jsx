@@ -1,6 +1,6 @@
-﻿import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { SearchIdleState } from './SearchIdleState';
 import { SearchAutocomplete } from './SearchAutocomplete';
@@ -8,6 +8,17 @@ import { SearchResults } from './SearchResults';
 import { FilterOverlay } from './FilterOverlay';
 import ExpansionBanner from '../hyperlocal/ExpansionBanner';
 import ProgressiveExpansionLoader from '../hyperlocal/ProgressiveExpansionLoader';
+
+const slideDown = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
 
 const Container = styled.div`
   min-height: 100vh;
@@ -428,7 +439,364 @@ const H3Banner = styled.div`
   width: fit-content;
 `;
 
+/* ─── Search History Chips ─────────────────────────────────────── */
+
+const HistoryPanel = styled.div`
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px min(5vw, 48px) 0;
+  animation: ${slideDown} 0.2s ease-out;
+`;
+
+const HistoryHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+`;
+
+const HistoryLabel = styled.span`
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: ${props => props.theme.colors.text.secondary};
+`;
+
+const ClearAllLink = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  color: ${props => props.theme.colors.primary};
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    opacity: 0.7;
+  }
+`;
+
+const HistoryChips = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
+const HistoryChip = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: ${props => props.theme.colors.primarySoftBg};
+  border: 1px solid rgba(61, 129, 239, 0.22);
+  border-radius: 999px;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    border-color: ${props => props.theme.colors.primary};
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(61, 129, 239, 0.14);
+  }
+`;
+
+const HistoryChipRemove = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(61, 129, 239, 0.16);
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    background: ${props => props.theme.colors.primary};
+    color: #ffffff;
+  }
+`;
+
+/* ─── Inline Filter Panel ──────────────────────────────────────── */
+
+const FiltersToggleButton = styled.button`
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: ${props => props.$active ? props.theme.colors.gradient.soft : '#ffffff'};
+  color: ${props => props.$active ? props.theme.colors.primarySoftText : props.theme.colors.text.primary};
+  border: 1px solid ${props => props.$active ? 'rgba(61, 129, 239, 0.28)' : props.theme.colors.border.default};
+  border-radius: 999px;
+  cursor: pointer;
+  transition: ${props => props.theme.transitions.swift};
+  font-weight: 900;
+  font-size: 14px;
+  box-shadow: 0 10px 22px rgba(16, 24, 40, 0.06);
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: ${props => props.theme.colors.primary};
+    color: ${props => props.theme.colors.primary};
+    transform: translateY(-1px);
+  }
+`;
+
+const FilterIconSvg = styled.span`
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  line-height: 1;
+`;
+
+const FilterBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.primary};
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+`;
+
+const InlineFilterPanel = styled.div`
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 14px min(5vw, 48px) 0;
+  animation: ${slideDown} 0.22s ease-out;
+`;
+
+const FilterPanelInner = styled.div`
+  background: #ffffff;
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 18px 46px rgba(16, 24, 40, 0.1);
+  display: grid;
+  gap: 20px;
+`;
+
+const FilterRow = styled.div`
+  display: grid;
+  gap: 8px;
+`;
+
+const FilterRowLabel = styled.div`
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: ${props => props.theme.colors.text.secondary};
+`;
+
+const PriceInputsRow = styled.div`
+  display: flex;
+  gap: 10px;
+  align-items: center;
+`;
+
+const PriceInput = styled.input`
+  flex: 1;
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid ${props => props.theme.colors.border.default};
+  border-radius: 12px;
+  background: #ffffff;
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 14px;
+  font-weight: 900;
+  outline: none;
+  transition: ${props => props.theme.transitions.swift};
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &:focus {
+    border-color: ${props => props.theme.colors.primary};
+    box-shadow: 0 0 0 3px ${props => props.theme.colors.primarySoftBg};
+  }
+
+  &::placeholder {
+    color: ${props => props.theme.colors.text.secondary};
+    font-weight: 700;
+  }
+`;
+
+const PriceDash = styled.span`
+  font-size: 13px;
+  font-weight: 900;
+  color: ${props => props.theme.colors.text.secondary};
+  flex-shrink: 0;
+`;
+
+const StarRatingRow = styled.div`
+  display: flex;
+  gap: 6px;
+`;
+
+const StarButton = styled.button`
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid ${props => props.$filled ? 'rgba(245, 158, 11, 0.42)' : props.theme.colors.border.default};
+  background: ${props => props.$filled ? 'rgba(254, 243, 199, 0.9)' : '#ffffff'};
+  color: ${props => props.$filled ? '#D97706' : props.theme.colors.text.secondary};
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    border-color: rgba(245, 158, 11, 0.42);
+    background: rgba(254, 243, 199, 0.6);
+    color: #D97706;
+    transform: translateY(-1px);
+  }
+`;
+
+const ToggleSwitchRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const ToggleSwitchLabel = styled.span`
+  font-size: 14px;
+  font-weight: 900;
+  color: ${props => props.theme.colors.text.primary};
+`;
+
+const ToggleSwitch = styled.button`
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  border: none;
+  background: ${props => props.$on ? props.theme.colors.primary : props.theme.colors.border.default};
+  cursor: pointer;
+  transition: ${props => props.theme.transitions.swift};
+  flex-shrink: 0;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: ${props => props.$on ? '23px' : '3px'};
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #ffffff;
+    transition: ${props => props.theme.transitions.swift};
+    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.18);
+  }
+`;
+
+const FilterPanelActions = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+  border-top: 1px solid ${props => props.theme.colors.border.light};
+`;
+
+const FilterClearLink = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 900;
+  color: ${props => props.theme.colors.text.secondary};
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const FilterApplyButton = styled.button`
+  height: 40px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.gradient.primary};
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 10px 22px rgba(16, 24, 40, 0.14);
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 28px rgba(16, 24, 40, 0.18);
+  }
+`;
+
+/* ─── Delivery / Pickup Toggle ─────────────────────────────────── */
+
+const DeliveryToggleWrap = styled.div`
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 16px min(5vw, 48px) 0;
+  animation: ${fadeIn} 0.2s ease-in;
+`;
+
+const DeliverySegment = styled.div`
+  display: inline-flex;
+  background: ${props => props.theme.colors.primarySoftBg};
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+`;
+
+const DeliverySegmentBtn = styled.button`
+  height: 34px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: none;
+  background: ${props => props.$active ? '#ffffff' : 'transparent'};
+  color: ${props => props.$active ? props.theme.colors.primary : props.theme.colors.text.secondary};
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: ${props => props.theme.transitions.swift};
+  box-shadow: ${props => props.$active ? '0 4px 14px rgba(16, 24, 40, 0.1)' : 'none'};
+  white-space: nowrap;
+
+  &:hover {
+    color: ${props => props.theme.colors.primary};
+  }
+`;
+
 import API_BASE_URL from '@config/api';
+
+const HISTORY_KEY = 'shopply_search_history';
+const MAX_HISTORY = 5;
 
 const ROOM_OPTIONS = [
   { label: 'All Rooms', value: 'all' },
@@ -464,6 +832,32 @@ export const SearchPage = ({ location, onBack }) => {
   const [h3TierLabel, setH3TierLabel] = useState(null);
   const [expansionData, setExpansionData] = useState(null);
   // { expanded, expansionSteps, tierLabel, effectiveRadiusKm }
+
+  // ── Improvement 1: Search History ────────────────────────────────
+  const [inputFocused, setInputFocused] = useState(false);
+  const [searchHistory, setSearchHistory] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  // ── Improvement 2: Inline Filters ────────────────────────────────
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [inlineFilters, setInlineFilters] = useState({
+    minPrice: '',
+    maxPrice: '',
+    minRating: 0,
+    openNow: false,
+    inStockOnly: false,
+  });
+  // Local draft while panel is open (apply on button click)
+  const [draftFilters, setDraftFilters] = useState({ ...inlineFilters });
+
+  // ── Improvement 3: Delivery/Pickup Toggle ─────────────────────────
+  const [deliveryFilter, setDeliveryFilter] = useState('all'); // 'all' | 'delivery' | 'pickup'
+
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -689,6 +1083,12 @@ export const SearchPage = ({ location, onBack }) => {
     setQuery(e.target.value);
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && query.trim()) {
+      pushToHistory(query.trim());
+    }
+  };
+
   const loadFlashDeals = async () => {
     setFlashDealsLoading(true);
     try {
@@ -707,6 +1107,77 @@ export const SearchPage = ({ location, onBack }) => {
     }
   };
 
+  // ── History helpers ───────────────────────────────────────────────
+  const pushToHistory = useCallback((term) => {
+    if (!term || !term.trim()) return;
+    setSearchHistory(prev => {
+      const deduped = [term, ...prev.filter(t => t !== term)].slice(0, MAX_HISTORY);
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(deduped));
+      } catch {}
+      return deduped;
+    });
+  }, []);
+
+  const removeFromHistory = useCallback((term) => {
+    setSearchHistory(prev => {
+      const next = prev.filter(t => t !== term);
+      try {
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const clearHistory = useCallback(() => {
+    setSearchHistory([]);
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+    } catch {}
+  }, []);
+
+  // ── Inline filter helpers ─────────────────────────────────────────
+  const inlineFilterCount = [
+    inlineFilters.minPrice !== '',
+    inlineFilters.maxPrice !== '',
+    inlineFilters.minRating > 0,
+    inlineFilters.openNow,
+    inlineFilters.inStockOnly,
+  ].filter(Boolean).length;
+
+  const handleOpenFiltersPanel = () => {
+    setDraftFilters({ ...inlineFilters });
+    setFiltersOpen(prev => !prev);
+  };
+
+  const handleApplyInlineFilters = () => {
+    setInlineFilters({ ...draftFilters });
+    setFiltersOpen(false);
+    // Merge the inline filter params into the existing filters object so performSearch picks them up
+    const extra = {};
+    if (draftFilters.minPrice !== '') extra.min_price = draftFilters.minPrice;
+    if (draftFilters.maxPrice !== '') extra.max_price = draftFilters.maxPrice;
+    if (draftFilters.minRating > 0) extra.min_rating = draftFilters.minRating;
+    if (draftFilters.openNow) extra.open_now = true;
+    if (draftFilters.inStockOnly) extra.in_stock_only = true;
+    setFilters(prev => {
+      // Remove old inline keys, merge new ones
+      const { min_price: _a, max_price: _b, min_rating: _c, open_now: _d, in_stock_only: _e, ...rest } = prev;
+      return { ...rest, ...extra };
+    });
+  };
+
+  const handleClearInlineFilters = () => {
+    const empty = { minPrice: '', maxPrice: '', minRating: 0, openNow: false, inStockOnly: false };
+    setDraftFilters(empty);
+    setInlineFilters(empty);
+    setFilters(prev => {
+      const { min_price: _a, max_price: _b, min_rating: _c, open_now: _d, in_stock_only: _e, ...rest } = prev;
+      return rest;
+    });
+    setFiltersOpen(false);
+  };
+
   const handleClearSearch = () => {
     setQuery('');
     setSuggestions(null);
@@ -721,22 +1192,24 @@ export const SearchPage = ({ location, onBack }) => {
   const handleSuggestionClick = (suggestion) => {
     if (suggestion.type === 'product') {
       setQuery(suggestion.label);
-      // Will trigger search via useEffect
+      pushToHistory(suggestion.label);
     } else if (suggestion.type === 'category') {
       setQuery(suggestion.data.category);
-      // Will trigger search via useEffect
+      pushToHistory(suggestion.data.category);
     } else if (suggestion.type === 'store') {
       setQuery(suggestion.label);
-      // Will trigger search via useEffect
+      pushToHistory(suggestion.label);
     }
   };
 
   const handleRecentSearchClick = (searchTerm) => {
     setQuery(searchTerm);
+    pushToHistory(searchTerm);
   };
 
   const handleTrendingSearchClick = (searchTerm) => {
     setQuery(searchTerm);
+    pushToHistory(searchTerm);
   };
 
   const handleRemoveRecentSearch = async (searchTerm) => {
@@ -801,6 +1274,17 @@ export const SearchPage = ({ location, onBack }) => {
 
   const activeFilterCount = Object.values(filters).filter(v => v !== undefined && v !== '' && v !== false).length;
 
+  // ── Improvement 3: client-side delivery filter ────────────────────
+  const hasDeliveryData = searchResults.some(r => r.canDeliver || r.pickupOnly);
+  const filteredResults = searchResults.filter(r => {
+    if (deliveryFilter === 'delivery') return r.canDeliver === true;
+    if (deliveryFilter === 'pickup') return r.pickupOnly === true;
+    return true;
+  });
+
+  // ── Improvement 1: show history panel ────────────────────────────
+  const showHistory = inputFocused && !query && searchHistory.length > 0;
+
   return (
     <Container>
       <SearchHeader>
@@ -829,6 +1313,9 @@ export const SearchPage = ({ location, onBack }) => {
                 placeholder="Search refined finds nearby"
                 value={query}
                 onChange={handleQueryChange}
+                onKeyDown={handleKeyDown}
+                onFocus={() => setInputFocused(true)}
+                onBlur={() => setTimeout(() => setInputFocused(false), 150)}
               />
               {query ? (
                 <ClearButton type="button" onClick={handleClearSearch} aria-label="Clear search">
@@ -845,11 +1332,23 @@ export const SearchPage = ({ location, onBack }) => {
           )}
           {searchState === 'results' && (
             <ControlsRow>
+              {/* Improvement 2: Inline Filters button */}
+              <FiltersToggleButton
+                $active={filtersOpen || inlineFilterCount > 0}
+                onClick={handleOpenFiltersPanel}
+                aria-expanded={filtersOpen}
+              >
+                <FilterIconSvg aria-hidden="true">&#9776;</FilterIconSvg>
+                Filters
+                {inlineFilterCount > 0 && (
+                  <FilterBadge>{inlineFilterCount}</FilterBadge>
+                )}
+              </FiltersToggleButton>
               <FilterButton
                 $active={showFilters || activeFilterCount > 0}
                 onClick={() => setShowFilters(!showFilters)}
               >
-                Filters {activeFilterCount > 0 && `(${activeFilterCount})`}
+                More {activeFilterCount > 0 && `(${activeFilterCount})`}
               </FilterButton>
               <SortButton
                 $active={sortBy !== 'relevance'}
@@ -870,6 +1369,126 @@ export const SearchPage = ({ location, onBack }) => {
           )}
         </HeaderInner>
       </SearchHeader>
+
+      {/* Improvement 2: Inline Filter Panel (slide-down, below header) */}
+      {filtersOpen && (
+        <InlineFilterPanel>
+          <FilterPanelInner>
+            <FilterRow>
+              <FilterRowLabel>Price range (ZAR)</FilterRowLabel>
+              <PriceInputsRow>
+                <PriceInput
+                  type="number"
+                  min="0"
+                  placeholder="Min"
+                  value={draftFilters.minPrice}
+                  onChange={e => setDraftFilters(p => ({ ...p, minPrice: e.target.value }))}
+                />
+                <PriceDash>—</PriceDash>
+                <PriceInput
+                  type="number"
+                  min="0"
+                  placeholder="Max"
+                  value={draftFilters.maxPrice}
+                  onChange={e => setDraftFilters(p => ({ ...p, maxPrice: e.target.value }))}
+                />
+              </PriceInputsRow>
+            </FilterRow>
+
+            <FilterRow>
+              <FilterRowLabel>Minimum rating</FilterRowLabel>
+              <StarRatingRow>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <StarButton
+                    key={star}
+                    type="button"
+                    $filled={star <= draftFilters.minRating}
+                    onClick={() =>
+                      setDraftFilters(p => ({
+                        ...p,
+                        minRating: p.minRating === star ? 0 : star,
+                      }))
+                    }
+                    aria-label={`${star} star minimum`}
+                  >
+                    {star <= draftFilters.minRating ? '★' : '☆'}
+                  </StarButton>
+                ))}
+              </StarRatingRow>
+            </FilterRow>
+
+            <FilterRow>
+              <ToggleSwitchRow>
+                <ToggleSwitchLabel>Open now</ToggleSwitchLabel>
+                <ToggleSwitch
+                  type="button"
+                  $on={draftFilters.openNow}
+                  onClick={() => setDraftFilters(p => ({ ...p, openNow: !p.openNow }))}
+                  aria-pressed={draftFilters.openNow}
+                  aria-label="Open now"
+                />
+              </ToggleSwitchRow>
+            </FilterRow>
+
+            <FilterRow>
+              <ToggleSwitchRow>
+                <ToggleSwitchLabel>In stock only</ToggleSwitchLabel>
+                <ToggleSwitch
+                  type="button"
+                  $on={draftFilters.inStockOnly}
+                  onClick={() => setDraftFilters(p => ({ ...p, inStockOnly: !p.inStockOnly }))}
+                  aria-pressed={draftFilters.inStockOnly}
+                  aria-label="In stock only"
+                />
+              </ToggleSwitchRow>
+            </FilterRow>
+
+            <FilterPanelActions>
+              <FilterClearLink type="button" onClick={handleClearInlineFilters}>
+                Clear all
+              </FilterClearLink>
+              <FilterApplyButton type="button" onClick={handleApplyInlineFilters}>
+                Apply
+              </FilterApplyButton>
+            </FilterPanelActions>
+          </FilterPanelInner>
+        </InlineFilterPanel>
+      )}
+
+      {/* Improvement 1: Search History chips (shown when input focused + empty) */}
+      {showHistory && (
+        <HistoryPanel>
+          <HistoryHeader>
+            <HistoryLabel>Recent searches</HistoryLabel>
+            <ClearAllLink type="button" onClick={clearHistory}>
+              Clear all
+            </ClearAllLink>
+          </HistoryHeader>
+          <HistoryChips>
+            {searchHistory.map(term => (
+              <HistoryChip
+                key={term}
+                onClick={() => {
+                  setQuery(term);
+                  pushToHistory(term);
+                }}
+              >
+                {term}
+                <HistoryChipRemove
+                  role="button"
+                  aria-label={`Remove ${term} from history`}
+                  onClick={e => {
+                    e.stopPropagation();
+                    removeFromHistory(term);
+                  }}
+                >
+                  ✕
+                </HistoryChipRemove>
+              </HistoryChip>
+            ))}
+          </HistoryChips>
+        </HistoryPanel>
+      )}
 
       {searchState === 'idle' && (
         <SearchIdleState
@@ -927,9 +1546,35 @@ export const SearchPage = ({ location, onBack }) => {
         />
       )}
 
+      {/* Improvement 3: Delivery / Pickup segmented toggle */}
+      {searchState === 'results' && !loading && searchResults.length > 0 && hasDeliveryData && (
+        <DeliveryToggleWrap>
+          <DeliverySegment role="group" aria-label="Delivery method filter">
+            <DeliverySegmentBtn
+              $active={deliveryFilter === 'all'}
+              onClick={() => setDeliveryFilter('all')}
+            >
+              All
+            </DeliverySegmentBtn>
+            <DeliverySegmentBtn
+              $active={deliveryFilter === 'delivery'}
+              onClick={() => setDeliveryFilter('delivery')}
+            >
+              Delivery
+            </DeliverySegmentBtn>
+            <DeliverySegmentBtn
+              $active={deliveryFilter === 'pickup'}
+              onClick={() => setDeliveryFilter('pickup')}
+            >
+              Pickup
+            </DeliverySegmentBtn>
+          </DeliverySegment>
+        </DeliveryToggleWrap>
+      )}
+
       {searchState === 'results' && (
         <SearchResults
-          results={searchResults}
+          results={filteredResults}
           query={query}
           location={location}
           loading={loading}
@@ -938,7 +1583,7 @@ export const SearchPage = ({ location, onBack }) => {
           onLoadMore={handleLoadMore}
           hasMore={hasMoreResults}
           loadingMore={loadingMore}
-          totalResults={totalResults}
+          totalResults={deliveryFilter === 'all' ? totalResults : filteredResults.length}
           filters={filters}
           onFilterChange={handleFilterChange}
         />

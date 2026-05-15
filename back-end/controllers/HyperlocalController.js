@@ -476,6 +476,192 @@ export async function getHeatmap(req, res, next) {
   }
 }
 
+/**
+ * GET /api/hyperlocal/seller-demand?sellerId=xxx
+ * Returns top 5 trending categories near the seller's store and the effective tier.
+ */
+export async function getSellerDemandSignal(req, res, next) {
+  try {
+    const { sellerId } = req.query;
+
+    if (!sellerId) {
+      return res.status(400).json({
+        success: false,
+        error: 'sellerId query parameter is required',
+      });
+    }
+
+    const stores = getAllStores();
+    const sellerStore = stores.find(s => String(s.sellerId) === String(sellerId));
+
+    if (!sellerStore) {
+      return res.status(404).json({
+        success: false,
+        error: 'No store found for this seller',
+      });
+    }
+
+    const { lat, lng } = sellerStore.address;
+    if (!lat || !lng) {
+      return res.status(400).json({
+        success: false,
+        error: 'Seller store has no valid coordinates',
+      });
+    }
+
+    // Determine the H3 cell for the store and get trending product IDs
+    const h3Cells = generateH3Cells(lat, lng);
+    const primaryCell = h3Cells?.h3_r7 || h3Cells?.h3_r6;
+
+    const topItems = primaryCell ? TrendingService.getTopForCell(primaryCell, 20) : [];
+
+    // Determine effective tier (smallest tier that has trending data)
+    let effectiveTier = RADIUS_TIERS[0];
+    if (topItems.length === 0) {
+      // Try wider cells
+      for (let i = 1; i < RADIUS_TIERS.length; i++) {
+        const tier = RADIUS_TIERS[i];
+        const tierCells = getH3CellsForTier(lat, lng, tier);
+        let found = false;
+        for (const cell of tierCells) {
+          const items = TrendingService.getTopForCell(cell, 5);
+          if (items.length > 0) {
+            effectiveTier = tier;
+            found = true;
+            break;
+          }
+        }
+        if (found) break;
+      }
+    }
+
+    // Enrich with category info from GeoIndex and aggregate by category
+    const categoryCounts = new Map();
+    for (const { productId, trendScore } of topItems) {
+      const entry = GeoIndex.products.get(String(productId));
+      const category = entry?.product?.category || 'Unknown';
+      const existing = categoryCounts.get(category) || { category, viewCount: 0, trendScore: 0 };
+      existing.viewCount++;
+      existing.trendScore += trendScore;
+      categoryCounts.set(category, existing);
+    }
+
+    const topCategories = Array.from(categoryCounts.values())
+      .sort((a, b) => b.trendScore - a.trendScore)
+      .slice(0, 5)
+      .map(c => ({
+        category: c.category,
+        viewCount: c.viewCount,
+        trendScore: parseFloat(c.trendScore.toFixed(4)),
+      }));
+
+    res.json({
+      success: true,
+      data: {
+        sellerId,
+        storeId: sellerStore.id,
+        storeName: sellerStore.name,
+        effectiveTier: effectiveTier.id,
+        effectiveTierLabel: effectiveTier.label,
+        effectiveRadiusKm: effectiveTier.radiusKm,
+        topCategories,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/hyperlocal/coverage-batch
+ * Accepts { locations: [{lat, lng}] } (max 50) and returns coverage info for each.
+ */
+export async function getCoverageBatch(req, res, next) {
+  try {
+    const { locations } = req.body;
+
+    if (!Array.isArray(locations) || locations.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Body must contain a non-empty "locations" array',
+      });
+    }
+
+    if (locations.length > 50) {
+      return res.status(400).json({
+        success: false,
+        error: 'Maximum 50 locations allowed per batch request',
+      });
+    }
+
+    const stores = getAllStores();
+    const products = await ProductService.getAll();
+    const inventories = getAllInventories();
+
+    const results = [];
+
+    for (const loc of locations) {
+      const lat = parseFloat(loc.lat);
+      const lng = parseFloat(loc.lng);
+
+      if (isNaN(lat) || isNaN(lng)) {
+        results.push({ lat: loc.lat, lng: loc.lng, error: 'invalid_coordinates' });
+        continue;
+      }
+
+      let found = false;
+
+      for (let tierIndex = 0; tierIndex < RADIUS_TIERS.length; tierIndex++) {
+        const tier = RADIUS_TIERS[tierIndex];
+        const h3Cells = getH3CellsForTier(lat, lng, tier);
+        const h3Set = new Set(h3Cells);
+
+        let count = 0;
+        let nearestKm = Infinity;
+
+        for (const product of products) {
+          const store = stores.find(s => s.id === product.storeId);
+          if (!store) continue;
+          if (!h3Set.has(store[`h3_r${tier.resolution}`])) continue;
+
+          const invKey = `${product.storeId}_${product.id}`;
+          const inventory = inventories.find(i => `${i.storeId}_${i.productId}` === invKey);
+          if (!inventory || !inventory.availableNow) continue;
+
+          count++;
+          const dist = calculateDistance(lat, lng, store.address.lat, store.address.lng);
+          if (dist < nearestKm) nearestKm = dist;
+          if (count >= 5) break;
+        }
+
+        if (count > 0) {
+          results.push({
+            lat,
+            lng,
+            tier: tier.id,
+            tierLabel: tier.label,
+            count,
+            nearestKm: parseFloat(nearestKm.toFixed(3)),
+          });
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        results.push({ lat, lng, tier: null, tierLabel: 'No availability', count: 0, nearestKm: null });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: { results },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export default {
   getHomeFeed,
   search,
@@ -485,5 +671,7 @@ export default {
   getTrending,
   getNearbySellers,
   getHeatmap,
+  getCoverageBatch,
+  getSellerDemandSignal,
 };
 

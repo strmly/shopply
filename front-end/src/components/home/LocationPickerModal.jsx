@@ -455,6 +455,7 @@ const ListWrap = styled.div`
   overflow-y: auto;
   flex: 1;
   padding: 0 8px 24px;
+  will-change: transform;
 
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-track { background: transparent; }
@@ -485,6 +486,8 @@ const SuburbRow = styled.button`
   cursor: pointer;
   text-align: left;
   transition: ${props => props.theme.transitions.swift};
+  content-visibility: auto;
+  contain-intrinsic-size: 0 58px;
 
   &:hover {
     background: ${props => props.theme.colors.primarySoftBg};
@@ -635,6 +638,7 @@ const ProvinceGrid = styled.div`
 `;
 
 const ProvinceCard = styled.button`
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -726,6 +730,101 @@ const ProvinceBreadcrumbCount = styled.div`
   color: ${props => props.theme.colors.text.secondary};
 `;
 
+const RecentSection = styled.div`
+  margin: 0 20px 4px;
+  flex-shrink: 0;
+`;
+
+const RecentRow = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    background: ${props => props.theme.colors.primarySoftBg};
+  }
+`;
+
+const RecentIconWrap = styled.span`
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid rgba(228, 231, 236, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: ${props => props.theme.colors.text.secondary};
+`;
+
+const RecentInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const RecentSuburbName = styled.div`
+  font-size: 14px;
+  font-weight: 800;
+  color: ${props => props.theme.colors.text.primary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const RecentSuburbSub = styled.div`
+  font-size: 11px;
+  font-weight: 700;
+  color: ${props => props.theme.colors.text.secondary};
+  margin-top: 1px;
+`;
+
+const RecentRemoveBtn = styled.button`
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(228, 231, 236, 0.9);
+  background: transparent;
+  color: ${props => props.theme.colors.text.secondary};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    background: rgba(228, 231, 236, 0.9);
+    color: ${props => props.theme.colors.text.primary};
+  }
+`;
+
+const ProvinceCoverageDot = styled.span`
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: ${p => {
+    if (p.$tier === 'T0') return '#15A17C';
+    if (p.$tier === 'T1' || p.$tier === 'T2') return '#3D81EF';
+    if (p.$tier === 'T3' || p.$tier === 'T4') return '#B35A05';
+    return '#CCC';
+  }};
+  border: 1.5px solid #ffffff;
+`;
+
 const PinIcon = () => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" />
@@ -775,10 +874,20 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   const [coverageMap, setCoverageMap] = useState({});
   const [gpsCoverage, setGpsCoverage] = useState(null);
   const [gpsResult, setGpsResult] = useState(null);
+  const [locationHistory, setLocationHistory] = useState([]);
+  const [provinceCoverage, setProvinceCoverage] = useState({});
 
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus(), 80);
     return () => clearTimeout(t);
+  }, []);
+
+  // Load location history from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('shopply_location_history');
+      if (stored) setLocationHistory(JSON.parse(stored));
+    } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
@@ -795,30 +904,6 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose, selectedProvince, search]);
 
-  const loadCoverage = useCallback(async (lat, lng) => {
-    const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-    if (loadingRef.current.has(key)) return;
-    loadingRef.current.add(key);
-    setCoverageMap(prev => ({ ...prev, [key]: { loading: true } }));
-    try {
-      const res = await fetch(`${API_BASE_URL}/hyperlocal/nearest-availability?lat=${lat}&lng=${lng}`);
-      const data = await res.json();
-      setCoverageMap(prev => ({
-        ...prev,
-        [key]: {
-          loading: false,
-          tier: data.data?.nearestTier || null,
-          tierLabel: data.data?.tierLabel || null,
-          count: data.data?.estimatedResults || 0,
-          nearestKm: data.data?.nearestDistanceKm || null,
-        },
-      }));
-    } catch {
-      loadingRef.current.delete(key);
-      setCoverageMap(prev => ({ ...prev, [key]: { loading: false, error: true } }));
-    }
-  }, []);
-
   const grouped = useMemo(() => {
     const map = {};
     for (const s of SUBURBS) {
@@ -830,11 +915,92 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
 
   const provinces = useMemo(() => Object.keys(grouped), [grouped]);
 
+  // Batch fetch province-level coverage on mount (one representative suburb per province)
+  useEffect(() => {
+    const locations = provinces.map(province => {
+      const first = grouped[province][0];
+      return { lat: first.lat, lng: first.lng, province };
+    });
+    fetch(`${API_BASE_URL}/hyperlocal/coverage-batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locations: locations.map(({ lat, lng }) => ({ lat, lng })) }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) return;
+        const results = data.data?.results || [];
+        const map = {};
+        results.forEach((result, i) => {
+          const prov = locations[i]?.province;
+          if (prov) map[prov] = { tier: result.tier ?? null, count: result.estimatedResults ?? 0 };
+        });
+        setProvinceCoverage(map);
+      })
+      .catch(() => { /* ignore */ });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Batch fetch suburb-level coverage when a province is selected
   useEffect(() => {
     if (!selectedProvince) return;
     const suburbs = grouped[selectedProvince] || [];
-    suburbs.forEach(s => loadCoverage(s.lat, s.lng));
-  }, [selectedProvince, grouped, loadCoverage]);
+    const toFetch = suburbs.filter(s => {
+      const key = `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`;
+      return !loadingRef.current.has(key) && !coverageMap[key];
+    });
+    if (toFetch.length === 0) return;
+
+    toFetch.forEach(s => {
+      const key = `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`;
+      loadingRef.current.add(key);
+    });
+    setCoverageMap(prev => {
+      const next = { ...prev };
+      toFetch.forEach(s => {
+        const key = `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`;
+        next[key] = { loading: true };
+      });
+      return next;
+    });
+
+    fetch(`${API_BASE_URL}/hyperlocal/coverage-batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locations: toFetch.map(s => ({ lat: s.lat, lng: s.lng })) }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.success) return;
+        const results = data.data?.results || [];
+        setCoverageMap(prev => {
+          const next = { ...prev };
+          results.forEach((result, i) => {
+            const s = toFetch[i];
+            if (!s) return;
+            const key = `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`;
+            next[key] = {
+              loading: false,
+              tier: result.tier ?? null,
+              tierLabel: result.tierLabel ?? null,
+              count: result.estimatedResults ?? 0,
+              nearestKm: result.nearestDistanceKm ?? null,
+            };
+          });
+          return next;
+        });
+      })
+      .catch(() => {
+        setCoverageMap(prev => {
+          const next = { ...prev };
+          toFetch.forEach(s => {
+            const key = `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`;
+            loadingRef.current.delete(key);
+            next[key] = { loading: false, error: true };
+          });
+          return next;
+        });
+      });
+  }, [selectedProvince, grouped]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isSearching = Boolean(search.trim());
 
@@ -873,13 +1039,38 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
     );
   };
 
+  const saveToHistory = useCallback((entry) => {
+    setLocationHistory(prev => {
+      const filtered = prev.filter(
+        h => !(h.suburb === entry.suburb && h.city === entry.city && h.province === entry.province)
+      );
+      const next = [entry, ...filtered].slice(0, 3);
+      try { localStorage.setItem('shopply_location_history', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
   const handleConfirmGPS = () => {
-    if (gpsResult) onSelect(gpsResult);
+    if (gpsResult) {
+      saveToHistory(gpsResult);
+      onSelect(gpsResult);
+    }
   };
 
   const handleSelect = (s) => {
-    onSelect({ lat: s.lat, lng: s.lng, suburb: s.suburb, city: s.city, province: s.province });
+    const entry = { lat: s.lat, lng: s.lng, suburb: s.suburb, city: s.city, province: s.province };
+    saveToHistory(entry);
+    onSelect(entry);
   };
+
+  const handleRemoveHistory = useCallback((e, index) => {
+    e.stopPropagation();
+    setLocationHistory(prev => {
+      const next = prev.filter((_, i) => i !== index);
+      try { localStorage.setItem('shopply_location_history', JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
@@ -998,6 +1189,30 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
           </GPSCoverageBox>
         )}
 
+        {/* Recent locations */}
+        {!isSearching && !selectedProvince && locationHistory.length > 0 && (
+          <RecentSection>
+            <SectionLabel>Recent</SectionLabel>
+            {locationHistory.map((item, index) => (
+              <RecentRow key={`${item.suburb}-${item.city}-${index}`} onClick={() => handleSelect(item)}>
+                <RecentIconWrap>
+                  <PinIcon />
+                </RecentIconWrap>
+                <RecentInfo>
+                  <RecentSuburbName>{item.suburb}</RecentSuburbName>
+                  <RecentSuburbSub>{item.city} · {item.province}</RecentSuburbSub>
+                </RecentInfo>
+                <RecentRemoveBtn
+                  onClick={(e) => handleRemoveHistory(e, index)}
+                  aria-label={`Remove ${item.suburb} from recent`}
+                >
+                  &#10005;
+                </RecentRemoveBtn>
+              </RecentRow>
+            ))}
+          </RecentSection>
+        )}
+
         {!isSearching && !selectedProvince && <Divider />}
 
         {/* Breadcrumb when a province is selected */}
@@ -1035,6 +1250,7 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
                     $active={isActiveProvince(province)}
                     onClick={() => setSelectedProvince(province)}
                   >
+                    <ProvinceCoverageDot $tier={provinceCoverage[province]?.tier ?? null} />
                     <ProvinceIconCircle $active={isActiveProvince(province)}>
                       <MapRegionIcon />
                     </ProvinceIconCircle>

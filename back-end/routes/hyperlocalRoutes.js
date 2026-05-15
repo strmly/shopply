@@ -1,5 +1,5 @@
 import express from 'express';
-import { getHomeFeed, search, searchCategory, getTiers, getNearestAvailability, getTrending, getNearbySellers, getHeatmap } from '../controllers/HyperlocalController.js';
+import { getHomeFeed, search, searchCategory, getTiers, getNearestAvailability, getTrending, getNearbySellers, getHeatmap, getCoverageBatch, getSellerDemandSignal } from '../controllers/HyperlocalController.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = express.Router();
@@ -38,6 +38,12 @@ router.get('/sellers', getNearbySellers);
 
 // Cell-level heatmap (product counts + live activity)
 router.get('/heatmap', getHeatmap);
+
+// Batch coverage check for multiple locations (max 50)
+router.post('/coverage-batch', getCoverageBatch);
+
+// Seller demand signal — trending categories near seller's store
+router.get('/seller-demand', getSellerDemandSignal);
 
 export default router;
 

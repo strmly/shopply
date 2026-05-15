@@ -61,6 +61,18 @@ import { GeoIndex } from './services/GeoIndex.js';
 import { getAllStores } from './services/StoreService.js';
 seedNewFurniture()
   .then(() => Promise.all([seedFlashDeals(), seedBundles()]))
+  .then(async () => {
+    try {
+      await GeoIndex.rebuild(
+        async () => ProductService.getAll(),
+        async () => getAllStores(),
+        async () => SellerService.getAllSellers(),
+      );
+      console.log('[GeoIndex] Ready — indexed', GeoIndex.products.size, 'products');
+    } catch (e) {
+      console.error('[GeoIndex] Bootstrap failed:', e.message);
+    }
+  })
   .catch(err => {
     console.error('Failed to seed products:', err);
   });
@@ -149,19 +161,7 @@ app.get('/api/debug/flash-deals', async (req, res) => {
 // API Routes
 app.use('/api', apiRoutes);
 
-// Bootstrap GeoIndex after all routes are mounted
-(async () => {
-  try {
-    await GeoIndex.rebuild(
-      async () => ProductService.getAll(),
-      async () => getAllStores(),
-      async () => SellerService.getAllSellers(),
-    );
-    console.log('[GeoIndex] Ready — indexed', GeoIndex.products.size, 'products');
-  } catch (e) {
-    console.error('[GeoIndex] Bootstrap failed:', e.message);
-  }
-})();
+// GeoIndex is bootstrapped in the seed chain above (after seedNewFurniture completes)
 
 // Error handling middleware (must be last)
 app.use(notFound);

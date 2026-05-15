@@ -1,0 +1,15 @@
+{
+  "name": "Shopply",
+  "short_name": "Shopply",
+  "description": "Hyperlocal furniture shopping, delivered fast",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#3D81EF",
+  "icons": [
+    { "src": "/shopply.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "categories": ["shopping"],
+  "lang": "en-ZA"
+}

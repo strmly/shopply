@@ -4,6 +4,9 @@
 import { generateProducts } from './generateProducts.js';
 import { ProductService } from '../services/ProductService.js';
 import { Product } from '../models/Product.js';
+import { SellerService } from '../services/SellerService.js';
+import { createStore, getAllStores } from '../services/StoreService.js';
+import { generateH3Cells } from '../utils/h3Utils.js';
 
 /**
  * Real furniture images from Unsplash (free to use)
@@ -127,7 +130,7 @@ function getRealImages(subcategory, productId) {
 /**
  * Convert generated furniture product to Product model format
  */
-function convertToProductModel(generatedProduct) {
+function convertToProductModel(generatedProduct, catalogStoreId) {
   // Get real images that match the product subcategory
   const realImages = getRealImages(generatedProduct.subcategory, generatedProduct.id);
   const mainImage = realImages[0];
@@ -181,8 +184,7 @@ function convertToProductModel(generatedProduct) {
     warranty: generatedProduct.warranty,
     features: generatedProduct.features || [],
 
-    // Catalog products use storeId 0 so they don't appear in any seller's dashboard
-    storeId: 0,
+    storeId: catalogStoreId,
     storeName: 'Shopply Home Furniture',
   };
 }
@@ -261,20 +263,45 @@ export async function seedNewFurniture() {
     console.log('   CLEARING OLD DATA & SEEDING NEW');
     console.log('   (1000 Furniture Products)');
     console.log('========================================\n');
-    
+
+    // Step 0: Ensure default seller + catalog store exist
+    await SellerService.seedDefaultSeller();
+    const CATALOG_STORE_ID = 'shopply-catalog';
+    const existingStores = getAllStores();
+    let catalogStore = existingStores.find(s => s.id === CATALOG_STORE_ID);
+    if (!catalogStore) {
+      const lat = -26.1076;
+      const lng = 28.0567; // Sandton, Johannesburg
+      const h3Cells = generateH3Cells(lat, lng);
+      catalogStore = createStore({
+        id: CATALOG_STORE_ID,
+        sellerId: 1,
+        name: 'Shopply Home Furniture',
+        description: 'Shopply\'s curated furniture catalog',
+        address: { street: '1 Sandton Drive', suburb: 'Sandton', city: 'Johannesburg', lat, lng },
+        rating: 4.5,
+        reviewCount: 128,
+        isOpenNow: true,
+        isActive: true,
+        serviceScore: 0.85,
+        ...h3Cells,
+      });
+      console.log(`✅ Created catalog store (${CATALOG_STORE_ID})\n`);
+    }
+
     // Step 1: Clear existing products
     console.log('🗑️  Clearing existing products...');
     ProductService.clearProducts();
     console.log('✅ Old products cleared\n');
-    
+
     // Step 2: Generate new products
     console.log('🏗️  Generating 1000 new furniture products...');
     const generatedProducts = generateProducts();
     console.log(`✅ Generated ${generatedProducts.length} products\n`);
-    
+
     // Step 3: Convert to Product model format
     console.log('🔄 Converting to Product model format...');
-    const productInstances = generatedProducts.map(convertToProductModel);
+    const productInstances = generatedProducts.map(p => convertToProductModel(p, CATALOG_STORE_ID));
     console.log(`✅ Converted ${productInstances.length} products\n`);
     
     // Step 4: Add to ProductService
