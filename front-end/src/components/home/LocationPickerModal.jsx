@@ -609,6 +609,20 @@ const ConfirmButton = styled.button`
   flex-shrink: 0;
 `;
 
+const dotPulse = keyframes`
+  0%, 100% { opacity: 0.25; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
+`;
+
+const CoverageLoadingDot = styled.span`
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: ${props => props.theme.colors.primary};
+  flex-shrink: 0;
+  animation: ${dotPulse} 1.2s ease-in-out infinite;
+`;
+
 const ProvinceGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -757,6 +771,10 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   const [detecting, setDetecting] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState(null);
   const inputRef = useRef(null);
+  const loadingRef = useRef(new Set());
+  const [coverageMap, setCoverageMap] = useState({});
+  const [gpsCoverage, setGpsCoverage] = useState(null);
+  const [gpsResult, setGpsResult] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus(), 80);
@@ -777,6 +795,30 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose, selectedProvince, search]);
 
+  const loadCoverage = useCallback(async (lat, lng) => {
+    const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    if (loadingRef.current.has(key)) return;
+    loadingRef.current.add(key);
+    setCoverageMap(prev => ({ ...prev, [key]: { loading: true } }));
+    try {
+      const res = await fetch(`${API_BASE_URL}/hyperlocal/nearest-availability?lat=${lat}&lng=${lng}`);
+      const data = await res.json();
+      setCoverageMap(prev => ({
+        ...prev,
+        [key]: {
+          loading: false,
+          tier: data.data?.nearestTier || null,
+          tierLabel: data.data?.tierLabel || null,
+          count: data.data?.estimatedResults || 0,
+          nearestKm: data.data?.nearestDistanceKm || null,
+        },
+      }));
+    } catch {
+      loadingRef.current.delete(key);
+      setCoverageMap(prev => ({ ...prev, [key]: { loading: false, error: true } }));
+    }
+  }, []);
+
   const grouped = useMemo(() => {
     const map = {};
     for (const s of SUBURBS) {
@@ -787,6 +829,12 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   }, []);
 
   const provinces = useMemo(() => Object.keys(grouped), [grouped]);
+
+  useEffect(() => {
+    if (!selectedProvince) return;
+    const suburbs = grouped[selectedProvince] || [];
+    suburbs.forEach(s => loadCoverage(s.lat, s.lng));
+  }, [selectedProvince, grouped, loadCoverage]);
 
   const isSearching = Boolean(search.trim());
 
@@ -805,21 +853,28 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   const handleGPS = () => {
     if (!navigator.geolocation || detecting) return;
     setDetecting(true);
+    setGpsResult(null);
+    setGpsCoverage(null);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const nearest = findNearestSuburb(pos.coords.latitude, pos.coords.longitude);
-        onSelect({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          suburb: nearest.suburb,
-          city: nearest.city,
-          province: nearest.province,
-        });
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const nearest = findNearestSuburb(latitude, longitude);
+        const result = { lat: latitude, lng: longitude, suburb: nearest.suburb, city: nearest.city, province: nearest.province };
+        setGpsResult(result);
+        try {
+          const res = await fetch(`${API_BASE_URL}/hyperlocal/nearest-availability?lat=${latitude}&lng=${longitude}`);
+          const data = await res.json();
+          if (data.success) setGpsCoverage(data.data);
+        } catch { /* ignore */ }
         setDetecting(false);
       },
       () => setDetecting(false),
       { timeout: 8000, enableHighAccuracy: true }
     );
+  };
+
+  const handleConfirmGPS = () => {
+    if (gpsResult) onSelect(gpsResult);
   };
 
   const handleSelect = (s) => {
@@ -839,26 +894,41 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
 
   const SuburbList = ({ items, showProvince = false }) => (
     <>
-      {items.map(s => (
-        <SuburbRow
-          key={`${s.suburb}-${s.city}`}
-          $active={isActive(s)}
-          onClick={() => handleSelect(s)}
-        >
-          <SuburbIconWrap $active={isActive(s)}>
-            <PinIcon />
-          </SuburbIconWrap>
-          <SuburbInfo>
-            <SuburbName $active={isActive(s)}>{s.suburb}</SuburbName>
-            <SuburbCity>{s.city}{showProvince ? ` · ${s.province}` : ''}</SuburbCity>
-          </SuburbInfo>
-          {isActive(s) && (
-            <CheckCircle>
-              <CheckSVGIcon />
-            </CheckCircle>
-          )}
-        </SuburbRow>
-      ))}
+      {items.map(s => {
+        const key = `${s.lat.toFixed(4)},${s.lng.toFixed(4)}`;
+        const cov = coverageMap[key];
+        const tierLabel =
+          cov?.tier === 'T0' ? 'Local' :
+          cov?.tier === 'T1' ? 'Nearby' :
+          cov?.tier === 'T2' ? 'Area' :
+          cov?.tier === 'T3' ? 'Regional' :
+          cov?.tier === 'T4' ? 'National' :
+          (!cov?.loading && cov && !cov.error) ? 'Coming soon' : null;
+        return (
+          <SuburbRow
+            key={`${s.suburb}-${s.city}`}
+            $active={isActive(s)}
+            onClick={() => handleSelect(s)}
+          >
+            <SuburbIconWrap $active={isActive(s)}>
+              <PinIcon />
+            </SuburbIconWrap>
+            <SuburbInfo>
+              <SuburbName $active={isActive(s)}>{s.suburb}</SuburbName>
+              <SuburbCity>{s.city}{showProvince ? ` · ${s.province}` : ''}</SuburbCity>
+            </SuburbInfo>
+            {cov?.loading && <CoverageLoadingDot />}
+            {!cov?.loading && tierLabel && (
+              <CoveragePill $tier={cov?.tier || 'none'}>{tierLabel}</CoveragePill>
+            )}
+            {isActive(s) && (
+              <CheckCircle>
+                <CheckSVGIcon />
+              </CheckCircle>
+            )}
+          </SuburbRow>
+        );
+      })}
     </>
   );
 
@@ -888,6 +958,45 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
             />
           </SearchRow>
         </SearchWrap>
+
+        {/* GPS detect button */}
+        {!gpsResult && (
+          <GPSButton onClick={handleGPS} disabled={detecting}>
+            <GPSIconCircle>
+              <GPSCrosshairIcon />
+            </GPSIconCircle>
+            <div>
+              <GPSLabel>{detecting ? 'Detecting…' : 'Use my location'}</GPSLabel>
+              <GPSSub>Automatically find the nearest area</GPSSub>
+            </div>
+          </GPSButton>
+        )}
+
+        {/* GPS coverage confirmation */}
+        {gpsResult && (
+          <GPSCoverageBox>
+            <span style={{ fontSize: 18 }}>📍</span>
+            <div style={{ flex: 1 }}>
+              <GPSCoverageText>
+                {gpsResult.suburb}, {gpsResult.city}
+                {gpsCoverage?.nearestTier && (
+                  <CoveragePill $tier={gpsCoverage.nearestTier} style={{ marginLeft: 6 }}>
+                    {gpsCoverage.nearestTier === 'T0' ? 'Local' :
+                     gpsCoverage.nearestTier === 'T1' ? 'Nearby' :
+                     gpsCoverage.nearestTier === 'T2' ? 'Area' :
+                     gpsCoverage.nearestTier === 'T3' ? 'Regional' : 'National'}
+                  </CoveragePill>
+                )}
+              </GPSCoverageText>
+              <GPSCoverageSub>
+                {gpsCoverage?.nearestTier
+                  ? `${gpsCoverage.estimatedResults || 'A few'} products found nearby`
+                  : 'Shopply is still growing in your area'}
+              </GPSCoverageSub>
+            </div>
+            <ConfirmButton onClick={handleConfirmGPS}>Use this</ConfirmButton>
+          </GPSCoverageBox>
+        )}
 
         {!isSearching && !selectedProvince && <Divider />}
 
