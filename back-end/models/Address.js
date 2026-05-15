@@ -38,10 +38,6 @@ export class Address extends BaseModel {
       errors.push('City is required');
     }
 
-    if (this.latitude === null || this.longitude === null) {
-      errors.push('Location coordinates are required');
-    }
-
     return {
       isValid: errors.length === 0,
       errors,

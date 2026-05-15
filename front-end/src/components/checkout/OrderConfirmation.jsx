@@ -114,6 +114,27 @@ const Button = styled.button`
   }
 `;
 
+const WhatsAppButton = styled.a`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+  border-radius: ${props => props.theme.radii.md};
+  text-decoration: none;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+
+  &:hover {
+    background: #1ebe5d;
+    transform: translateY(-1px);
+  }
+`;
+
 import API_BASE_URL from '@config/api';
 
 export const OrderConfirmation = ({ orderId, onContinueShopping }) => {
@@ -156,9 +177,9 @@ export const OrderConfirmation = ({ orderId, onContinueShopping }) => {
   return (
     <Container>
       <SuccessIcon>✓</SuccessIcon>
-      <Title>Order Confirmed!</Title>
+      <Title>Order ready for seller confirmation</Title>
       <Message>
-        Your order has been placed successfully. You'll receive a confirmation email shortly.
+        Your order has been created. Send it to the seller on WhatsApp to confirm availability and next steps.
       </Message>
 
       {loading ? (
@@ -188,7 +209,8 @@ export const OrderConfirmation = ({ orderId, onContinueShopping }) => {
                      order.status === 'delivered' ? '#12B76A' :
                      order.status === 'cancelled' ? '#EF4444' : '#F59E0B' 
             }}>
-              {order.status === 'confirmed' ? 'Confirmed' : 
+              {order.status === 'pending_seller_confirmation' ? 'Waiting for seller' :
+               order.status === 'confirmed' ? 'Confirmed' : 
                order.status === 'processing' ? 'Processing' :
                order.status === 'out_for_delivery' ? 'Out for Delivery' :
                order.status === 'delivered' ? 'Delivered' :
@@ -205,6 +227,16 @@ export const OrderConfirmation = ({ orderId, onContinueShopping }) => {
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '400px' }}>
+        {order?.whatsappHandoff?.filter(item => item.href).map(item => (
+          <WhatsAppButton
+            key={`${item.storeId}-${item.whatsappNumber}`}
+            href={item.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            WhatsApp {item.storeName}
+          </WhatsAppButton>
+        ))}
         <Button 
           onClick={() => navigate(`/tracking/${orderId}`)}
           style={{ background: '#12B76A' }}

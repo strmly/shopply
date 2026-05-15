@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { API_BASE_URL } from '../../config/api.js';
 import { AuthModal } from '../auth';
 import { isSignedIn } from '../../utils/authState';
+import { useUser } from '../../context/UserContext';
 
 const NavContainer = styled.nav`
   position: fixed;
@@ -174,7 +175,8 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
   const location = useLocation();
   const activePath = currentPath || location.pathname;
   const [cartCount, setCartCount] = useState(0);
-  const [profileSignedIn, setProfileSignedIn] = useState(() => isSignedIn());
+  const { role, loading: contextLoading } = useUser();
+  const profileSignedIn = contextLoading ? isSignedIn() : role !== 'guest';
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const navItems = [
@@ -187,7 +189,7 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
   useEffect(() => {
     const loadCartCount = () => {
       try {
-        const cartStr = localStorage.getItem('tsenga_cart');
+        const cartStr = localStorage.getItem('shopply_cart');
         let calculatedCount = 0;
 
         if (cartStr) {
@@ -203,7 +205,7 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
         }
 
         setCartCount(calculatedCount);
-        localStorage.setItem('tsenga_cart_count', calculatedCount.toString());
+        localStorage.setItem('shopply_cart_count', calculatedCount.toString());
       } catch (error) {
         console.error('Error loading cart count:', error);
         setCartCount(0);
@@ -220,7 +222,7 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
           const serverCount = data.data.itemCount || 0;
           if (serverCount > 0) {
             setCartCount(serverCount);
-            localStorage.setItem('tsenga_cart_count', serverCount.toString());
+            localStorage.setItem('shopply_cart_count', serverCount.toString());
           }
         }
       } catch {
@@ -238,18 +240,6 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
       window.removeEventListener('cartUpdated', loadCartCount);
       window.removeEventListener('storage', loadCartCount);
       clearInterval(serverSyncInterval);
-    };
-  }, []);
-
-  useEffect(() => {
-    const syncAuthState = () => setProfileSignedIn(isSignedIn());
-
-    syncAuthState();
-    window.addEventListener('authChanged', syncAuthState);
-    window.addEventListener('storage', syncAuthState);
-    return () => {
-      window.removeEventListener('authChanged', syncAuthState);
-      window.removeEventListener('storage', syncAuthState);
     };
   }, []);
 
@@ -308,7 +298,6 @@ export const BottomNavigation = ({ currentPath, onSearchClick }) => {
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
         onSuccess={() => {
-          setProfileSignedIn(true);
           navigate('/profile');
         }}
       />

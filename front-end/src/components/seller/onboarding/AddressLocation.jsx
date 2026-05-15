@@ -90,19 +90,6 @@ const TextArea = styled.textarea`
   }
 `;
 
-const MapPlaceholder = styled.div`
-  width: 100%;
-  height: 200px;
-  background: ${props => props.theme.colors.surface};
-  border: 1px solid ${props => props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.md};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${props => props.theme.colors.text.secondary};
-  margin: ${props => props.theme.spacing.md} 0;
-`;
-
 const ButtonGroup = styled.div`
   display: flex;
   gap: ${props => props.theme.spacing.md};
@@ -162,18 +149,6 @@ export const AddressLocation = ({ onNext, onBack, data }) => {
     validateField(field, formData[field]);
   };
 
-  const handleLocationDetect = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        setFormData({
-          ...formData,
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-      });
-    }
-  };
-
   const validate = () => {
     const result = validateAddress(formData);
     setErrors(result.errors);
@@ -210,20 +185,6 @@ export const AddressLocation = ({ onNext, onBack, data }) => {
       <Subtitle>Where is your store located?</Subtitle>
 
       <Form onSubmit={handleSubmit}>
-        <MapPlaceholder>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '8px' }}>📍</div>
-            <div>Map with draggable pin</div>
-            <Button 
-              type="button" 
-              onClick={handleLocationDetect}
-              style={{ marginTop: '12px', fontSize: '12px', padding: '8px 16px' }}
-            >
-              Detect My Location
-            </Button>
-          </div>
-        </MapPlaceholder>
-
         <InputWrapper>
           <InputLabel>
             Street Address *

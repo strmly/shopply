@@ -195,7 +195,7 @@ export const WelcomeScreen = ({ onContinue, onBrowseAsGuest, onSignIn }) => {
   return (
     <Container>
       <TopSection>
-        <Logo>Tsenga</Logo>
+        <Logo>Shopply</Logo>
         <Headline>Shop your neighborhood.</Headline>
         <Subtext>
           <SubtextLine>Find thousands of products from stores nearby.</SubtextLine>

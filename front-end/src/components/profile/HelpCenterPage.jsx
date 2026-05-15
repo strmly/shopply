@@ -272,7 +272,7 @@ export const HelpCenterPage = () => {
 
             <Section>
               <SupportPanel>
-                <CardTitle>Need a hand from Tsenga?</CardTitle>
+                <CardTitle>Need a hand from Shopply?</CardTitle>
                 <CardText>Our support flow is ready for order, return, account, and seller questions.</CardText>
                 <Button onClick={() => navigate('/support/contact')}>Contact support</Button>
               </SupportPanel>

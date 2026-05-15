@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 
 /* ─── Animations ──────────────────────────────────────── */
@@ -355,6 +355,29 @@ const FreeShipChip = styled.span`
   border-radius: 999px;
 `;
 
+const DistanceChip = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: ${props => props.theme?.colors?.primary || '#3D81EF'};
+  background: ${props => props.theme?.colors?.primarySoftBg || '#EEF4FF'};
+  padding: 4px 8px;
+  border-radius: 999px;
+  width: fit-content;
+`;
+
+const UnratedChip = styled.span`
+  font-size: 10px;
+  font-weight: 800;
+  color: ${props => props.theme?.colors?.text?.secondary || '#888'};
+  background: ${props => props.theme?.colors?.surface || '#F5F5F5'};
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px dashed ${props => props.theme?.colors?.border?.default || '#E0E0E0'};
+`;
+
 /* ─── Quantity controls ───────────────────────────────── */
 
 const QtyBar = styled.div`
@@ -433,7 +456,7 @@ const fmtCount = (n) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 const fmtSold  = (n) => !n ? null : n >= 1000 ? `${(n / 1000).toFixed(1)}k+ sold` : `${n}+ sold`;
 
 /* Persist wishlist to localStorage */
-const WISH_KEY = 'tsenga_wishlist';
+const WISH_KEY = 'shopply_wishlist';
 const getWishlist = () => {
   try { return new Set(JSON.parse(localStorage.getItem(WISH_KEY) || '[]')); } catch { return new Set(); }
 };
@@ -450,7 +473,7 @@ const UID = 'default';
 /* Read qty for this product from localStorage (no API call) */
 const readLocalQty = (productId) => {
   try {
-    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
     const item = cart.find(i => String(i.id) === String(productId) && JSON.stringify(i.selectedVariant) === 'null');
     return item ? (item.quantity || 0) : 0;
   } catch { return 0; }
@@ -494,15 +517,15 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
     if (busy || outOfStock) return;
     setBusy(true);
     try {
-      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
       const idx  = cart.findIndex(i => String(i.id) === String(product.id) && JSON.stringify(i.selectedVariant) === 'null');
       const newQty = idx >= 0 ? cart[idx].quantity + 1 : 1;
 
       if (idx >= 0) { cart[idx].quantity = newQty; }
       else { cart.push({ ...product, quantity: 1, selectedVariant: null, addedAt: new Date().toISOString() }); }
 
-      localStorage.setItem('tsenga_cart', JSON.stringify(cart));
-      localStorage.setItem('tsenga_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
+      localStorage.setItem('shopply_cart', JSON.stringify(cart));
+      localStorage.setItem('shopply_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
       setQty(newQty);
       window.dispatchEvent(new Event('cartUpdated'));
 
@@ -525,7 +548,7 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
     if (next < 0) return;
     setBusy(true);
     try {
-      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
       const idx  = cart.findIndex(i => String(i.id) === String(product.id) && JSON.stringify(i.selectedVariant) === 'null');
 
       if (next === 0) {
@@ -544,8 +567,8 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
       }
 
       setQty(next);
-      localStorage.setItem('tsenga_cart', JSON.stringify(cart));
-      localStorage.setItem('tsenga_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
+      localStorage.setItem('shopply_cart', JSON.stringify(cart));
+      localStorage.setItem('shopply_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
       window.dispatchEvent(new Event('cartUpdated'));
     } finally { setBusy(false); }
   };
@@ -618,16 +641,24 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
           )}
         </PriceRow>
 
-        {(product.rating > 0 || product.salesCount > 0) && (
-          <MetaRow>
-            {product.rating > 0 && (
-              <>
-                <Stars rating={product.rating} />
-                {product.reviewCount > 0 && <ReviewLabel>({fmtCount(product.reviewCount)})</ReviewLabel>}
-              </>
-            )}
-            {product.salesCount > 0 && <SoldLabel>{fmtSold(product.salesCount)}</SoldLabel>}
-          </MetaRow>
+        <MetaRow>
+          {product.rating > 0 ? (
+            <>
+              <Stars rating={product.rating} />
+              {product.reviewCount > 0 && <ReviewLabel>({fmtCount(product.reviewCount)})</ReviewLabel>}
+            </>
+          ) : (
+            <UnratedChip>No reviews yet</UnratedChip>
+          )}
+          {product.salesCount > 0 && <SoldLabel>{fmtSold(product.salesCount)}</SoldLabel>}
+        </MetaRow>
+
+        {product.distanceDisplay && (
+          <DistanceChip>
+            📍 {product.distanceDisplay}
+            {product.store?.isOpenNow === false && <span style={{color:'#E53935', fontWeight: 700}}> · Closed</span>}
+            {product.pickupOnly && <span style={{color:'#FF6F00', fontWeight: 700}}> · Pickup only</span>}
+          </DistanceChip>
         )}
 
         {product.deliveryEligible && !outOfStock && <FreeShipChip>Free delivery</FreeShipChip>}

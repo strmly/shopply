@@ -117,11 +117,11 @@ export const ContactSupportPage = () => {
 
   const handleChat = () => {
     // Placeholder: would open in-app chat; for now we navigate to email as fallback
-    window.location.href = `mailto:support@tsenga.app?subject=Chat%20with%20support&body=${buildSupportContext()}`;
+    window.location.href = `mailto:support@shopply.co.za?subject=Chat%20with%20support&body=${buildSupportContext()}`;
   };
 
   const handleEmail = () => {
-    window.location.href = `mailto:support@tsenga.app?subject=Support%20request&body=${buildSupportContext()}`;
+    window.location.href = `mailto:support@shopply.co.za?subject=Support%20request&body=${buildSupportContext()}`;
   };
 
   const handleCall = () => {

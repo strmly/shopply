@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import API_BASE_URL from '@config/api';
 import styled, { keyframes } from 'styled-components';
 
 const SUBURBS = [
@@ -539,6 +540,73 @@ const EmptyState = styled.div`
   color: ${props => props.theme.colors.text.secondary};
   font-size: 14px;
   font-weight: 600;
+`;
+
+const CoveragePill = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex-shrink: 0;
+  background: ${p => {
+    if (p.$tier === 'T0') return 'rgba(21, 161, 124, 0.12)';
+    if (p.$tier === 'T1' || p.$tier === 'T2') return 'rgba(61, 129, 239, 0.1)';
+    if (p.$tier === 'T3' || p.$tier === 'T4') return 'rgba(245, 158, 11, 0.1)';
+    return 'rgba(228, 231, 236, 0.8)';
+  }};
+  color: ${p => {
+    if (p.$tier === 'T0') return '#118264';
+    if (p.$tier === 'T1' || p.$tier === 'T2') return '#3D81EF';
+    if (p.$tier === 'T3' || p.$tier === 'T4') return '#B35A05';
+    return '#888';
+  }};
+  border: 1px solid ${p => {
+    if (p.$tier === 'T0') return 'rgba(21, 161, 124, 0.22)';
+    if (p.$tier === 'T1' || p.$tier === 'T2') return 'rgba(61, 129, 239, 0.2)';
+    if (p.$tier === 'T3' || p.$tier === 'T4') return 'rgba(245, 158, 11, 0.2)';
+    return 'rgba(228, 231, 236, 0.9)';
+  }};
+`;
+
+const GPSCoverageBox = styled.div`
+  margin: 0 20px 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(21, 161, 124, 0.07);
+  border: 1px solid rgba(21, 161, 124, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const GPSCoverageText = styled.div`
+  font-size: 12px;
+  font-weight: 800;
+  color: #118264;
+  flex: 1;
+`;
+
+const GPSCoverageSub = styled.div`
+  font-size: 11px;
+  font-weight: 600;
+  color: ${props => props.theme.colors.text.secondary};
+  margin-top: 2px;
+`;
+
+const ConfirmButton = styled.button`
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.gradient.primary};
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  flex-shrink: 0;
 `;
 
 const ProvinceGrid = styled.div`

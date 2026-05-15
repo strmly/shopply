@@ -667,7 +667,7 @@ export const ProductListPage = ({ location }) => {
             <Badge>Seller catalog</Badge>
             <Title>Products</Title>
             <Subtitle>
-              Manage every Tsenga listing from one modern workspace: search, edit price, update stock, publish, duplicate, and retire products.
+              Manage every Shopply listing from one modern workspace: search, edit price, update stock, publish, duplicate, and retire products.
             </Subtitle>
           </div>
           <HeroActions>

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+﻿import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { theme as baseTheme } from '../theme';
 
@@ -30,7 +30,7 @@ export const ThemeModeProvider = ({ children }) => {
     let isMounted = true;
 
     const fromStorage = typeof window !== 'undefined'
-      ? window.localStorage.getItem('tsenga_theme_mode')
+      ? window.localStorage.getItem('shopply_theme_mode')
       : null;
     if (fromStorage === 'light' || fromStorage === 'dark' || fromStorage === 'system') {
       setMode(fromStorage);
@@ -52,7 +52,7 @@ export const ThemeModeProvider = ({ children }) => {
           (apiMode === 'light' || apiMode === 'dark' || apiMode === 'system')
         ) {
           setMode(apiMode);
-          window.localStorage.setItem('tsenga_theme_mode', apiMode);
+          window.localStorage.setItem('shopply_theme_mode', apiMode);
         }
       } catch {
         // Fail silently – fall back to storage / system
@@ -92,7 +92,7 @@ export const ThemeModeProvider = ({ children }) => {
       mode,
       setMode: (nextMode) => {
         setMode(nextMode);
-        window.localStorage.setItem('tsenga_theme_mode', nextMode);
+        window.localStorage.setItem('shopply_theme_mode', nextMode);
 
         // Persist to backend (fire-and-forget)
         try {

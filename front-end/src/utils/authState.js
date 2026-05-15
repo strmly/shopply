@@ -1,4 +1,4 @@
-const AUTH_STORAGE_KEY = 'tsenga_auth_user';
+﻿const AUTH_STORAGE_KEY = 'shopply_auth_user';
 
 const canUseStorage = () => typeof window !== 'undefined' && window.localStorage;
 

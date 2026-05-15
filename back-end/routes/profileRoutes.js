@@ -12,6 +12,7 @@ router.get('/:userId/quick-actions', (req, res, next) => profileController.getQu
 router.get('/:userId', (req, res, next) => profileController.getProfile(req, res, next));
 router.put('/:userId', (req, res, next) => profileController.updateProfile(req, res, next));
 router.post('/:userId/change-password', (req, res, next) => profileController.changePassword(req, res, next));
+router.delete('/:userId', (req, res, next) => profileController.deleteAccount(req, res, next));
 
 // Preferences (language, theme, notifications)
 router.get('/:userId/preferences', (req, res, next) => profileController.getPreferences(req, res, next));

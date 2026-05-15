@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect } from 'react';
+﻿import { useState, useEffect, useLayoutEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { HomeScreen } from './components/HomeScreen';
 import { 
@@ -33,6 +33,7 @@ import {
 } from './components/category';
 import { CommunityBundlePage, CurateBundlePage, TrendingPage } from './components/community';
 import { SellerOnboarding, BecomeSellerPage, SellerLearnMorePage, OrdersManagement, SellerDashboard, SellerMessagesPage, AnalyticsPage, StoreFrontPage, StoreHoursPage } from './components/seller';
+import { AdminDashboardPage } from './components/admin/AdminDashboardPage';
 import { ProtectedRoute, UnauthorizedPage, SignInPage } from './components/auth';
 import { ProductListPage, ProductEditor } from './components/seller/products';
 import { OrderDetails } from './components/seller/orders';
@@ -78,7 +79,7 @@ const App = () => {
   const routerLocation = useLocation(); // still used for seller route detection in layout
 
   useEffect(() => {
-    const savedLocation = localStorage.getItem('userLocation') || localStorage.getItem('tsenga_location');
+    const savedLocation = localStorage.getItem('userLocation') || localStorage.getItem('shopply_location');
     let loaded = null;
     if (savedLocation) {
       try { loaded = JSON.parse(savedLocation); } catch {}
@@ -91,7 +92,7 @@ const App = () => {
     } else {
       setLocation(DEFAULT_LOCATION);
       localStorage.setItem('userLocation', JSON.stringify(DEFAULT_LOCATION));
-      localStorage.setItem('tsenga_location', JSON.stringify(DEFAULT_LOCATION));
+      localStorage.setItem('shopply_location', JSON.stringify(DEFAULT_LOCATION));
     }
   }, []);
 
@@ -101,12 +102,12 @@ const App = () => {
         const loc = { lat: position.coords.latitude, lng: position.coords.longitude, suburb: 'Sandton', city: 'Johannesburg' };
         setLocation(loc);
         localStorage.setItem('userLocation', JSON.stringify(loc));
-        localStorage.setItem('tsenga_location', JSON.stringify(loc));
+        localStorage.setItem('shopply_location', JSON.stringify(loc));
       },
       () => {
         setLocation(DEFAULT_LOCATION);
         localStorage.setItem('userLocation', JSON.stringify(DEFAULT_LOCATION));
-        localStorage.setItem('tsenga_location', JSON.stringify(DEFAULT_LOCATION));
+        localStorage.setItem('shopply_location', JSON.stringify(DEFAULT_LOCATION));
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
     );
@@ -115,7 +116,7 @@ const App = () => {
   const handleLocationChange = (newLocation) => {
     setLocation(newLocation);
     localStorage.setItem('userLocation', JSON.stringify(newLocation));
-    localStorage.setItem('tsenga_location', JSON.stringify(newLocation));
+    localStorage.setItem('shopply_location', JSON.stringify(newLocation));
   };
 
   // Real-time notification socket
@@ -168,8 +169,8 @@ const App = () => {
         <Route path="/addresses" element={<AddressManagementPage location={location} />} />
         <Route path="/addresses/new" element={<AddEditAddressPage location={location} />} />
         <Route path="/addresses/:id/edit" element={<AddEditAddressPage location={location} />} />
-        <Route path="/payment-methods" element={<PaymentMethodsPage />} />
-        <Route path="/payment-methods/new" element={<AddPaymentMethodPage location={location} />} />
+        <Route path="/payment-methods" element={<Navigate to="/" replace />} />
+        <Route path="/payment-methods/new" element={<Navigate to="/" replace />} />
         <Route path="/orders" element={<OrdersListPage location={location} />} />
         <Route path="/orders/:orderId" element={<OrderDetailPage location={location} />} />
         <Route path="/returns" element={<ReturnsHubPage location={location} />} />
@@ -192,10 +193,13 @@ const App = () => {
         <Route path="/trending" element={<TrendingPage location={location} />} />
         <Route path="/community/bundle/:bundleType" element={<CommunityBundlePage location={location} />} />
         <Route path="/community/bundle/:bundleType/curate" element={<CurateBundlePage location={location} />} />
-        <Route path="/sell-on-tsenga" element={<SellerLearnMorePage location={location} />} />
+        <Route path="/sell-on-shopply" element={<SellerLearnMorePage location={location} />} />
         <Route path="/become-a-seller" element={<BecomeSellerPage location={location} />} />
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+        {/* Admin route */}
+        <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboardPage /></ProtectedRoute>} />
 
         {/* Seller routes — require seller or admin role */}
         <Route path="/seller/onboarding" element={<ProtectedRoute roles={['seller', 'admin']}><SellerOnboarding location={location} /></ProtectedRoute>} />

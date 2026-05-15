@@ -596,7 +596,7 @@ export function BecomeSellerPage({ location }) {
         },
         storeSetup: {
           name: form.storeName,
-          description: form.notes || `${form.storeName} is preparing to sell on Tsenga.`,
+          description: form.notes || `${form.storeName} is preparing to sell on Shopply.`,
         },
         address: {
           street: '',
@@ -629,7 +629,7 @@ export function BecomeSellerPage({ location }) {
       <Shell>
         <Hero>
           <HeroCopy>
-            <Eyebrow><Spark /> Sell on Tsenga</Eyebrow>
+            <Eyebrow><Spark /> Sell on Shopply</Eyebrow>
             <Title>
               Turn beautiful furniture
               <Accent>into local income.</Accent>
@@ -665,7 +665,7 @@ export function BecomeSellerPage({ location }) {
 
           <FormCard id="seller-application">
             <CardHead>
-              <LogoMark>T</LogoMark>
+              <LogoMark>S</LogoMark>
               <div>
                 <CardTitle>Apply to sell</CardTitle>
                 <CardSub>We will create your seller draft and take you into onboarding.</CardSub>
@@ -676,7 +676,7 @@ export function BecomeSellerPage({ location }) {
               <SuccessBox>
                 <SuccessTitle>Your seller draft is ready</SuccessTitle>
                 <SuccessCopy>
-                  Application #{createdSeller.id} has been saved on the server. Finish onboarding to verify
+                  Application #{createdSeller.id} has been saved on the server. Finish onboarding to set up
                   your store, payout details, and first listings.
                 </SuccessCopy>
                 <PrimaryButton type="button" onClick={() => navigate('/seller/onboarding')}>
@@ -813,7 +813,7 @@ export function BecomeSellerPage({ location }) {
           <SectionHead>
             <SectionTitle>Everything a local seller needs.</SectionTitle>
             <SectionCopy>
-              The seller flow keeps the same polished Tsenga home styling while giving sellers real tools
+              The seller flow keeps the same polished Shopply home styling while giving sellers real tools
               for discovery, trust, fulfillment, and growth.
             </SectionCopy>
           </SectionHead>
@@ -831,7 +831,7 @@ export function BecomeSellerPage({ location }) {
             <FeatureCard>
               <FeatureIcon><ShieldIcon /></FeatureIcon>
               <FeatureTitle>Verified storefronts</FeatureTitle>
-              <FeatureCopy>Onboarding captures identity, payout, address, and category details so buyers can trust every store.</FeatureCopy>
+              <FeatureCopy>Onboarding captures payout, address, and category details so buyers can trust every store.</FeatureCopy>
             </FeatureCard>
           </FeatureGrid>
         </Section>

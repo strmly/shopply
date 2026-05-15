@@ -216,6 +216,13 @@ class OrdersService {
         metadata.icon = '⏳';
         break;
 
+      case 'pending_seller_confirmation':
+        metadata.badgeColor = 'amber';
+        metadata.subtext = 'Waiting for seller confirmation on WhatsApp';
+        metadata.icon = 'W';
+        metadata.isUrgent = true;
+        break;
+
       case 'confirmed':
         metadata.badgeColor = 'blue';
         metadata.subtext = 'Order confirmed';
@@ -279,7 +286,7 @@ class OrdersService {
     // Check if order is delayed (past ETA)
     if (status !== 'delivered' && status !== 'cancelled') {
       const threshold = order.deliverySpeed === 'express' ? 60 : 90;
-      if (timeSinceOrder > threshold) {
+      if (status !== 'pending_seller_confirmation' && timeSinceOrder > threshold) {
         metadata.badgeColor = 'amber';
         metadata.subtext = "We're working on an update";
         metadata.isUrgent = true;
@@ -295,6 +302,7 @@ class OrdersService {
   calculateProgress(status) {
     const progressMap = {
       'pending': 10,
+      'pending_seller_confirmation': 15,
       'confirmed': 20,
       'processing': 40,
       'preparing': 50,
@@ -326,7 +334,7 @@ class OrdersService {
    */
   orderNeedsAttention(order) {
     const status = order.status || 'pending';
-    return status === 'delayed' || status === 'cancelled' || this.isDelayed(order);
+    return status === 'pending_seller_confirmation' || status === 'delayed' || status === 'cancelled' || this.isDelayed(order);
   }
 
   /**
@@ -355,7 +363,7 @@ class OrdersService {
       return orders;
     }
 
-    const activeStatuses = ['pending', 'confirmed', 'processing', 'preparing', 'out_for_delivery', 'ready', 'ready_for_pickup', 'delayed'];
+    const activeStatuses = ['pending', 'pending_seller_confirmation', 'confirmed', 'processing', 'preparing', 'out_for_delivery', 'ready', 'ready_for_pickup', 'delayed'];
     const pastStatuses = ['delivered'];
     const cancelledStatuses = ['cancelled'];
 
@@ -401,7 +409,7 @@ class OrdersService {
       const orders = result.orders || [];
       
       const activeOrders = orders.filter(order => {
-        const activeStatuses = ['pending', 'confirmed', 'processing', 'preparing', 'out_for_delivery', 'ready', 'ready_for_pickup'];
+        const activeStatuses = ['pending', 'pending_seller_confirmation', 'confirmed', 'processing', 'preparing', 'out_for_delivery', 'ready', 'ready_for_pickup'];
         return activeStatuses.includes(order.status);
       });
 
@@ -618,8 +626,8 @@ class OrdersService {
       throw new Error('Unauthorized');
     }
 
-    // Only allow cancellation for pending or confirmed orders
-    if (!['pending', 'confirmed'].includes(order.status)) {
+    // Only allow cancellation before the seller starts fulfilling the order
+    if (!['pending', 'pending_seller_confirmation', 'confirmed'].includes(order.status)) {
       throw new Error(`Cannot cancel order with status: ${order.status}`);
     }
 
@@ -660,6 +668,7 @@ class OrdersService {
 
     // Add status transitions based on current status
     const statusMap = {
+      'pending_seller_confirmation': { label: 'Sent to Seller', description: 'Confirm the order with the seller on WhatsApp' },
       'processing': { label: 'Processing', description: 'Your order is being prepared' },
       'preparing': { label: 'Preparing', description: 'Store is preparing your order' },
       'out_for_delivery': { label: 'Out for Delivery', description: 'Your order is on the way' },

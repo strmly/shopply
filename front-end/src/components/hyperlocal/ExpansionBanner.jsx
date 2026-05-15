@@ -5,9 +5,11 @@ import styled, { keyframes } from 'styled-components';
  * ExpansionBanner Component
  * Shows radius expansion messages (Uber-style)
  */
-const ExpansionBanner = ({ 
-  expanded = false, 
-  effectiveRadius, 
+const ExpansionBanner = ({
+  expanded = false,
+  wasAutoExpanded = false,
+  expansionReason = null,
+  effectiveRadius,
   effectiveLabel,
   expansionSteps = [],
   isSearching = false,
@@ -20,6 +22,51 @@ const ExpansionBanner = ({
         <LoadingDot delay={0.2} />
         <LoadingDot delay={0.4} />
         <Message>Searching nearby...</Message>
+      </Banner>
+    );
+  }
+
+  const isGlobalFallback = expansionReason === 'global_fallback';
+  const isAutoExpanded = wasAutoExpanded || isGlobalFallback;
+
+  if (isGlobalFallback) {
+    return (
+      <Banner globalFallback>
+        <Icon>🌱</Icon>
+        <Content>
+          <Message>
+            No sellers in your area yet — showing <Strong>the closest available matches</Strong>
+          </Message>
+          <SubMessage>
+            Shopply is still growing. These are the nearest sellers we found — more are joining every week.
+            {query && ` Showing all results for "${query}" regardless of distance.`}
+          </SubMessage>
+        </Content>
+      </Banner>
+    );
+  }
+
+  if (isAutoExpanded && expansionReason === 'no_local_results') {
+    return (
+      <Banner expanded>
+        <Icon>📡</Icon>
+        <Content>
+          <Message>
+            No sellers nearby yet — showing results <Strong>{effectiveLabel ? `within ${effectiveLabel}` : `within ${effectiveRadius}km`}</Strong>
+          </Message>
+          <SubMessage>Shopply is new in your area. We expanded the radius to find the nearest available sellers — more are joining soon.</SubMessage>
+          {expansionSteps.length > 1 && (
+            <Steps>
+              {expansionSteps.map((step, index) => (
+                <Step key={step.tier}>
+                  <StepLabel>{step.label}</StepLabel>
+                  <StepCount>{step.resultsFound} found</StepCount>
+                  {index < expansionSteps.length - 1 && <StepArrow>→</StepArrow>}
+                </Step>
+              ))}
+            </Steps>
+          )}
+        </Content>
       </Banner>
     );
   }
@@ -74,6 +121,7 @@ const Banner = styled.div`
   padding: 12px 16px;
   background: ${props => {
     if (props.searching) return 'linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%)';
+    if (props.globalFallback) return 'linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%)';
     if (props.expanded) return 'linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%)';
     return 'linear-gradient(135deg, #F5F5F5 0%, #EEEEEE 100%)';
   }};
@@ -81,6 +129,7 @@ const Banner = styled.div`
   margin-bottom: 16px;
   border: 1px solid ${props => {
     if (props.searching) return '#FFD54F';
+    if (props.globalFallback) return '#CE93D8';
     if (props.expanded) return '#90CAF9';
     return '#E0E0E0';
   }};
@@ -150,6 +199,13 @@ const StepArrow = styled.div`
   font-size: 10px;
   color: ${props => props.theme?.colors?.textSecondary || '#999'};
   margin: 0 4px;
+`;
+
+const SubMessage = styled.div`
+  font-size: 11px;
+  color: ${props => props.theme?.colors?.textSecondary || '#888'};
+  margin-top: 4px;
+  line-height: 1.4;
 `;
 
 const LoadingDot = styled.div`

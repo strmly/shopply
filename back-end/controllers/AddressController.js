@@ -236,6 +236,23 @@ export class AddressController {
   }
 
   /**
+   * Get current user's address summary
+   */
+  async getMyAddressSummary(req, res, next) {
+    try {
+      const userId = req.query.userId || req.user?.id || 'default';
+      const summary = await addressService.getAddressSummary(userId);
+
+      res.json({
+        success: true,
+        data: summary,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Search address suggestions
    */
   async searchAddresses(req, res, next) {

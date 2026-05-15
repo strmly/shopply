@@ -315,7 +315,7 @@ const buildWhatsAppHref = (product, contact) => {
 
   const message = [
     `Hi ${product?.storeName || 'there'},`,
-    `I have ${product?.name || 'this product'} in my Tsenga cart.`,
+    `I have ${product?.name || 'this product'} in my Shopply cart.`,
     'Is it still available?',
   ].join('\n');
 

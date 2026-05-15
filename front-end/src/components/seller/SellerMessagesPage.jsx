@@ -390,7 +390,7 @@ export const SellerMessagesPage = () => {
           <div>
             <Eyebrow>{messages.unreadCount} unread buyer messages</Eyebrow>
             <Title>Seller Messages</Title>
-            <Subtitle>Reply to buyer questions, keep order conversations warm, and protect every sale from one calm Tsenga inbox.</Subtitle>
+            <Subtitle>Reply to buyer questions, keep order conversations warm, and protect every sale from one calm Shopply inbox.</Subtitle>
           </div>
           <HeroActions>
             <Button type="button" onClick={() => navigate('/seller/dashboard')}>Dashboard</Button>

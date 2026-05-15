@@ -3,6 +3,32 @@ import { CartService } from './CartService.js';
 import { ProductService } from './ProductService.js';
 import { VoucherService } from './VoucherService.js';
 import SellerOrderService from './SellerOrderService.js';
+import { SellerService } from './SellerService.js';
+import { getStoreById } from './StoreService.js';
+
+const normalizeWhatsAppNumber = (value = '') => {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = `27${digits.slice(1)}`;
+  if (digits.length === 9) digits = `27${digits}`;
+  return digits;
+};
+
+const formatCurrency = (value = 0) => `R${Number(value || 0).toFixed(2)}`;
+
+const formatAddress = (address) => {
+  if (!address) return 'Not provided';
+  if (typeof address === 'string') return address;
+  return [
+    address.address,
+    address.street,
+    address.unit ? `Unit ${address.unit}` : '',
+    address.suburb,
+    address.city,
+    address.postalCode,
+  ].filter(Boolean).join(', ') || 'Not provided';
+};
 
 class CheckoutService {
   constructor() {
@@ -47,6 +73,88 @@ class CheckoutService {
 
     this.orders.set(order1.id, order1);
     this.orders.set(order2.id, order2);
+  }
+
+  async resolveSellerContact(storeId, group = {}) {
+    storeId = storeId || 1;
+    const store = getStoreById(storeId) || getStoreById(String(storeId));
+    let seller = null;
+
+    if (store?.sellerId) seller = await SellerService.getSellerById(store.sellerId);
+    if (!seller && storeId) seller = await SellerService.getSellerById(storeId);
+    if (!seller && parseInt(storeId, 10) === 1) seller = await SellerService.seedDefaultSeller();
+
+    let firstProduct = group.items?.[0]?.product || null;
+    if (!firstProduct && group.items?.[0]?.productId) {
+      const productModel = await ProductService.getProductById(group.items[0].productId);
+      firstProduct = productModel?.toJSON ? productModel.toJSON() : productModel;
+    }
+
+    const rawNumber = seller?.storeBasicInfo?.storePhone
+      || seller?.phone
+      || store?.phone
+      || firstProduct?.sellerContact?.whatsappNumber
+      || firstProduct?.sellerContact?.storePhone
+      || firstProduct?.sellerPhone
+      || firstProduct?.storePhone
+      || '';
+
+    return {
+      sellerId: seller?.id || store?.sellerId || storeId || null,
+      storeName: group.storeName || store?.name || seller?.storeSetup?.name || seller?.legalBusinessName || 'Shopply seller',
+      whatsappNumber: normalizeWhatsAppNumber(rawNumber),
+      rawWhatsappNumber: rawNumber,
+    };
+  }
+
+  async buildWhatsAppHandoff(order) {
+    const groups = order.storeGroups?.length ? order.storeGroups : this.groupItemsByStore(order.items || []);
+    const handoffs = [];
+
+    for (const group of groups) {
+      const storeId = group.storeId || group.items?.[0]?.storeId || group.items?.[0]?.product?.storeId || 1;
+      const contact = await this.resolveSellerContact(storeId, group);
+      const groupItems = group.items || [];
+      const itemsTotal = groupItems.reduce((sum, item) => {
+        const price = item.product?.price || item.price || 0;
+        return sum + (price * (item.quantity || 1));
+      }, 0);
+      const itemLines = groupItems.map(item => {
+        const product = item.product || item;
+        return `- ${item.quantity || 1} x ${product.name || 'Product'} (${formatCurrency(product.price || item.price || 0)})`;
+      }).join('\n');
+
+      const message = [
+        `Hi ${contact.storeName},`,
+        `I would like to place this Shopply order.`,
+        ``,
+        `Order: #${order.id}`,
+        `Customer phone: ${order.contactInfo?.phone || 'Not provided'}`,
+        order.contactInfo?.email ? `Customer email: ${order.contactInfo.email}` : '',
+        `Delivery: ${order.deliveryMethod}${order.deliverySpeed ? ` (${order.deliverySpeed})` : ''}`,
+        `Address: ${formatAddress(order.deliveryAddress)}`,
+        order.orderInstructions ? `Instructions: ${order.orderInstructions}` : '',
+        ``,
+        `Items:`,
+        itemLines,
+        ``,
+        `Seller subtotal: ${formatCurrency(itemsTotal)}`,
+        `Order total: ${formatCurrency(order.totals?.total || 0)}`,
+        ``,
+        `Please confirm availability and next steps.`,
+      ].filter(line => line !== '').join('\n');
+
+      handoffs.push({
+        storeId,
+        sellerId: contact.sellerId,
+        storeName: contact.storeName,
+        whatsappNumber: contact.whatsappNumber,
+        href: contact.whatsappNumber ? `https://wa.me/${contact.whatsappNumber}?text=${encodeURIComponent(message)}` : '',
+        message,
+      });
+    }
+
+    return handoffs;
   }
 
   /**
@@ -184,6 +292,13 @@ class CheckoutService {
       throw new Error('Cart is empty');
     }
 
+    if (orderData.deliveryAddress) {
+      cart.deliveryAddress = orderData.deliveryAddress;
+    }
+    if (orderData.deliveryMethod) {
+      cart.deliveryMethod = orderData.deliveryMethod;
+    }
+
     // Validate cart
     const validation = await this.validateCart(userId, location);
     if (!validation.valid) {
@@ -249,7 +364,7 @@ class CheckoutService {
       deliveryAddress: orderData.deliveryAddress || cart.deliveryAddress || location,
       deliveryMethod,
       deliverySpeed,
-      paymentMethod: orderData.paymentMethod || cart.paymentMethod,
+      paymentMethod: orderData.paymentMethod || cart.paymentMethod || 'seller_whatsapp',
       paymentDetails: orderData.paymentDetails || null,
       contactInfo: orderData.contactInfo || {},
       orderInstructions: orderData.orderInstructions || null,
@@ -258,7 +373,7 @@ class CheckoutService {
       discount: finalDiscount,
       totals: finalTotals,
       eta,
-      status: 'pending',
+      status: 'pending_seller_confirmation',
     });
 
     // Validate order
@@ -266,6 +381,8 @@ class CheckoutService {
     if (!orderValidation.valid) {
       throw new Error(`Order validation failed: ${orderValidation.errors.join(', ')}`);
     }
+
+    order.whatsappHandoff = await this.buildWhatsAppHandoff(order);
 
     // Store order
     this.orders.set(order.id, order);
@@ -278,6 +395,8 @@ class CheckoutService {
         console.warn('Failed to mark voucher as used:', error.message);
       }
     }
+
+    order.sellerOrders = this.createSellerOrders(order);
 
     // Clear cart after successful order
     CartService.clearCart(userId);

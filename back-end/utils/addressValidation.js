@@ -27,18 +27,14 @@ export const validateAddressData = (data) => {
     errors.push({ field: 'city', message: 'City is required' });
   }
 
-  // Coordinates validation
-  if (data.latitude === null || data.latitude === undefined) {
-    errors.push({ field: 'latitude', message: 'Latitude is required' });
-  } else if (typeof data.latitude !== 'number' || isNaN(data.latitude)) {
+  // Coordinates are optional for manually entered addresses.
+  if (data.latitude !== null && data.latitude !== undefined && (typeof data.latitude !== 'number' || isNaN(data.latitude))) {
     errors.push({ field: 'latitude', message: 'Latitude must be a valid number' });
   } else if (data.latitude < -90 || data.latitude > 90) {
     errors.push({ field: 'latitude', message: 'Latitude must be between -90 and 90' });
   }
 
-  if (data.longitude === null || data.longitude === undefined) {
-    errors.push({ field: 'longitude', message: 'Longitude is required' });
-  } else if (typeof data.longitude !== 'number' || isNaN(data.longitude)) {
+  if (data.longitude !== null && data.longitude !== undefined && (typeof data.longitude !== 'number' || isNaN(data.longitude))) {
     errors.push({ field: 'longitude', message: 'Longitude must be a valid number' });
   } else if (data.longitude < -180 || data.longitude > 180) {
     errors.push({ field: 'longitude', message: 'Longitude must be between -180 and 180' });

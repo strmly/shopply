@@ -140,7 +140,7 @@ class CheckoutSkill extends BaseSkill {
   async generatePaymentLink(order) {
     // In production, integrate with payment gateway (Paystack, Stripe, etc.)
     // For now, return a mock link
-    const baseUrl = process.env.APP_URL || 'https://tsenga.app';
+    const baseUrl = process.env.APP_URL || 'https://shopply.co.za';
     return `${baseUrl}/checkout/payment/${order.id}`;
   }
 }

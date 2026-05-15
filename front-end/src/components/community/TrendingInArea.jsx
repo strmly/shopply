@@ -252,6 +252,27 @@ export const TrendingInArea = ({ location, limit = 3, showViewAll = true }) => {
   const load = async () => {
     try {
       setLoading(true);
+
+      // Try H3 trending endpoint if coordinates are available
+      let storedLocation = null;
+      try {
+        storedLocation = JSON.parse(localStorage.getItem('shopply_location') || 'null');
+      } catch {}
+
+      if (storedLocation?.lat && storedLocation?.lng) {
+        const h3Res = await fetch(
+          `${API_BASE_URL}/hyperlocal/trending?lat=${storedLocation.lat}&lng=${storedLocation.lng}&limit=9`
+        );
+        const h3Data = await h3Res.json();
+        if (h3Data.success && h3Data.data?.products?.length > 0) {
+          const prods = h3Data.data.products.map(p => ({ ...p, _trend: { reason: h3Data.data.tierLabel || 'Trending nearby' } }));
+          setTotal(prods.length);
+          setItems(prods);
+          return;
+        }
+      }
+
+      // Fallback: community/trending endpoint
       const locationParam = location ? encodeURIComponent(JSON.stringify(location)) : '';
       const trendRes = await fetch(
         `${API_BASE_URL}/community/trending?location=${locationParam}&limit=9`
@@ -289,7 +310,7 @@ export const TrendingInArea = ({ location, limit = 3, showViewAll = true }) => {
       <Section>
         <Shell>
           <Header>
-            <HeaderIcon>T</HeaderIcon>
+            <HeaderIcon>S</HeaderIcon>
             <HeaderCopy>
               <Eyebrow>Trending in {suburb}</Eyebrow>
               <Title>Local demand is moving</Title>
@@ -311,7 +332,7 @@ export const TrendingInArea = ({ location, limit = 3, showViewAll = true }) => {
     <Section>
       <Shell>
         <Header>
-          <HeaderIcon>T</HeaderIcon>
+          <HeaderIcon>S</HeaderIcon>
           <HeaderCopy>
             <Eyebrow>Trending in {suburb}</Eyebrow>
             <Title>Local demand is moving</Title>

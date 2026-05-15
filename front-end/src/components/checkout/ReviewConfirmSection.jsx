@@ -66,6 +66,7 @@ export const ReviewConfirmSection = ({
   };
 
   const getPaymentMethodText = () => {
+    if (paymentMethod === 'seller_whatsapp') return 'Confirm with seller on WhatsApp';
     if (paymentMethod === 'card') return 'Card ending 4821';
     if (paymentMethod === 'mobile_money') return 'Mobile Money';
     if (paymentMethod === 'cash') return 'Cash on Delivery';
@@ -94,7 +95,7 @@ export const ReviewConfirmSection = ({
         {paymentMethod && (
           <ReviewItem>
             <CheckIcon>✔</CheckIcon>
-            <Label>Paying with:</Label>
+            <Label>Order handoff:</Label>
             <Value>{getPaymentMethodText()}</Value>
           </ReviewItem>
         )}

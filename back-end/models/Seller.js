@@ -149,14 +149,6 @@ export class Seller extends BaseModel {
       errors.push('Maximum 10 categories allowed');
     }
 
-    // KYC validation
-    if (!this.kycDocuments.idDocument) {
-      errors.push('ID document is required for verification');
-    }
-    if (!this.kycDocuments.selfie) {
-      errors.push('Selfie verification is required');
-    }
-
     // Bank account validation
     if (!this.bankAccount.accountHolderName || this.bankAccount.accountHolderName.trim().length < 2) {
       errors.push('Account holder name is required');

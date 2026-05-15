@@ -617,7 +617,7 @@ export function PromotionsHomePage({ location }) {
             <Badge>Seller marketing</Badge>
             <Title>Promotions</Title>
             <Subtitle>
-              Launch discounts, flash deals, bundles, basket rewards, and free delivery campaigns from one beautiful Tsenga workspace.
+              Launch discounts, flash deals, bundles, basket rewards, and free delivery campaigns from one beautiful Shopply workspace.
             </Subtitle>
           </div>
           <HeroActions>

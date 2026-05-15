@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
-import { Map } from '../ui/Map';
-import { AddressSearch } from './AddressSearch';
 import { 
   InputWrapper, 
   InputLabel, 
@@ -27,14 +25,17 @@ const Header = styled.div`
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(61, 129, 239, 0.12);
-  padding: 14px min(5vw, 32px);
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.98), rgba(241,247,255,0.95)) padding-box,
+    ${props => props.theme.colors.gradient.primary} border-box;
+  border: 1px solid transparent;
+  border-radius: 0 0 30px 30px;
+  padding: calc(18px + env(safe-area-inset-top)) min(5vw, 48px) 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: ${props => props.theme.spacing.md};
+  box-shadow: 0 24px 62px rgba(16, 24, 40, 0.1);
 `;
 
 const HeaderLeft = styled.div`
@@ -46,10 +47,10 @@ const HeaderLeft = styled.div`
 const BackButton = styled.button`
   width: 42px;
   height: 42px;
-  border-radius: 999px;
+  border-radius: 16px;
   background: #ffffff;
-  border: 1px solid rgba(61, 129, 239, 0.18);
-  font-size: 22px;
+  border: 1px solid rgba(228, 231, 236, 0.95);
+  font-size: 24px;
   font-weight: 900;
   cursor: pointer;
   color: ${props => props.theme.colors.text.primary};
@@ -58,6 +59,7 @@ const BackButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.06);
 
   &:hover {
     color: ${props => props.theme.colors.primary};
@@ -88,29 +90,19 @@ const Section = styled.div`
   gap: ${props => props.theme.spacing.md};
   padding: clamp(16px, 3vw, 24px);
   border-radius: 24px;
-  background: #ffffff;
-  border: 1px solid ${props => props.theme.colors.border.default};
-  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.07);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94)) padding-box,
+    linear-gradient(140deg, rgba(61,129,239,0.18), rgba(228,231,236,0.9), rgba(21,161,124,0.12)) border-box;
+  border: 1px solid transparent;
+  box-shadow: 0 20px 46px rgba(16, 24, 40, 0.08);
 `;
 
 const SectionTitle = styled.h3`
   ${props => props.theme.typography.heading3}
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
+  font-weight: 900;
   font-size: 18px;
   margin: 0;
-`;
-
-const SearchBar = styled.div`
-  margin-bottom: ${props => props.theme.spacing.md};
-`;
-
-const MapContainer = styled.div`
-  height: 300px;
-  border-radius: ${props => props.theme.radii.lg};
-  overflow: hidden;
-  border: 2px solid ${props => props.theme.colors.border.light};
-  margin-bottom: ${props => props.theme.spacing.md};
 `;
 
 const FormRow = styled.div`
@@ -128,9 +120,9 @@ const ToggleWrapper = styled.div`
   align-items: center;
   gap: ${props => props.theme.spacing.md};
   padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.surface};
-  border-radius: 999px;
-  border: 1px solid ${props => props.theme.colors.border.light};
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1px solid rgba(228, 231, 236, 0.95);
 `;
 
 const ToggleLabel = styled.label`
@@ -198,23 +190,6 @@ const SaveButton = styled.button`
   }
 `;
 
-const AutoDetectButton = styled.button`
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.surface};
-  color: ${props => props.theme.colors.primary};
-  border: 1px solid ${props => props.theme.colors.primary};
-  border-radius: ${props => props.theme.radii.md};
-  cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  ${props => props.theme.typography.button}
-  font-size: 14px;
-  margin-bottom: ${props => props.theme.spacing.md};
-
-  &:hover {
-    background: ${props => props.theme.colors.primarySoftBg};
-  }
-`;
-
 import API_BASE_URL from '@config/api';
 
 const LABEL_OPTIONS = ['Home', 'Work', 'Mom\'s House', 'Other'];
@@ -242,15 +217,10 @@ export const AddEditAddressPage = ({ location }) => {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [mapCenter, setMapCenter] = useState(
-    location ? { lat: location.lat, lng: location.lng } : null
-  );
-
   useEffect(() => {
     if (isEdit) {
       loadAddress();
     } else if (location) {
-      setMapCenter({ lat: location.lat, lng: location.lng });
       setFormData(prev => ({
         ...prev,
         suburb: location.suburb || '',
@@ -279,14 +249,10 @@ export const AddEditAddressPage = ({ location }) => {
             city: addr.city || '',
             postalCode: addr.postalCode || '',
             deliveryInstructions: addr.deliveryInstructions || '',
-            latitude: addr.latitude,
-            longitude: addr.longitude,
+            latitude: addr.latitude || null,
+            longitude: addr.longitude || null,
             isDefault: addr.isDefault || false,
           });
-          
-          if (addr.latitude && addr.longitude) {
-            setMapCenter({ lat: addr.latitude, lng: addr.longitude });
-          }
         }
       }
     } catch (error) {
@@ -304,37 +270,6 @@ export const AddEditAddressPage = ({ location }) => {
     }
   };
 
-  const handleMapPositionChange = (position) => {
-    setFormData(prev => ({
-      ...prev,
-      latitude: position.lat,
-      longitude: position.lng,
-    }));
-    setMapCenter(position);
-  };
-
-  const handleAutoDetect = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const pos = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setMapCenter(pos);
-          handleMapPositionChange(pos);
-          toast.success('Location detected');
-        },
-        (error) => {
-          console.error('Geolocation error:', error);
-          toast.error('Failed to detect location');
-        }
-      );
-    } else {
-      toast.error('Geolocation not supported');
-    }
-  };
-
   const validate = () => {
     const newErrors = {};
     
@@ -347,10 +282,9 @@ export const AddEditAddressPage = ({ location }) => {
     if (!formData.city.trim()) {
       newErrors.city = 'City is required';
     }
-    if (!formData.latitude || !formData.longitude) {
-      newErrors.location = 'Please set location on map';
+    if (formData.label === 'Other' && !formData.customLabel.trim()) {
+      newErrors.customLabel = 'Custom label is required';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -432,53 +366,6 @@ export const AddEditAddressPage = ({ location }) => {
 
       <Content>
         <Section>
-          <SectionTitle>Location</SectionTitle>
-          
-          <SearchBar>
-            <AddressSearch
-              value={formData.street}
-              onChange={(value) => {
-                handleInputChange('street', value);
-                // If suggestion selected, it will be handled by onSelect
-              }}
-              onSelect={(suggestion) => {
-                // Auto-fill form from suggestion
-                if (suggestion.street) {
-                  handleInputChange('street', suggestion.street);
-                }
-                if (suggestion.suburb) {
-                  handleInputChange('suburb', suggestion.suburb);
-                }
-                if (suggestion.city) {
-                  handleInputChange('city', suggestion.city);
-                }
-              }}
-              placeholder="Search your street, building, or landmark"
-            />
-          </SearchBar>
-
-          <AutoDetectButton onClick={handleAutoDetect}>
-            📍 Auto-detect my location
-          </AutoDetectButton>
-          
-          {mapCenter && (
-            <MapContainer>
-              <Map
-                center={mapCenter}
-                zoom={15}
-                height="300px"
-                draggable={true}
-                onPositionChange={handleMapPositionChange}
-              />
-            </MapContainer>
-          )}
-
-          {errors.location && (
-            <ErrorMessage>{errors.location}</ErrorMessage>
-          )}
-        </Section>
-
-        <Section>
           <SectionTitle>Address Details</SectionTitle>
           
           <InputWrapper>
@@ -492,15 +379,16 @@ export const AddEditAddressPage = ({ location }) => {
               ))}
             </StyledSelect>
             {formData.label === 'Other' && (
-              <Input
-                placeholder="Enter custom label"
-                value={formData.customLabel || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setFormData(prev => ({ ...prev, customLabel: value, label: value || 'Other' }));
-                }}
-                style={{ marginTop: '8px' }}
-              />
+              <>
+                <Input
+                  placeholder="Enter custom label"
+                  value={formData.customLabel || ''}
+                  onChange={(e) => handleInputChange('customLabel', e.target.value)}
+                  $error={!!errors.customLabel}
+                  style={{ marginTop: '8px' }}
+                />
+                {errors.customLabel && <ErrorMessage>{errors.customLabel}</ErrorMessage>}
+              </>
             )}
           </InputWrapper>
 
@@ -514,7 +402,7 @@ export const AddEditAddressPage = ({ location }) => {
               readOnly={false}
             />
             {errors.street && <ErrorMessage>{errors.street}</ErrorMessage>}
-            <HelperText>Use the search above to find your address quickly</HelperText>
+            <HelperText>Type the delivery address exactly as couriers should see it.</HelperText>
           </InputWrapper>
 
           <FormRow>

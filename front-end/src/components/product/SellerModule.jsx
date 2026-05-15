@@ -189,7 +189,7 @@ const buildWhatsAppLink = (product, location) => {
   const area = location?.suburb ? ` in ${location.suburb}` : '';
   const message = [
     `Hi ${product.storeName || 'there'},`,
-    `I found ${product.name} on Tsenga${area}.`,
+    `I found ${product.name} on Shopply${area}.`,
     `Is it still available?`,
     productUrl,
   ].filter(Boolean).join('\n');

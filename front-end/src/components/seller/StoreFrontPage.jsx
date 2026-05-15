@@ -267,7 +267,7 @@ const normalizeWhatsAppNumber = (value = '') => {
 const buildWhatsAppUrl = (store) => {
   const number = normalizeWhatsAppNumber(store?.whatsappNumber || store?.phone);
   if (!number) return '';
-  const message = `Hi ${store.name}, I found your store on Tsenga and would like to ask about your products.`;
+  const message = `Hi ${store.name}, I found your store on Shopply and would like to ask about your products.`;
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 };
 
@@ -318,7 +318,7 @@ export const StoreFrontPage = ({ location }) => {
 
   const whatsappUrl = useMemo(() => buildWhatsAppUrl(store), [store]);
   const address = formatAddress(store?.address, location);
-  const initials = (store?.name || 'Tsenga Store').trim().slice(0, 1).toUpperCase();
+  const initials = (store?.name || 'Shopply Store').trim().slice(0, 1).toUpperCase();
 
   return (
     <Page>

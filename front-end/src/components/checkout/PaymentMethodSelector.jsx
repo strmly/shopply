@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+﻿import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
 const Card = styled.div`
@@ -98,10 +98,10 @@ const ErrorText = styled.div`
 `;
 
 export const PaymentMethodSelector = ({ paymentMethod, onPaymentMethodChange, error }) => {
-  const savedCard = localStorage.getItem('tsenga_saved_card');
+  const savedCard = localStorage.getItem('shopply_saved_card');
   const cardNumber = savedCard ? JSON.parse(savedCard).last4 : null;
   const handleAddDemoCard = () => {
-    localStorage.setItem('tsenga_saved_card', JSON.stringify({
+    localStorage.setItem('shopply_saved_card', JSON.stringify({
       brand: 'Visa',
       last4: '4242',
       addedAt: new Date().toISOString(),

@@ -1,4 +1,7 @@
 import { Product } from '../models/Product.js';
+import { indexProduct } from './H3IndexingService.js';
+import { getAllStores } from './StoreService.js';
+import { SellerService } from './SellerService.js';
 
 /**
  * Product Service
@@ -634,6 +637,20 @@ class ProductServiceClass {
     }
 
     this.products.push(product);
+
+    // H3 indexing: attach store location data and compute quality score
+    try {
+      const stores = getAllStores();
+      const store = stores.find(s => String(s.id) === String(product.storeId));
+      if (store) {
+        const sellers = await SellerService.getAllSellers();
+        const seller = sellers.find(s => String(s.id) === String(store.sellerId));
+        indexProduct(product, store, seller || null, null);
+      }
+    } catch (indexErr) {
+      console.warn('H3 indexProduct (create) failed silently:', indexErr.message);
+    }
+
     return product;
   }
 
@@ -700,6 +717,20 @@ class ProductServiceClass {
     }
 
     this.products[productIndex] = updatedProduct;
+
+    // H3 indexing: re-index after update
+    try {
+      const stores = getAllStores();
+      const store = stores.find(s => String(s.id) === String(updatedProduct.storeId));
+      if (store) {
+        const sellers = await SellerService.getAllSellers();
+        const seller = sellers.find(s => String(s.id) === String(store.sellerId));
+        indexProduct(updatedProduct, store, seller || null, null);
+      }
+    } catch (indexErr) {
+      console.warn('H3 indexProduct (update) failed silently:', indexErr.message);
+    }
+
     return updatedProduct;
   }
 

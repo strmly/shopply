@@ -355,7 +355,7 @@ export const SearchResults = ({
     return (
       <Container>
         <EmptyState>
-          <EmptyIcon>T</EmptyIcon>
+          <EmptyIcon>S</EmptyIcon>
           <EmptyTitle>No matches for "{query}" near {suburb}</EmptyTitle>
           <EmptyText>
             Try searching with different keywords or browse trending items near you.

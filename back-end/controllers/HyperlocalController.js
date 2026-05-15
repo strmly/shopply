@@ -1,9 +1,12 @@
 import { searchWithExpansion, getHyperlocalHomeFeed, searchByCategory } from '../services/HyperlocalSearchService.js';
-import { RADIUS_TIERS, getH3CellsForTier, calculateDistance } from '../utils/h3Utils.js';
+import { RADIUS_TIERS, getH3CellsForTier, calculateDistance, formatDistance } from '../utils/h3Utils.js';
 import { ProductService } from '../services/ProductService.js';
 import { SellerService } from '../services/SellerService.js';
 import { getAllInventories } from '../services/InventoryService.js';
 import { getAllStores } from '../services/StoreService.js';
+import { GeoIndex } from '../services/GeoIndex.js';
+import { TrendingService } from '../services/TrendingService.js';
+import { generateH3Cells } from '../utils/h3Utils.js';
 
 /**
  * Hyperlocal Controller
@@ -14,7 +17,7 @@ import { getAllStores } from '../services/StoreService.js';
  * Get hyperlocal home feed
  * GET /api/hyperlocal/feed/home
  */
-export async function getHomeFeed(req, res) {
+export async function getHomeFeed(req, res, next) {
   try {
     const { lat, lng, tier_index } = req.query;
 
@@ -48,11 +51,7 @@ export async function getHomeFeed(req, res) {
       data: feed,
     });
   } catch (error) {
-    console.error('Error getting home feed:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    next(error);
   }
 }
 
@@ -60,14 +59,14 @@ export async function getHomeFeed(req, res) {
  * Search with automatic radius expansion
  * GET /api/hyperlocal/search
  */
-export async function search(req, res) {
+export async function search(req, res, next) {
   try {
-    const { 
-      q, 
-      category, 
-      lat, 
-      lng, 
-      min_results, 
+    const {
+      q,
+      category,
+      lat,
+      lng,
+      min_results,
       max_tier,
       min_price,
       max_price,
@@ -114,16 +113,23 @@ export async function search(req, res) {
       getAllInventories: async () => getAllInventories(),
     });
 
+    // Track views for trending
+    if (results.results?.length) {
+      const buyerCells = generateH3Cells(userLat, userLng);
+      if (buyerCells) {
+        const cellArr = Object.values(buyerCells);
+        results.results.slice(0, 20).forEach(p => {
+          TrendingService.trackView(p.id, cellArr);
+        });
+      }
+    }
+
     res.json({
       success: true,
       data: results,
     });
   } catch (error) {
-    console.error('Error searching:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    next(error);
   }
 }
 
@@ -131,7 +137,7 @@ export async function search(req, res) {
  * Search by category
  * GET /api/hyperlocal/category/:category
  */
-export async function searchCategory(req, res) {
+export async function searchCategory(req, res, next) {
   try {
     const { category } = req.params;
     const { lat, lng, tier_index } = req.query;
@@ -166,11 +172,7 @@ export async function searchCategory(req, res) {
       data: results,
     });
   } catch (error) {
-    console.error('Error searching category:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    next(error);
   }
 }
 
@@ -195,7 +197,7 @@ export function getTiers(req, res) {
  * Get nearest availability for a query (fast check for UI animation)
  * GET /api/hyperlocal/nearest-availability
  */
-export async function getNearestAvailability(req, res) {
+export async function getNearestAvailability(req, res, next) {
   try {
     const { q, lat, lng, category } = req.query;
 
@@ -276,11 +278,201 @@ export async function getNearestAvailability(req, res) {
       },
     });
   } catch (error) {
-    console.error('Error checking nearest availability:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message,
+    next(error);
+  }
+}
+
+/**
+ * GET /api/hyperlocal/trending
+ * Top trending products in the buyer's H3 cell
+ */
+export async function getTrending(req, res, next) {
+  try {
+    const { lat, lng, tier_index = 0, limit = 20 } = req.query;
+    if (!lat || !lng) return res.status(400).json({ success: false, error: 'lat and lng required' });
+
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+    const cells = generateH3Cells(userLat, userLng);
+    const primaryCell = cells?.h3_r7 || cells?.h3_r6;
+
+    // Real trending from TrendingService
+    const topIds = primaryCell ? TrendingService.getTopForCell(primaryCell, parseInt(limit)) : [];
+
+    if (topIds.length >= 5) {
+      // Enrich with product data from GeoIndex
+      const enriched = topIds.map(({ productId, trendScore }) => {
+        const entry = GeoIndex.products.get(String(productId));
+        if (!entry) return null;
+        const distanceKm = entry.store?.address?.lat
+          ? calculateDistance(userLat, userLng, entry.store.address.lat, entry.store.address.lng)
+          : null;
+        return {
+          ...entry.product,
+          trendScore,
+          distanceKm,
+          distanceDisplay: distanceKm != null ? formatDistance(distanceKm) : null,
+        };
+      }).filter(Boolean);
+
+      return res.json({
+        success: true,
+        data: {
+          products: enriched,
+          source: 'live',
+          tier: `T${tier_index}`,
+          radiusKm: RADIUS_TIERS[parseInt(tier_index)]?.radiusKm,
+        },
+      });
+    }
+
+    // Fallback: score-based trending via search
+    const tier = RADIUS_TIERS[parseInt(tier_index)] || RADIUS_TIERS[0];
+    const results = await searchWithExpansion({
+      query: '',
+      category: null,
+      userLat,
+      userLng,
+      minResults: parseInt(limit),
+      maxTier: parseInt(tier_index) + 1,
+      filters: { inStockOnly: true },
+      getAllProducts: async () => ProductService.getAll(),
+      getAllStores: async () => getAllStores(),
+      getAllSellers: async () => SellerService.getAllSellers(),
+      getAllInventories: async () => getAllInventories(),
     });
+
+    const trending = results.results
+      .sort((a, b) => {
+        const sa = ((a.salesCount || 1) * (a.rating || 3)) / Math.max(a.distanceKm || 1, 0.1);
+        const sb = ((b.salesCount || 1) * (b.rating || 3)) / Math.max(b.distanceKm || 1, 0.1);
+        return sb - sa;
+      })
+      .slice(0, parseInt(limit));
+
+    res.json({
+      success: true,
+      data: { products: trending, source: 'computed', tier: tier.id, radiusKm: tier.radiusKm },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/hyperlocal/sellers
+ * Top-rated sellers near the buyer
+ */
+export async function getNearbySellers(req, res, next) {
+  try {
+    const { lat, lng, tier_index = 0, limit = 20 } = req.query;
+    if (!lat || !lng) return res.status(400).json({ success: false, error: 'lat and lng required' });
+
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+    const startTierIndex = parseInt(tier_index);
+    const maxLimit = parseInt(limit);
+
+    const stores = getAllStores();
+    const sellers = await SellerService.getAllSellers();
+    const sellerMap = new Map(sellers.map(s => [String(s.id), s]));
+
+    const scoreStore = (store, seller) => {
+      const distanceKm = calculateDistance(userLat, userLng, store.address.lat, store.address.lng);
+      return {
+        storeId: store.id,
+        storeName: store.name,
+        distanceKm,
+        distanceDisplay: formatDistance(distanceKm),
+        rating: store.rating || 0,
+        reviewCount: store.reviewCount || 0,
+        isOpenNow: store.isOpenNow || false,
+        serviceScore: store.serviceScore || 0,
+        sellerId: seller?.id,
+        qualityScore: seller?.qualityScore || 0,
+        address: { suburb: store.address?.suburb, city: store.address?.city },
+      };
+    };
+
+    const sortByQuality = (arr) => arr.sort((a, b) => {
+      const sa = (a.qualityScore * 0.6 + (a.rating / 5) * 0.4) / Math.max(a.distanceKm, 0.1);
+      const sb = (b.qualityScore * 0.6 + (b.rating / 5) * 0.4) / Math.max(b.distanceKm, 0.1);
+      return sb - sa;
+    });
+
+    // Expand tier by tier until we find sellers
+    let nearbyStores = [];
+    let effectiveTier = null;
+    let wasAutoExpanded = false;
+    let expansionReason = null;
+
+    for (let tierIndex = startTierIndex; tierIndex < RADIUS_TIERS.length; tierIndex++) {
+      const tier = RADIUS_TIERS[tierIndex];
+      const h3Cells = getH3CellsForTier(userLat, userLng, tier);
+      const h3Set = new Set(h3Cells);
+      const cellKey = `h3_r${tier.resolution}`;
+
+      const found = stores
+        .filter(store => store.address?.lat && store.address?.lng && h3Set.has(store[cellKey]))
+        .map(store => scoreStore(store, sellerMap.get(String(store.sellerId))));
+
+      if (found.length > 0) {
+        nearbyStores = found;
+        effectiveTier = tier;
+        if (tierIndex > startTierIndex) {
+          wasAutoExpanded = true;
+          expansionReason = 'no_local_sellers';
+        }
+        break;
+      }
+    }
+
+    // Global fallback: all sellers sorted by quality
+    if (nearbyStores.length === 0) {
+      wasAutoExpanded = true;
+      expansionReason = 'global_fallback';
+      effectiveTier = RADIUS_TIERS[RADIUS_TIERS.length - 1];
+      nearbyStores = stores
+        .filter(store => store.address?.lat && store.address?.lng)
+        .map(store => scoreStore(store, sellerMap.get(String(store.sellerId))));
+    }
+
+    sortByQuality(nearbyStores);
+
+    res.json({
+      success: true,
+      data: {
+        sellers: nearbyStores.slice(0, maxLimit),
+        tier: effectiveTier?.id,
+        tierLabel: effectiveTier?.label || 'National',
+        radiusKm: effectiveTier?.radiusKm,
+        wasAutoExpanded,
+        expansionReason,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * GET /api/hyperlocal/heatmap
+ * Returns per-cell product/store counts merged with live activity from TrendingService
+ */
+export async function getHeatmap(req, res, next) {
+  try {
+    const cellStats = GeoIndex.getAllCellStats();
+    const activityStats = TrendingService.getAllActiveCells();
+    const activityMap = new Map(activityStats.map(a => [a.h3Cell, a]));
+
+    const heatmap = cellStats.map(stat => ({
+      ...stat,
+      ...(activityMap.get(stat.h3Cell) || { views: 0, carts: 0, orders: 0 }),
+    })).sort((a, b) => b.productCount - a.productCount);
+
+    res.json({ success: true, data: { cells: heatmap, totalCells: heatmap.length } });
+  } catch (err) {
+    next(err);
   }
 }
 
@@ -290,5 +482,8 @@ export default {
   searchCategory,
   getTiers,
   getNearestAvailability,
+  getTrending,
+  getNearbySellers,
+  getHeatmap,
 };
 

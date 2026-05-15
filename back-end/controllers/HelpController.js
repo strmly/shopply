@@ -4,7 +4,7 @@ const HELP_CATEGORIES = [
   { id: 'orders', title: 'Orders & Delivery', description: 'Track, change, and receive your orders.' },
   { id: 'payments', title: 'Payments & Refunds', description: 'Billing, refunds, and payment methods.' },
   { id: 'account', title: 'Account & Security', description: 'Profile, password, and account safety.' },
-  { id: 'sellers', title: 'Sellers & Stores', description: 'Selling on Tsenga and store management.' },
+  { id: 'sellers', title: 'Sellers & Stores', description: 'Selling on Shopply and store management.' },
   { id: 'technical', title: 'Technical Issues', description: 'App performance, bugs, and errors.' },
 ];
 

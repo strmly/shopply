@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
+import { useUser } from '../../context/UserContext';
 
 const shimmer = keyframes`
   0% { transform: translateX(-100%) rotate(20deg); }
@@ -111,6 +112,8 @@ const StoreIcon = () => (
 
 export function SellerBannerCompact() {
   const navigate = useNavigate();
+  const { role } = useUser();
+  if (role === 'seller' || role === 'admin') return null;
   return (
     <CompactWrap onClick={() => navigate('/become-a-seller')} style={{ cursor: 'pointer' }}>
       <CompactIcon><StoreIcon /></CompactIcon>
@@ -329,12 +332,14 @@ const BtnRow = styled.div`
 
 export function SellerBannerFull() {
   const navigate = useNavigate();
+  const { role } = useUser();
+  if (role === 'seller' || role === 'admin') return null;
   return (
     <FullWrap>
       <Blob1 />
       <Blob2 />
       <FullLeft>
-        <FullEyebrow>Sell on Tsenga</FullEyebrow>
+        <FullEyebrow>Sell on Shopply</FullEyebrow>
         <FullTitle>Turn your space<br />into income</FullTitle>
         <FullSub>
           List your pieces in minutes. Reach thousands of local buyers. Track every order from your seller dashboard.
@@ -360,7 +365,7 @@ export function SellerBannerFull() {
           <FullBtn onClick={() => navigate('/become-a-seller')}>
             Become a seller
           </FullBtn>
-          <LearnBtn onClick={() => navigate('/sell-on-tsenga')}>
+          <LearnBtn onClick={() => navigate('/sell-on-shopply')}>
             Learn more
           </LearnBtn>
         </BtnRow>

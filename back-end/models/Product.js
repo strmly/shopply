@@ -77,6 +77,10 @@ export class Product extends BaseModel {
     this.returnRate = data.returnRate || 0.05; // Product return rate
     this.qualityScore = data.qualityScore || 0; // Computed product quality score
     this.normalizedTitle = data.normalizedTitle || null; // For search matching
+    this.moderationStatus = data.moderationStatus || 'approved'; // 'pending', 'approved', 'hidden', 'suspended', 'featured'
+    this.moderationReason = data.moderationReason || '';
+    this.moderatedAt = data.moderatedAt || null;
+    this.isFeatured = Boolean(data.isFeatured);
     
     this.createdAt = data.createdAt || new Date();
     this.updatedAt = data.updatedAt || new Date();
@@ -202,6 +206,10 @@ export class Product extends BaseModel {
       returnRate: this.returnRate,
       qualityScore: this.qualityScore,
       normalizedTitle: this.normalizedTitle,
+      moderationStatus: this.moderationStatus,
+      moderationReason: this.moderationReason,
+      moderatedAt: this.moderatedAt,
+      isFeatured: this.isFeatured,
       room: this.room,
       furnitureCategory: this.furnitureCategory,
       subCategory: this.subCategory,

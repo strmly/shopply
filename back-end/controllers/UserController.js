@@ -50,7 +50,10 @@ export class UserController {
    */
   async createUser(req, res, next) {
     try {
-      const user = await userService.createUser(req.body);
+      // role and passwordHash must not be set through this endpoint;
+      // role assignment is handled exclusively via /api/admin/users
+      const { role, passwordHash, ...safeBody } = req.body;
+      const user = await userService.createUser(safeBody);
       res.status(201).json({
         success: true,
         data: user,
@@ -67,7 +70,8 @@ export class UserController {
   async updateUser(req, res, next) {
     try {
       const { id } = req.params;
-      const user = await userService.updateUser(id, req.body);
+      const { role, passwordHash, ...safeBody } = req.body;
+      const user = await userService.updateUser(id, safeBody);
 
       if (!user) {
         return res.status(404).json({

@@ -264,7 +264,7 @@ class SearchServiceClass {
       .map(p => ({
         type: 'product',
         label: p.name,
-        secondary: p.storeName || 'Tsenga Home Furniture',
+        secondary: p.storeName || 'Shopply Home Furniture',
         icon: '🛍️',
         data: p,
       }));

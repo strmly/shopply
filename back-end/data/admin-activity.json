@@ -1,0 +1,90 @@
+{
+  "activities": [
+    {
+      "id": 6,
+      "actorId": 1,
+      "actorName": "Admin",
+      "action": "bulk.updated",
+      "targetType": "products",
+      "targetId": "1",
+      "summary": "Bulk updated 1 products",
+      "metadata": {
+        "target": "products",
+        "action": "moderation",
+        "value": "approved",
+        "ids": [
+          1
+        ]
+      },
+      "createdAt": "2026-05-15T00:57:20.967Z"
+    },
+    {
+      "id": 5,
+      "actorId": 1,
+      "actorName": "Admin",
+      "action": "bulk.updated",
+      "targetType": "products",
+      "targetId": "1",
+      "summary": "Bulk updated 1 products",
+      "metadata": {
+        "target": "products",
+        "action": "moderation",
+        "value": "approved",
+        "ids": [
+          1
+        ]
+      },
+      "createdAt": "2026-05-15T00:57:09.010Z"
+    },
+    {
+      "id": 4,
+      "actorId": 1,
+      "actorName": "Admin",
+      "action": "note.created",
+      "targetType": "user",
+      "targetId": "1",
+      "summary": "Added note to user 1",
+      "metadata": {},
+      "createdAt": "2026-05-15T00:57:08.994Z"
+    },
+    {
+      "id": 3,
+      "actorId": 1,
+      "actorName": "Admin",
+      "action": "delivery.retry",
+      "targetType": "delivery",
+      "targetId": "2",
+      "summary": "Retried sms message to +27123456789",
+      "metadata": {},
+      "createdAt": "2026-05-15T00:57:08.983Z"
+    },
+    {
+      "id": 2,
+      "actorId": 1,
+      "actorName": "Admin",
+      "action": "issue.updated",
+      "targetType": "issue",
+      "targetId": "1",
+      "summary": "Updated issue Delivery window needs confirmation",
+      "metadata": {
+        "status": "open"
+      },
+      "createdAt": "2026-05-15T00:57:08.975Z"
+    },
+    {
+      "id": 1,
+      "actorId": 1,
+      "actorName": "Admin",
+      "action": "product.moderated",
+      "targetType": "product",
+      "targetId": "1",
+      "summary": "Set product 1 to approved",
+      "metadata": {
+        "status": "approved",
+        "reason": "Smoke test"
+      },
+      "createdAt": "2026-05-15T00:57:08.963Z"
+    }
+  ],
+  "nextId": 7
+}

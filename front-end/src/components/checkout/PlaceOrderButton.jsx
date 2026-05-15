@@ -113,13 +113,12 @@ export const PlaceOrderButton = ({ total, eta, isValid, errors, onPlaceOrder }) 
       const errorKeys = Object.keys(errors || {});
       if (errorKeys.length > 0) {
         if (errorKeys.includes('deliveryAddress')) return 'Add Address';
-        if (errorKeys.includes('paymentMethod')) return 'Select Payment';
         if (errorKeys.includes('phone')) return 'Add Phone';
         return 'Fix Issues';
       }
       return 'Fix Issues';
     }
-    return 'PLACE ORDER';
+    return 'SEND TO SELLER';
   };
 
   const errorMessages = Object.values(errors || {}).filter(Boolean);

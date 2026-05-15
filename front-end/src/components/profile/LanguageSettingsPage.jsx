@@ -130,7 +130,7 @@ const SaveButton = styled.button`
 `;
 
 const languages = [
-  { code: 'en', label: 'English', text: 'Default Tsenga language' },
+  { code: 'en', label: 'English', text: 'Default Shopply language' },
   { code: 'af', label: 'Afrikaans', text: 'Afrikaanse voorkeure' },
   { code: 'zu', label: 'isiZulu', text: 'Izilungiselelo zolimi' },
   { code: 'xh', label: 'isiXhosa', text: 'Useto lolwimi' },
@@ -186,7 +186,7 @@ export const LanguageSettingsPage = () => {
           <BackButton onClick={() => navigate(-1)} aria-label="Back">&lt;</BackButton>
           <div>
             <Title>Language</Title>
-            <Subtext>Choose the language Tsenga should use for your account experience.</Subtext>
+            <Subtext>Choose the language Shopply should use for your account experience.</Subtext>
           </div>
         </Hero>
 

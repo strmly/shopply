@@ -117,16 +117,24 @@ export const UserProvider = ({ children }) => {
     setUser(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 
-    await apiFetch(`/profile/${userId}`, {
+    const res = await apiFetch(`/profile/${userId}`, {
       method: 'PUT',
       body: JSON.stringify({
+        firstName: next.firstName,
+        lastName: next.lastName,
         name: next.name,
         email: next.email,
         mobile: next.mobile,
         avatarUrl: next.avatarUrl,
       }),
     });
-  }, [user]);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.success === false) {
+      applyUser(user);
+      throw new Error(data.message || 'Could not update profile');
+    }
+    if (data.data) applyUser(data.data);
+  }, [applyUser, user]);
 
   const role = (authRole && authRole !== 'guest') ? authRole : (user.role || 'guest');
 

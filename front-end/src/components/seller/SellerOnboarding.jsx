@@ -8,7 +8,6 @@ import { StoreBasicInfo } from './onboarding/StoreBasicInfo';
 import { StoreSetup } from './onboarding/StoreSetup';
 import { AddressLocation } from './onboarding/AddressLocation';
 import { CategorySelection } from './onboarding/CategorySelection';
-import { KYCVerification } from './onboarding/KYCVerification';
 import { BankAccountSetup } from './onboarding/BankAccountSetup';
 import { SuccessScreen } from './onboarding/SuccessScreen';
 
@@ -144,7 +143,6 @@ const steps = [
   { label: 'Store Setup', key: 'storeSetup' },
   { label: 'Address', key: 'address' },
   { label: 'Categories', key: 'categories' },
-  { label: 'KYC', key: 'kyc' },
   { label: 'Payouts', key: 'payouts' },
 ];
 
@@ -392,14 +390,6 @@ export function SellerOnboarding() {
           />
         );
       case 5:
-        return (
-          <KYCVerification
-            data={{ kycDocuments: data.kycDocuments }}
-            onNext={(payload) => handleNext({ kycDocuments: payload.kycDocuments })}
-            onBack={() => handleBack()}
-          />
-        );
-      case 6:
       default:
         return (
           <BankAccountSetup

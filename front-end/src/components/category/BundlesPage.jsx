@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -589,7 +589,7 @@ export const BundlesPage = ({ location }) => {
     };
 
     try {
-      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
       const existingIndex = cart.findIndex(item => item.id === bundle.id);
 
       if (existingIndex >= 0) {
@@ -598,8 +598,8 @@ export const BundlesPage = ({ location }) => {
         cart.push(cartItem);
       }
 
-      localStorage.setItem('tsenga_cart', JSON.stringify(cart));
-      localStorage.setItem('tsenga_cart_count', String(cart.reduce((sum, item) => sum + (item.quantity || 1), 0)));
+      localStorage.setItem('shopply_cart', JSON.stringify(cart));
+      localStorage.setItem('shopply_cart_count', String(cart.reduce((sum, item) => sum + (item.quantity || 1), 0)));
 
       await fetch(`${API_BASE_URL}/cart/items`, {
         method: 'POST',

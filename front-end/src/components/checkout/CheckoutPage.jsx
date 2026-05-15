@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -6,7 +6,6 @@ import { CheckoutHeader } from './CheckoutHeader';
 import { OrderSummaryCard } from './OrderSummaryCard';
 import { DeliveryAddressConfirmation } from './DeliveryAddressConfirmation';
 import { DeliveryOptions } from './DeliveryOptions';
-import { PaymentMethodSelector } from './PaymentMethodSelector';
 import { ContactInformation } from './ContactInformation';
 import { OrderInstructions } from './OrderInstructions';
 import { DiscountCodeInput } from './DiscountCodeInput';
@@ -198,7 +197,7 @@ export const CheckoutPage = ({ location, onClose }) => {
   const [deliveryAddress, setDeliveryAddress] = useState(null);
   const [deliveryMethod, setDeliveryMethod] = useState('delivery');
   const [deliverySpeed, setDeliverySpeed] = useState('standard');
-  const [paymentMethod, setPaymentMethod] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('seller_whatsapp');
   const [contactInfo, setContactInfo] = useState({
     phone: '',
     email: '',
@@ -224,7 +223,7 @@ export const CheckoutPage = ({ location, onClose }) => {
 
   useEffect(() => {
     validateForm();
-  }, [deliveryAddress, deliveryMethod, paymentMethod, contactInfo.phone]);
+  }, [deliveryAddress, deliveryMethod, contactInfo.phone]);
 
   const loadCart = async () => {
     try {
@@ -250,7 +249,7 @@ export const CheckoutPage = ({ location, onClose }) => {
           }
         }
 
-        setPaymentMethod(data.data.paymentMethod || 'cash');
+        setPaymentMethod('seller_whatsapp');
         setPromoCode(data.data.promoCode || '');
       }
     } catch (error) {
@@ -262,7 +261,7 @@ export const CheckoutPage = ({ location, onClose }) => {
 
   const readLocalCart = () => {
     try {
-      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
       return Array.isArray(cart) ? cart.filter(item => item?.id) : [];
     } catch {
       return [];
@@ -295,7 +294,7 @@ export const CheckoutPage = ({ location, onClose }) => {
   };
 
   const loadDeliveryAddress = () => {
-    const savedLocation = localStorage.getItem('tsenga_location');
+    const savedLocation = localStorage.getItem('shopply_location');
     if (savedLocation) {
       try {
         const locationData = JSON.parse(savedLocation);
@@ -314,8 +313,8 @@ export const CheckoutPage = ({ location, onClose }) => {
 
   const loadContactInfo = () => {
     // Load saved contact info if available
-    const savedPhone = localStorage.getItem('tsenga_phone');
-    const savedEmail = localStorage.getItem('tsenga_email');
+    const savedPhone = localStorage.getItem('shopply_phone');
+    const savedEmail = localStorage.getItem('shopply_email');
     if (savedPhone || savedEmail) {
       setContactInfo({
         phone: savedPhone || '',
@@ -329,10 +328,6 @@ export const CheckoutPage = ({ location, onClose }) => {
 
     if (!deliveryAddress && deliveryMethod === 'delivery') {
       newErrors.deliveryAddress = 'Delivery address is required';
-    }
-
-    if (!paymentMethod) {
-      newErrors.paymentMethod = 'Payment method is required';
     }
 
     if (!contactInfo.phone || contactInfo.phone.trim() === '') {
@@ -366,7 +361,7 @@ export const CheckoutPage = ({ location, onClose }) => {
           deliveryAddress: deliveryAddress,
           deliveryMethod: deliveryMethod,
           deliverySpeed: deliverySpeed,
-          paymentMethod: paymentMethod,
+          paymentMethod: 'seller_whatsapp',
           contactInfo: contactInfo,
           orderInstructions: orderInstructions || null,
           voucherId: voucherId || null,
@@ -382,43 +377,25 @@ export const CheckoutPage = ({ location, onClose }) => {
       if (orderData.success) {
         const order = orderData.data;
 
-        // Process payment
-        try {
-          const paymentResponse = await fetch(`${API_BASE_URL}/checkout/order/${order.id}/payment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              paymentDetails: {
-                method: paymentMethod,
-              },
-            }),
-          });
-
-          if (!paymentResponse.ok) {
-            throw new Error('Payment processing failed');
-          }
-
-          const paymentData = await paymentResponse.json();
-          if (paymentData.success) {
-            // Save contact info
-            if (contactInfo.phone) {
-              localStorage.setItem('tsenga_phone', contactInfo.phone);
-            }
-            if (contactInfo.email) {
-              localStorage.setItem('tsenga_email', contactInfo.email);
-            }
-
-            // Clear cart count
-            localStorage.setItem('tsenga_cart_count', '0');
-            window.dispatchEvent(new Event('cartUpdated'));
-
-            setOrderId(order.id);
-            setOrderPlaced(true);
-          }
-        } catch (paymentError) {
-          console.error('Payment error:', paymentError);
-          setSubmitError('Order was created, but payment could not be completed. Please try again or choose cash on delivery.');
+        if (contactInfo.phone) {
+          localStorage.setItem('shopply_phone', contactInfo.phone);
         }
+        if (contactInfo.email) {
+          localStorage.setItem('shopply_email', contactInfo.email);
+        }
+
+        localStorage.setItem('shopply_cart_count', '0');
+        window.dispatchEvent(new Event('cartUpdated'));
+
+        const firstHandoff = order.whatsappHandoff?.find(item => item.href) || order.whatsappHandoff?.[0];
+        if (firstHandoff?.href) {
+          window.open(firstHandoff.href, '_blank', 'noopener,noreferrer');
+        } else {
+          setSubmitError('Order created, but the seller WhatsApp number is unavailable. Please contact the seller from the product page.');
+        }
+
+        setOrderId(order.id);
+        setOrderPlaced(true);
       }
     } catch (error) {
       console.error('Error placing order:', error);
@@ -492,10 +469,10 @@ export const CheckoutPage = ({ location, onClose }) => {
       <Content>
         <Hero>
           <div>
-            <Eyebrow>Tsenga checkout</Eyebrow>
+            <Eyebrow>Shopply checkout</Eyebrow>
             <Title>Confirm the good stuff.</Title>
             <HeroCopy>
-              Review delivery, payment, and contact details before your order is sent to each seller.
+              Review delivery and contact details before your order is sent to each seller on WhatsApp.
             </HeroCopy>
           </div>
           <TrustRow>
@@ -523,12 +500,6 @@ export const CheckoutPage = ({ location, onClose }) => {
               onDeliverySpeedChange={setDeliverySpeed}
               cart={cart}
               location={location}
-            />
-
-            <PaymentMethodSelector
-              paymentMethod={paymentMethod}
-              onPaymentMethodChange={setPaymentMethod}
-              error={errors.paymentMethod}
             />
 
             <ContactInformation

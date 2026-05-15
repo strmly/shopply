@@ -47,6 +47,30 @@ class AuthServiceClass {
     const sid = process.env.TWILIO_ACCOUNT_SID;
     const token = process.env.TWILIO_AUTH_TOKEN;
     const from = process.env.TWILIO_PHONE_NUMBER;
+    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+
+    if (sid && token && verifyServiceSid) {
+      const body = new URLSearchParams({
+        To: mobile,
+        Channel: 'sms',
+      });
+
+      const response = await fetch(`https://verify.twilio.com/v2/Services/${verifyServiceSid}/Verifications`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString('base64')}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body,
+      });
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(`Twilio Verify failed to send OTP: ${message}`);
+      }
+
+      return { sent: true, provider: 'twilio-verify' };
+    }
 
     if (!sid || !token || !from) {
       console.log(`[auth] OTP for ${mobile}: ${otp}`);
@@ -56,7 +80,7 @@ class AuthServiceClass {
     const body = new URLSearchParams({
       To: mobile,
       From: from,
-      Body: `Your Tsenga verification code is ${otp}. It expires in 5 minutes.`,
+      Body: `Your Shopply verification code is ${otp}. It expires in 5 minutes.`,
     });
 
     const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
@@ -74,6 +98,36 @@ class AuthServiceClass {
     }
 
     return { sent: true, provider: 'twilio' };
+  }
+
+  async checkTwilioVerifyOtp(mobile, code) {
+    const sid = process.env.TWILIO_ACCOUNT_SID;
+    const token = process.env.TWILIO_AUTH_TOKEN;
+    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+
+    if (!sid || !token || !verifyServiceSid) return null;
+
+    const body = new URLSearchParams({
+      To: mobile,
+      Code: String(code || '').trim(),
+    });
+
+    const response = await fetch(`https://verify.twilio.com/v2/Services/${verifyServiceSid}/VerificationCheck`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      if (response.status === 400 || response.status === 404) return false;
+      throw new Error(`Twilio Verify failed to check OTP: ${payload.message || response.statusText}`);
+    }
+
+    return payload.status === 'approved' || payload.valid === true;
   }
 
   async sendEmailOtp(email, otp, purpose = 'verify') {
@@ -116,14 +170,16 @@ class AuthServiceClass {
       userId: user?.id || null,
     });
 
-    await this.sendOtp(normalizedMobile, otp);
+    const delivery = await this.sendOtp(normalizedMobile, otp);
+    const record = otpStore.get(buildOtpKey('phone', normalizedMobile));
+    if (record) record.provider = delivery.provider;
 
     return {
       requiresPassword: false,
       requiresOtp: true,
       isNewUser: !user,
       expiresInSeconds: OTP_TTL_MS / 1000,
-      devCode: process.env.NODE_ENV === 'production' ? undefined : otp,
+      devCode: process.env.NODE_ENV === 'production' || delivery.provider === 'twilio-verify' ? undefined : otp,
     };
   }
 
@@ -144,7 +200,11 @@ class AuthServiceClass {
     }
 
     record.attempts += 1;
-    if (record.otp !== String(code || '').trim()) {
+    const verifiedByProvider = record.provider === 'twilio-verify'
+      ? await this.checkTwilioVerifyOtp(normalizedMobile, code)
+      : null;
+
+    if (record.provider === 'twilio-verify' ? !verifiedByProvider : record.otp !== String(code || '').trim()) {
       const error = new Error('Verification code is incorrect.');
       error.statusCode = 400;
       throw error;
@@ -154,7 +214,7 @@ class AuthServiceClass {
 
     if (!user) {
       user = await UserService.createUser({
-        name: String(name || record.name || 'Tsenga Shopper').trim(),
+        name: String(name || record.name || 'Shopply Shopper').trim(),
         mobile: normalizedMobile,
         email: '',
         avatarUrl: '',
@@ -213,13 +273,14 @@ class AuthServiceClass {
       userId: user?.id || null,
     });
 
-    await this.sendEmailOtp(normalizedEmail, otp, 'verification');
+    const delivery = await this.sendEmailOtp(normalizedEmail, otp, 'verification');
 
     return {
       requiresPassword: false,
       requiresOtp: true,
       isNewUser: !user,
       expiresInSeconds: OTP_TTL_MS / 1000,
+      delivery,
       devCode: process.env.NODE_ENV === 'production' ? undefined : otp,
     };
   }
@@ -251,7 +312,7 @@ class AuthServiceClass {
 
     if (!user) {
       user = await UserService.createUser({
-        name: String(name || record.name || 'Tsenga Shopper').trim(),
+        name: String(name || record.name || 'Shopply Shopper').trim(),
         mobile: '',
         email: normalizedEmail,
         avatarUrl: '',
@@ -286,7 +347,7 @@ class AuthServiceClass {
     if (!user) {
       user = await UserService.createUser({
         id: userId === 'default' ? 1 : undefined,
-        name: 'Tsenga Shopper',
+        name: 'Shopply Shopper',
         email: normalizedEmail,
         emailVerified: false,
         avatarUrl: '',
@@ -319,12 +380,13 @@ class AuthServiceClass {
       verified: false,
     });
 
-    await this.sendEmailOtp(normalizedEmail, otp, 'verification');
+    const delivery = await this.sendEmailOtp(normalizedEmail, otp, 'verification');
 
     return {
       sent: true,
       email: normalizedEmail,
       expiresInSeconds: OTP_TTL_MS / 1000,
+      delivery,
       devCode: process.env.NODE_ENV === 'production' ? undefined : otp,
     };
   }
@@ -464,16 +526,22 @@ class AuthServiceClass {
     });
 
     if (channel === 'email') {
-      await this.sendEmailOtp(identifier, otp, 'password reset');
+      const delivery = await this.sendEmailOtp(identifier, otp, 'password reset');
+      const record = otpStore.get(buildOtpKey(channel, identifier, 'reset'));
+      if (record) record.provider = delivery.provider;
     } else {
-      await this.sendOtp(identifier, otp);
+      const delivery = await this.sendOtp(identifier, otp);
+      const record = otpStore.get(buildOtpKey(channel, identifier, 'reset'));
+      if (record) record.provider = delivery.provider;
     }
 
     return {
       sent: true,
       channel,
       expiresInSeconds: OTP_TTL_MS / 1000,
-      devCode: process.env.NODE_ENV === 'production' ? undefined : otp,
+      devCode: process.env.NODE_ENV === 'production' || otpStore.get(buildOtpKey(channel, identifier, 'reset'))?.provider === 'twilio-verify'
+        ? undefined
+        : otp,
     };
   }
 
@@ -497,7 +565,11 @@ class AuthServiceClass {
     }
 
     record.attempts += 1;
-    if (record.otp !== String(code || '').trim()) {
+    const verifiedByProvider = record.provider === 'twilio-verify'
+      ? await this.checkTwilioVerifyOtp(identifier, code)
+      : null;
+
+    if (record.provider === 'twilio-verify' ? !verifiedByProvider : record.otp !== String(code || '').trim()) {
       const error = new Error('Reset code is incorrect.');
       error.statusCode = 400;
       throw error;

@@ -233,7 +233,7 @@ export const NotificationSettingsPage = () => {
           <BackButton onClick={() => navigate(-1)} aria-label="Back">&lt;</BackButton>
           <div>
             <Title>Notifications</Title>
-            <Subtext>Choose which Tsenga updates should reach you. Essential account safety messages stay on.</Subtext>
+            <Subtext>Choose which Shopply updates should reach you. Essential account safety messages stay on.</Subtext>
           </div>
         </Hero>
 

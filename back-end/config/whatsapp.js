@@ -18,7 +18,7 @@ export const whatsappConfig = {
 
   // Webhook Configuration
   webhook: {
-    verifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'tsenga_verify_token_2024',
+    verifyToken: process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || 'shopply_verify_token_2024',
     secret: process.env.WHATSAPP_WEBHOOK_SECRET,
   },
 

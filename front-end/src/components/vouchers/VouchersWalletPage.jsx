@@ -1,263 +1,306 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { VoucherCard } from './VoucherCard.jsx';
 import { BottomNavigation } from '../home/BottomNavigation';
+import API_BASE_URL from '@config/api';
 
 const Container = styled.div`
   min-height: 100vh;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 52%, #ffffff 100%);
-  animation: ${fadeIn} 0.3s ease-in;
-  padding-bottom: 80px;
+  animation: ${fadeIn} 0.45s ease;
+  padding-bottom: 104px;
 `;
 
-const Header = styled.div`
-  background:
-    linear-gradient(120deg, rgba(255,255,255,0.98), rgba(241,247,255,0.94)) padding-box,
-    ${props => props.theme.colors.gradient.primary} border-box;
-  border: 1px solid transparent;
-  border-radius: 0 0 28px 28px;
-  padding: clamp(20px, 5vw, 34px) min(5vw, 48px);
+const Header = styled.header`
   position: sticky;
   top: 0;
   z-index: 100;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.98), rgba(241,247,255,0.95)) padding-box,
+    ${props => props.theme.colors.gradient.primary} border-box;
+  border: 1px solid transparent;
+  border-radius: 0 0 30px 30px;
   box-shadow: 0 24px 62px rgba(16, 24, 40, 0.1);
 `;
 
-const HeaderContent = styled.div`
+const HeaderInner = styled.div`
+  width: min(1020px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: calc(18px + env(safe-area-inset-top)) 0 18px;
+`;
+
+const HeaderTop = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.md};
-  max-width: 920px;
-  margin: 0 auto;
+  gap: 14px;
 `;
 
 const BackButton = styled.button`
   width: 42px;
   height: 42px;
-  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(228, 231, 236, 0.95);
+  border-radius: 16px;
   background: #ffffff;
-  border: 1px solid rgba(61, 129, 239, 0.18);
-  font-size: 22px;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 24px;
   font-weight: 900;
   cursor: pointer;
-  padding: 0;
-  color: ${props => props.theme.colors.text.primary};
-  display: flex;
-  align-items: center;
-  justify-content: center;
+`;
+
+const TitleBlock = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const Eyebrow = styled.div`
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
 `;
 
 const Title = styled.h1`
+  margin: 3px 0 0;
   color: ${props => props.theme.colors.text.primary};
-  font-size: clamp(32px, 7vw, 52px);
+  font-size: clamp(30px, 7vw, 52px);
   line-height: 1;
   font-weight: 900;
   letter-spacing: 0;
-  flex: 1;
 `;
 
-const Content = styled.div`
-  max-width: 920px;
-  margin: 0 auto;
-  padding: ${props => props.theme.spacing.xl};
+const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+
+  @media (max-width: 620px) {
+    grid-template-columns: repeat(3, minmax(92px, 1fr));
+    overflow-x: auto;
+  }
+`;
+
+const Stat = styled.div`
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(228,231,236,0.92);
+  border-radius: 18px;
+  padding: 13px;
+`;
+
+const StatValue = styled.div`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 900;
+`;
+
+const StatLabel = styled.div`
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 5px;
 `;
 
 const Tabs = styled.div`
   display: flex;
-  gap: ${props => props.theme.spacing.xs};
-  margin-bottom: ${props => props.theme.spacing.lg};
-  border-bottom: 0;
+  gap: 8px;
+  margin-top: 16px;
   overflow-x: auto;
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
+  &::-webkit-scrollbar { display: none; }
 `;
 
 const Tab = styled.button`
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  background: ${props => props.$active ? props.theme.colors.primarySoftBg : 'transparent'};
-  border: none;
-  ${props => props.theme.typography.body1}
-  color: ${props => 
-    props.$active 
-      ? props.theme.colors.primary 
-      : props.theme.colors.text.secondary};
-  font-weight: ${props => props.$active ? 700 : 500};
-  font-size: 14px;
-  cursor: pointer;
-  border-bottom: 3px solid ${props => 
-    props.$active 
-      ? props.theme.colors.primary 
-      : 'transparent'};
-  margin-bottom: -2px;
-  transition: all 0.2s ease;
+  border: 1px solid ${props => props.$active ? 'transparent' : 'rgba(228,231,236,0.95)'};
   border-radius: 999px;
+  background: ${props => props.$active ? props.theme.colors.gradient.primary : '#ffffff'};
+  color: ${props => props.$active ? '#ffffff' : props.theme.colors.text.secondary};
+  padding: 11px 15px;
+  min-height: 42px;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
   white-space: nowrap;
-  
-  &:hover {
-    background: ${props => props.theme.colors.primarySoftBg};
-    color: ${props => props.theme.colors.primary};
-  }
 `;
 
-const VouchersList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
+const Count = styled.span`
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: ${props => props.$active ? 'rgba(255,255,255,0.22)' : props.theme.colors.primarySoftBg};
+  color: ${props => props.$active ? '#ffffff' : props.theme.colors.primarySoftText};
 `;
 
-const EmptyState = styled.div`
-  text-align: center;
-  padding: ${props => props.theme.spacing.xl * 2} ${props => props.theme.spacing.xl};
-  animation: ${fadeIn} 0.4s ease-in;
-`;
-
-const EmptyIcon = styled.div`
-  font-size: 80px;
-  margin-bottom: ${props => props.theme.spacing.lg};
-  animation: ${fadeIn} 0.6s ease-in;
-  filter: grayscale(0.3);
-`;
-
-const EmptyTitle = styled.div`
-  ${props => props.theme.typography.heading3}
-  color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  margin-bottom: ${props => props.theme.spacing.md};
-  font-size: 20px;
-`;
-
-const EmptyText = styled.div`
-  ${props => props.theme.typography.body1}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 15px;
-  line-height: 1.6;
-  max-width: 300px;
+const Content = styled.main`
+  width: min(1020px, calc(100% - 32px));
   margin: 0 auto;
+  padding: 22px 0 0;
 `;
 
-const LoadingContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  ${props => props.theme.typography.body1}
+const List = styled.div`
+  display: grid;
+  gap: 14px;
+`;
+
+const StatePanel = styled.div`
+  min-height: 330px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94)) padding-box,
+    linear-gradient(140deg, rgba(61,129,239,0.2), rgba(228,231,236,0.9), rgba(21,161,124,0.16)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  padding: 34px 20px;
+  box-shadow: 0 24px 54px rgba(16, 24, 40, 0.08);
+`;
+
+const StateMark = styled.div`
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  border-radius: 24px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 22px;
+  font-weight: 900;
+`;
+
+const StateTitle = styled.h2`
+  margin: 0;
+  color: ${props => props.theme.colors.text.primary};
+  font-size: clamp(22px, 5vw, 32px);
+  line-height: 1;
+  font-weight: 900;
+`;
+
+const StateText = styled.p`
+  max-width: 380px;
+  margin: 10px auto 0;
   color: ${props => props.theme.colors.text.secondary};
+  font-weight: 700;
+  line-height: 1.45;
 `;
 
-import API_BASE_URL from '@config/api';
+const tabs = [
+  { id: 'active', label: 'Active' },
+  { id: 'used', label: 'Used' },
+  { id: 'expired', label: 'Expired' },
+  { id: 'all', label: 'All' },
+];
 
 export const VouchersWalletPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const requestedTab = ['active', 'used', 'expired', 'all'].includes(searchParams.get('tab'))
-    ? searchParams.get('tab')
-    : 'active';
+  const requestedTab = tabs.some(tab => tab.id === searchParams.get('tab')) ? searchParams.get('tab') : 'active';
   const [activeTab, setActiveTab] = useState(requestedTab);
   const [vouchers, setVouchers] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const userId = 'default';
 
-  useEffect(() => {
-    loadVouchers();
-  }, [activeTab]);
-
-  const loadVouchers = async () => {
+  const loadVouchers = useCallback(async () => {
     try {
       setLoading(true);
-      const status = activeTab === 'all' ? null : activeTab;
-      const response = await fetch(
-        `${API_BASE_URL}/vouchers?userId=${userId}${status ? `&status=${status}` : ''}`
-      );
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setVouchers(data.data || []);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading vouchers:', error);
+      setError(null);
+      const [voucherRes, summaryRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/vouchers?userId=${userId}`),
+        fetch(`${API_BASE_URL}/vouchers/summary?userId=${userId}`),
+      ]);
+      const voucherData = await voucherRes.json();
+      const summaryData = await summaryRes.json();
+      if (!voucherRes.ok || !voucherData.success) throw new Error(voucherData.message || 'Failed to load vouchers');
+      setVouchers(voucherData.data || []);
+      setSummary(summaryData.success ? summaryData.data : null);
+    } catch (err) {
+      console.error('Error loading vouchers:', err);
+      setError(err.message || 'Failed to load vouchers');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleVoucherClick = (voucher) => {
-    if (voucher.status === 'active') {
-      // Navigate to checkout with voucher pre-selected
-      navigate('/cart', { state: { selectedVoucherId: voucher.id } });
-    }
-  };
+  useEffect(() => {
+    loadVouchers();
+  }, [loadVouchers]);
+
+  const counts = useMemo(() => ({
+    all: vouchers.length,
+    active: vouchers.filter(v => v.status === 'active').length,
+    used: vouchers.filter(v => v.status === 'used').length,
+    expired: vouchers.filter(v => v.status === 'expired').length,
+  }), [vouchers]);
+
+  const filtered = activeTab === 'all' ? vouchers : vouchers.filter(v => v.status === activeTab);
+  const stats = [
+    { label: 'Active', value: summary?.active ?? counts.active },
+    { label: 'Value', value: `R${Number(summary?.totalAvailableValue || 0).toFixed(0)}` },
+    { label: 'Savings', value: `R${Number(summary?.totalSavings || 0).toFixed(0)}` },
+  ];
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSearchParams({ tab });
   };
 
-  const tabs = [
-    { id: 'active', label: 'Active' },
-    { id: 'used', label: 'Used' },
-    { id: 'expired', label: 'Expired' },
-    { id: 'all', label: 'All' },
-  ];
-
-  const filteredVouchers = vouchers.filter(v => {
-    if (activeTab === 'all') return true;
-    return v.status === activeTab;
-  });
-
   return (
     <Container>
       <Header>
-        <HeaderContent>
-          <BackButton onClick={() => navigate(-1)}>&lt;</BackButton>
-          <Title>Vouchers</Title>
-        </HeaderContent>
+        <HeaderInner>
+          <HeaderTop>
+            <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
+            <TitleBlock>
+              <Eyebrow>Shopply rewards</Eyebrow>
+              <Title>Vouchers</Title>
+            </TitleBlock>
+          </HeaderTop>
+          <StatsGrid>
+            {stats.map(stat => (
+              <Stat key={stat.label}>
+                <StatValue>{stat.value}</StatValue>
+                <StatLabel>{stat.label}</StatLabel>
+              </Stat>
+            ))}
+          </StatsGrid>
+          <Tabs>
+            {tabs.map(tab => (
+              <Tab key={tab.id} $active={activeTab === tab.id} onClick={() => handleTabChange(tab.id)}>
+                {tab.label}<Count $active={activeTab === tab.id}>{counts[tab.id] || 0}</Count>
+              </Tab>
+            ))}
+          </Tabs>
+        </HeaderInner>
       </Header>
 
       <Content>
-        <Tabs>
-          {tabs.map(tab => (
-            <Tab
-              key={tab.id}
-              $active={activeTab === tab.id}
-              onClick={() => handleTabChange(tab.id)}
-            >
-              {tab.label}
-            </Tab>
-          ))}
-        </Tabs>
-
         {loading ? (
-          <LoadingContainer>Loading vouchers...</LoadingContainer>
-        ) : filteredVouchers.length === 0 ? (
-          <EmptyState>
-            <EmptyIcon>🎁</EmptyIcon>
-            <EmptyTitle>No vouchers right now</EmptyTitle>
-            <EmptyText>
-              Keep shopping locally to earn rewards!
-            </EmptyText>
-          </EmptyState>
+          <StatePanel><div><StateMark>V</StateMark><StateTitle>Loading vouchers...</StateTitle></div></StatePanel>
+        ) : error ? (
+          <StatePanel><div><StateMark>!</StateMark><StateTitle>Vouchers could not load</StateTitle><StateText>{error}</StateText></div></StatePanel>
+        ) : filtered.length === 0 ? (
+          <StatePanel><div><StateMark>V</StateMark><StateTitle>No vouchers right now</StateTitle><StateText>Keep shopping locally to earn new Shopply rewards.</StateText></div></StatePanel>
         ) : (
-          <VouchersList>
-            {filteredVouchers.map(voucher => (
+          <List>
+            {filtered.map(voucher => (
               <VoucherCard
                 key={voucher.id}
                 voucher={voucher}
-                onClick={() => handleVoucherClick(voucher)}
                 showHint={activeTab === 'active'}
+                onClick={() => voucher.status === 'active' && navigate('/cart', { state: { selectedVoucherId: voucher.id } })}
               />
             ))}
-          </VouchersList>
+          </List>
         )}
       </Content>
 
-      <BottomNavigation />
+      <BottomNavigation currentPath="/vouchers" />
     </Container>
   );
 };
-

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -90,7 +90,7 @@ export const ProductDetailPage = ({ location }) => {
   
   useEffect(() => {
     if (!currentLocation) {
-      const savedLocation = localStorage.getItem('tsenga_location');
+      const savedLocation = localStorage.getItem('shopply_location');
       if (savedLocation) {
         try {
           setCurrentLocation(JSON.parse(savedLocation));
@@ -118,7 +118,7 @@ export const ProductDetailPage = ({ location }) => {
   // Keep cartCount live by subscribing to cartUpdated events
   useEffect(() => {
     const updateCount = () => {
-      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
       setCartCount(cart.reduce((sum, item) => sum + (item.quantity || 1), 0));
     };
     updateCount();
@@ -305,7 +305,7 @@ export const ProductDetailPage = ({ location }) => {
     };
 
     // Get existing cart
-    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
     
     // Check if item already exists
     const existingIndex = cart.findIndex(item =>
@@ -319,12 +319,12 @@ export const ProductDetailPage = ({ location }) => {
       cart.push(cartItem);
     }
 
-    localStorage.setItem('tsenga_cart', JSON.stringify(cart));
+    localStorage.setItem('shopply_cart', JSON.stringify(cart));
     
     // Update cart count (sum of all quantities)
     const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
     setCartCount(cartCount);
-    localStorage.setItem('tsenga_cart_count', cartCount.toString());
+    localStorage.setItem('shopply_cart_count', cartCount.toString());
 
     window.dispatchEvent(new Event('cartUpdated'));
     toast.success(`${product.name} added to cart`);

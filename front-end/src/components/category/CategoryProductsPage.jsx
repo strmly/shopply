@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -6,6 +6,7 @@ import { TopNavigation } from '../home/TopNavigation';
 import { ProductGrid } from '../home/ProductGrid';
 import { BottomNavigation } from '../home/BottomNavigation';
 import API_BASE_URL from '@config/api';
+import ExpansionBanner from '../hyperlocal/ExpansionBanner';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -208,6 +209,7 @@ export const CategoryProductsPage = ({ location }) => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+  const [expansionData, setExpansionData] = useState(null);
   const itemsPerPage = 12;
 
   const furnitureRoom = FURNITURE_ROOMS[categoryName];
@@ -230,10 +232,40 @@ export const CategoryProductsPage = ({ location }) => {
     try {
       if (reset) {
         setLoading(true);
+        setExpansionData(null);
       } else {
         setLoadingMore(true);
       }
       setError(null);
+
+      // H3 hyperlocal search when location is available (only on first page load)
+      if (reset) {
+        const storedLoc = JSON.parse(localStorage.getItem('shopply_location') || 'null');
+        if (storedLoc?.lat && storedLoc?.lng) {
+          const params = new URLSearchParams({
+            lat: storedLoc.lat,
+            lng: storedLoc.lng,
+            category: categoryName,
+            min_results: 20,
+          });
+          const res = await fetch(`${API_BASE_URL}/api/hyperlocal/search?${params}`);
+          const data = await res.json();
+          if (data.success) {
+            setProducts(data.data.results || []);
+            setExpansionData({
+              expanded: data.data.expanded || false,
+              wasAutoExpanded: data.data.wasAutoExpanded || false,
+              expansionReason: data.data.expansionReason || null,
+              tierLabel: data.data.tierLabel,
+              effectiveRadiusKm: data.data.effectiveRadiusKm,
+              expansionSteps: data.data.expansionSteps || [],
+            });
+            setLoading(false);
+            setLoadingMore(false);
+            return;
+          }
+        }
+      }
 
       let apiUrl = `${API_BASE_URL}/products?page=${pageNum}&limit=${itemsPerPage}`;
       if (furnitureRoom && categoryName !== 'all') {
@@ -283,7 +315,7 @@ export const CategoryProductsPage = ({ location }) => {
         addedAt: new Date().toISOString(),
       };
 
-      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
       const existingIndex = cart.findIndex(item =>
         item.id === product.id &&
         JSON.stringify(item.selectedVariant) === JSON.stringify(null)
@@ -295,9 +327,9 @@ export const CategoryProductsPage = ({ location }) => {
         cart.push(cartItem);
       }
 
-      localStorage.setItem('tsenga_cart', JSON.stringify(cart));
+      localStorage.setItem('shopply_cart', JSON.stringify(cart));
       const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      localStorage.setItem('tsenga_cart_count', cartCount.toString());
+      localStorage.setItem('shopply_cart_count', cartCount.toString());
 
       try {
         await fetch(`${API_BASE_URL}/cart/items`, {
@@ -379,6 +411,17 @@ export const CategoryProductsPage = ({ location }) => {
             </CountCard>
           </HeroPanel>
         </Hero>
+
+        {(expansionData?.expanded || expansionData?.wasAutoExpanded) && (
+          <ExpansionBanner
+            expanded={expansionData.expanded}
+            wasAutoExpanded={expansionData.wasAutoExpanded}
+            expansionReason={expansionData.expansionReason}
+            effectiveLabel={expansionData.tierLabel}
+            effectiveRadius={expansionData.effectiveRadiusKm}
+            expansionSteps={expansionData.expansionSteps}
+          />
+        )}
 
         {products.length === 0 ? (
           <CenterState>

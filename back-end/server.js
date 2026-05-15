@@ -57,6 +57,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 import { seedNewFurniture } from './scripts/seedNewFurniture.js';
 import { seedFlashDeals } from './scripts/seedFlashDeals.js';
 import { seedBundles } from './scripts/seedBundles.js';
+import { GeoIndex } from './services/GeoIndex.js';
+import { getAllStores } from './services/StoreService.js';
 seedNewFurniture()
   .then(() => Promise.all([seedFlashDeals(), seedBundles()]))
   .catch(err => {
@@ -96,7 +98,7 @@ redisClient.connect().then(() => {
 // Health check route
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Welcome to Tsenga API',
+    message: 'Welcome to Shopply API',
     version: appConfig.apiVersion,
     environment: appConfig.env,
   });
@@ -146,6 +148,20 @@ app.get('/api/debug/flash-deals', async (req, res) => {
 
 // API Routes
 app.use('/api', apiRoutes);
+
+// Bootstrap GeoIndex after all routes are mounted
+(async () => {
+  try {
+    await GeoIndex.rebuild(
+      async () => ProductService.getAll(),
+      async () => getAllStores(),
+      async () => SellerService.getAllSellers(),
+    );
+    console.log('[GeoIndex] Ready — indexed', GeoIndex.products.size, 'products');
+  } catch (e) {
+    console.error('[GeoIndex] Bootstrap failed:', e.message);
+  }
+})();
 
 // Error handling middleware (must be last)
 app.use(notFound);

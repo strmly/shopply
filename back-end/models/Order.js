@@ -9,6 +9,7 @@ class Order {
     this.deliverySpeed = data.deliverySpeed || 'standard'; // 'standard', 'express'
     this.paymentMethod = data.paymentMethod || null;
     this.paymentDetails = data.paymentDetails || null;
+    this.whatsappHandoff = data.whatsappHandoff || null;
     this.contactInfo = data.contactInfo || {};
     this.orderInstructions = data.orderInstructions || null;
     this.promoCode = data.promoCode || null;
@@ -42,6 +43,7 @@ class Order {
       deliverySpeed: this.deliverySpeed,
       paymentMethod: this.paymentMethod,
       paymentDetails: this.paymentDetails,
+      whatsappHandoff: this.whatsappHandoff,
       contactInfo: this.contactInfo,
       orderInstructions: this.orderInstructions,
       promoCode: this.promoCode,
@@ -70,10 +72,6 @@ class Order {
 
     if (this.deliveryMethod === 'delivery' && !this.deliveryAddress) {
       errors.push('Delivery address is required for delivery orders');
-    }
-
-    if (!this.paymentMethod) {
-      errors.push('Payment method is required');
     }
 
     if (!this.contactInfo.phone) {

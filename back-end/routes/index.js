@@ -30,6 +30,7 @@ import legalRoutes from './legalRoutes.js';
 import furnitureRoutes from './furnitureRoutes.js';
 import uploadRoutes from './uploadRoutes.js';
 import storefrontRoutes from './storefrontRoutes.js';
+import adminRoutes from './adminRoutes.js';
 
 const router = express.Router();
 
@@ -67,5 +68,6 @@ router.use('/inventory', inventoryRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/legal', legalRoutes);
 router.use('/uploads', uploadRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

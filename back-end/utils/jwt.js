@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 const SECRET = process.env.JWT_SECRET || 'shopply-dev-secret-change-in-production';
-const EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 days
+const EXPIRY_SECONDS = 60 * 60; // 1 hour
 
 const b64url = (buf) => buf.toString('base64url');
 const encode = (obj) => b64url(Buffer.from(JSON.stringify(obj)));

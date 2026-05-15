@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -108,7 +108,7 @@ export const ProductDetailHeader = ({ product, onBack, cartCount: propCartCount 
 
   useEffect(() => {
     const loadCartCount = () => {
-      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
       const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
       setCartCount(count);
     };

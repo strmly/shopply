@@ -757,7 +757,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
   const STEP_COPY = {
     phone: {
       signin: { title: 'Welcome back',   sub: 'Sign in to unlock deals and track your orders.' },
-      signup: { title: 'Join Tsenga',   sub: 'Create your account in a minute.' },
+      signup: { title: 'Join Shopply',   sub: 'Create your account in a minute.' },
     },
     otp:            { title: 'Check your inbox',    sub: null },
     password:       { title: 'Set your password',   sub: "Choose something strong — you'll use it every time." },
@@ -872,7 +872,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
 
         <Header>
           <CloseButton type="button" onClick={onClose} aria-label="Close">×</CloseButton>
-          <LogoBadge><LogoDot aria-hidden="true" /> Tsenga</LogoBadge>
+          <LogoBadge><LogoDot aria-hidden="true" /> Shopply</LogoBadge>
           <Title id="auth-title">{stepTitle}</Title>
           {stepSub && <Subtitle>{stepSub}</Subtitle>}
           {showStepDots && (
@@ -955,7 +955,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
                       value={mobile}
                       onChange={e => setMobile(e.target.value)}
                       onBlur={() => touch('mobile')}
-                      placeholder="+27 71 234 5678"
+                      placeholder=""
                       autoComplete="tel"
                       $error={!!phoneError}
                       $valid={!!phoneOk}

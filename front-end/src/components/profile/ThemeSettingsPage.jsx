@@ -140,7 +140,7 @@ const Badge = styled.span`
 
 const options = [
   { value: 'system', title: 'System', text: 'Match the device appearance automatically.' },
-  { value: 'light', title: 'Light', text: 'Bright Tsenga surfaces for daytime browsing.' },
+  { value: 'light', title: 'Light', text: 'Bright Shopply surfaces for daytime browsing.' },
   { value: 'dark', title: 'Dark', text: 'A calmer low-light preference saved to your profile.' },
 ];
 
@@ -160,7 +160,7 @@ export const ThemeSettingsPage = () => {
           <BackButton onClick={() => navigate(-1)} aria-label="Back">&lt;</BackButton>
           <div>
             <Title>Theme</Title>
-            <Subtext>Choose how Tsenga should feel across your shopping and seller tools.</Subtext>
+            <Subtext>Choose how Shopply should feel across your shopping and seller tools.</Subtext>
           </div>
         </Hero>
 

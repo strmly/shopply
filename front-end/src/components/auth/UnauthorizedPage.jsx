@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useUser } from '../../context/UserContext';
 
 const Container = styled.div`
   min-height: 100dvh;
@@ -66,7 +66,7 @@ const Button = styled.button`
 
 const UnauthorizedPage = () => {
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role } = useUser();
 
   return (
     <Container>

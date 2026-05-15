@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -484,7 +484,7 @@ export const FlashDealsPage = ({ location }) => {
       addedAt: new Date().toISOString(),
     };
 
-    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
     const idx  = cart.findIndex(i => i.id === product.id && JSON.stringify(i.selectedVariant) === 'null');
 
     if (idx >= 0) {
@@ -493,8 +493,8 @@ export const FlashDealsPage = ({ location }) => {
       cart.push(cartItem);
     }
 
-    localStorage.setItem('tsenga_cart', JSON.stringify(cart));
-    localStorage.setItem('tsenga_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
+    localStorage.setItem('shopply_cart', JSON.stringify(cart));
+    localStorage.setItem('shopply_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
     window.dispatchEvent(new Event('cartUpdated'));
 
     // Sync to backend

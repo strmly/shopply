@@ -734,6 +734,50 @@ const ErrorBox = styled.div`
   background: ${p => p.theme.colors.danger[100]}; font-weight: 850;
 `;
 
+const DangerPanel = styled.div`
+  padding: 18px 20px;
+  border: 1px solid rgba(198,40,80,0.18);
+  border-radius: 20px;
+  background: rgba(255,245,248,0.7);
+`;
+
+const DangerTitle = styled.div`
+  font-size: 13px; font-weight: 950; color: #c62850; margin-bottom: 4px;
+`;
+
+const DangerText = styled.div`
+  font-size: 12px; font-weight: 700; color: #9b2040; line-height: 1.5; margin-bottom: 14px;
+`;
+
+const DangerBtn = styled.button`
+  min-height: 40px; padding: 0 18px;
+  border: 1.5px solid rgba(198,40,80,0.5); border-radius: 999px;
+  background: transparent; color: #c62850;
+  font-size: 13px; font-weight: 900; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  &:hover:not(:disabled) { background: #c62850; color: #fff; }
+  &:disabled { opacity: 0.6; cursor: wait; }
+`;
+
+const DangerConfirmRow = styled.div`
+  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px;
+`;
+
+const DangerConfirmBtn = styled.button`
+  min-height: 40px; padding: 0 18px;
+  border: 0; border-radius: 999px;
+  background: #c62850; color: #fff;
+  font-size: 13px; font-weight: 900; cursor: pointer;
+  &:disabled { opacity: 0.6; cursor: wait; }
+`;
+
+const DangerCancelBtn = styled.button`
+  min-height: 40px; padding: 0 18px;
+  border: 1.5px solid rgba(228,231,236,0.9); border-radius: 999px;
+  background: transparent; color: ${p => p.theme.colors.text.secondary};
+  font-size: 13px; font-weight: 900; cursor: pointer;
+`;
+
 /* ─── Helpers ─────────────────────────────────────────── */
 
 const fmt = (v) => `R${Number(v || 0).toFixed(2)}`;
@@ -752,9 +796,11 @@ export const ProfilePage = ({ location }) => {
   const isSeller = role === 'seller';
   const isAdmin  = role === 'admin';
 
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
+  const [summary, setSummary]         = useState(null);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting]       = useState(false);
 
   const getUserId = () => getAuthUser()?.id || 'default';
 
@@ -780,7 +826,7 @@ export const ProfilePage = ({ location }) => {
 
   /* ── Derived ──────────────────────────────────────── */
 
-  const profileUser   = summary?.user || user || {};
+  const profileUser   = user || {};
   const stats         = summary?.stats || {};
   const orders        = summary?.orders || [];
   const userName      = profileUser.name || 'Shopper';
@@ -800,21 +846,30 @@ export const ProfilePage = ({ location }) => {
   /* ── Stats per role ───────────────────────────────── */
 
   const statItems = useMemo(() => {
-    if (isSeller || isAdmin) {
+    if (isAdmin) {
       return [
-        { label: 'My orders',    value: stats.orders        || 0,     route: '/orders' },
-        { label: 'Store orders', value: stats.sellerOrders  || 0,     route: '/seller/orders' },
-        { label: 'Products',     value: stats.products      || 0,     route: '/seller/products' },
-        { label: 'Revenue',      value: `R${stats.revenue   || 0}`,   route: '/seller/analytics' },
-        { label: 'Messages',     value: stats.messages      || 0,     route: '/seller/messages' },
-        { label: 'Reviews',      value: stats.reviews       || 0,     route: '/reviews' },
+        { label: 'My orders',   value: stats.orders       || 0,   route: '/orders' },
+        { label: 'All orders',  value: stats.sellerOrders || 0,   route: '/admin' },
+        { label: 'Products',    value: stats.products     || 0,   route: '/seller/products' },
+        { label: 'Revenue',     value: `R${stats.revenue  || 0}`, route: '/seller/analytics' },
+        { label: 'Messages',    value: stats.messages     || 0,   route: '/seller/messages' },
+        { label: 'Reviews',     value: stats.reviews      || 0,   route: '/reviews' },
+      ];
+    }
+    if (isSeller) {
+      return [
+        { label: 'My orders',    value: stats.orders       || 0,   route: '/orders' },
+        { label: 'Store orders', value: stats.sellerOrders || 0,   route: '/seller/orders' },
+        { label: 'Products',     value: stats.products     || 0,   route: '/seller/products' },
+        { label: 'Revenue',      value: `R${stats.revenue  || 0}`, route: '/seller/analytics' },
+        { label: 'Messages',     value: stats.messages     || 0,   route: '/seller/messages' },
+        { label: 'Reviews',      value: stats.reviews      || 0,   route: '/reviews' },
       ];
     }
     return [
       { label: 'Orders',    value: stats.orders         || 0, route: '/orders' },
       { label: 'Active',    value: stats.activeOrders   || 0, route: '/orders?filter=active' },
       { label: 'Addresses', value: stats.savedAddresses || 0, route: '/addresses' },
-      { label: 'Cards',     value: stats.paymentMethods || 0, route: '/payment-methods' },
       { label: 'Vouchers',  value: stats.activeVouchers || 0, route: '/vouchers' },
       { label: 'Reviews',   value: stats.reviews        || 0, route: '/reviews' },
     ];
@@ -824,13 +879,13 @@ export const ProfilePage = ({ location }) => {
 
   const quickActions = useMemo(() => {
     if (isAdmin) return [
-      { iconKey: 'dashboard',  title: 'Seller dashboard', text: summary?.seller?.storeName || 'Open your seller workspace', route: '/seller/dashboard', highlight: false },
-      { iconKey: 'orders',     title: 'My orders',        text: 'Track and reorder purchases',                               route: '/orders',            highlight: false },
+      { iconKey: 'admin',      title: 'Admin panel',      text: 'Platform management and settings',                          route: '/admin',            highlight: true  },
+      { iconKey: 'allorders',  title: 'All orders',       text: 'Every order across the platform',                           route: '/admin',            highlight: true  },
+      { iconKey: 'dashboard',  title: 'Seller dashboard', text: summary?.seller?.storeName || 'Open your seller workspace',  route: '/seller/dashboard', highlight: false },
       { iconKey: 'products',   title: 'Products',         text: 'Manage all product listings',                               route: '/seller/products',  highlight: false },
       { iconKey: 'analytics',  title: 'Analytics',        text: 'Sales, traffic, and conversions',                           route: '/seller/analytics', highlight: false },
       { iconKey: 'messages',   title: 'Messages',         text: 'Buyer conversations',                                       route: '/seller/messages',  highlight: false },
-      { iconKey: 'admin',      title: 'Admin panel',      text: 'Platform management and settings',                          route: '/seller/dashboard', highlight: true  },
-      { iconKey: 'allorders',  title: 'All orders',       text: 'Every order across the platform',                           route: '/seller/orders',    highlight: true  },
+      { iconKey: 'orders',     title: 'My orders',        text: 'Track and reorder purchases',                               route: '/orders',           highlight: false },
     ];
     if (isSeller) return [
       { iconKey: 'shop',       title: 'Shop nearby',      text: 'Explore products near you',                                                 route: '/search',           highlight: false },
@@ -845,7 +900,6 @@ export const ProfilePage = ({ location }) => {
       { iconKey: 'shop',      title: 'Shop nearby',     text: 'Search refined finds near you',                              metric: 'Nearby', route: '/search' },
       { iconKey: 'orders',    title: 'My orders',       text: summary?.orderSummary?.subtext || 'Track and reorder faster',                  route: '/orders' },
       { iconKey: 'addresses', title: 'Addresses',       text: summary?.defaultAddress ? `${summary.defaultAddress.label || 'Default'} · ${summary.defaultAddress.suburb || locationLabel}` : 'Add a delivery address', route: '/addresses' },
-      { iconKey: 'payments',  title: 'Payments',        text: summary?.defaultPaymentMethod ? `Default ${summary.defaultPaymentMethod.brand || 'card'}` : 'Add payment method', route: '/payment-methods' },
       { iconKey: 'vouchers',  title: 'Vouchers',        text: `${stats.activeVouchers || 0} active rewards`,                                route: '/vouchers' },
       { iconKey: 'reviews',   title: 'Reviews',         text: `${stats.pendingReviews || 0} waiting for feedback`,                          route: '/reviews' },
       { iconKey: 'become',    title: 'Become a seller', text: 'Open your own store on Shopply',                                             route: '/become-a-seller' },
@@ -874,7 +928,7 @@ export const ProfilePage = ({ location }) => {
       label: 'Platform administrator',
       title: 'Full platform access',
       text:  'Manage sellers, orders, and all platform settings.',
-      cta:   'Admin dashboard', ctaRoute: '/seller/dashboard',
+      cta:   'Admin dashboard', ctaRoute: '/admin',
     };
     if (isSeller) return {
       label: 'Your store',
@@ -884,7 +938,7 @@ export const ProfilePage = ({ location }) => {
         : 'Manage your store, products, and orders.',
       cta:   'Open dashboard', ctaRoute: '/seller/dashboard',
     };
-    const hasProfile = !!(profileUser.email && profileUser.email !== 'guest@example.com');
+    const hasProfile = !!(profileUser.email);
     return {
       label: completedCount === 4 ? 'Profile complete' : `Profile ${completedCount}/4`,
       title: hasProfile ? 'Ready for local shopping' : 'Finish your profile',
@@ -897,6 +951,16 @@ export const ProfilePage = ({ location }) => {
   }, [role, summary, profileUser, locationLabel, completedCount]);
 
   const handleSignOut = () => { clearAuthUser(); navigate('/'); };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const userId = getAuthUser()?.id || 'default';
+      await fetch(`${API_BASE_URL}/profile/${userId}`, { method: 'DELETE' });
+    } catch {}
+    clearAuthUser();
+    navigate('/');
+  };
 
   /* ── Loading skeleton ─────────────────────────────── */
 
@@ -1287,9 +1351,9 @@ export const ProfilePage = ({ location }) => {
                 </PanelHeader>
                 <List>
                   {[
-                    { icon: DashIcon,  title: 'Platform overview', text: 'Sales, traffic, and key metrics',        route: '/seller/dashboard', tone: 'soft' },
-                    { icon: ListIcon,  title: 'All orders',        text: 'Every order across the platform',        route: '/seller/orders' },
-                    { icon: ChartIcon, title: 'Analytics',         text: 'GMV, conversions, seller performance',   route: '/seller/analytics' },
+                    { icon: DashIcon,  title: 'Platform overview', text: 'Sales, traffic, and key metrics',      route: '/admin',            tone: 'soft' },
+                    { icon: ListIcon,  title: 'All orders',        text: 'Every order across the platform',      route: '/admin' },
+                    { icon: ChartIcon, title: 'Analytics',         text: 'GMV, conversions, seller performance', route: '/seller/analytics' },
                   ].map(r => (
                     <RowButton key={r.title} $tone={r.tone} onClick={() => navigate(r.route)}>
                       <RowIconBox><r.icon /></RowIconBox>
@@ -1317,7 +1381,7 @@ export const ProfilePage = ({ location }) => {
                     </div>
                     <UpsellChevron><ChevronIcon /></UpsellChevron>
                   </UpsellRow>
-                  <UpsellRow onClick={() => navigate('/sell-on-tsenga')}>
+                  <UpsellRow onClick={() => navigate('/sell-on-shopply')}>
                     <UpsellIconBox><HelpIcon /></UpsellIconBox>
                     <div>
                       <UpsellRowTitle>Learn more</UpsellRowTitle>
@@ -1348,6 +1412,29 @@ export const ProfilePage = ({ location }) => {
                 })}
               </List>
             </Panel>
+
+            {/* Danger zone */}
+            <DangerPanel>
+              <DangerTitle>Delete account</DangerTitle>
+              <DangerText>
+                This permanently removes your account, orders, and saved data. This cannot be undone.
+              </DangerText>
+              {!deleteConfirm ? (
+                <DangerBtn onClick={() => setDeleteConfirm(true)}>Delete my account</DangerBtn>
+              ) : (
+                <>
+                  <DangerText style={{ marginBottom: 0 }}>Are you sure? This is permanent.</DangerText>
+                  <DangerConfirmRow>
+                    <DangerConfirmBtn onClick={handleDeleteAccount} disabled={deleting}>
+                      {deleting ? 'Deleting…' : 'Yes, delete'}
+                    </DangerConfirmBtn>
+                    <DangerCancelBtn onClick={() => setDeleteConfirm(false)} disabled={deleting}>
+                      Cancel
+                    </DangerCancelBtn>
+                  </DangerConfirmRow>
+                </>
+              )}
+            </DangerPanel>
           </Column>
         </Grid>
       </Shell>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../theme/animations';
@@ -18,6 +18,7 @@ import { SellerTopBanner } from './home/SellerTopBanner';
 import { NotificationsPanel } from './ui';
 import { LocationPickerModal } from './home/LocationPickerModal';
 import { ProductGridSkeleton } from './ui/Skeleton';
+import ExpansionBanner from './hyperlocal/ExpansionBanner';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -88,6 +89,8 @@ export const HomeScreen = ({ location, onLocationChange }) => {
   const [topRated, setTopRated] = useState([]);
   const [feedProducts, setFeedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hyperlocalFeed, setHyperlocalFeed] = useState(null);
+  const [geoLoading, setGeoLoading] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -112,6 +115,20 @@ export const HomeScreen = ({ location, onLocationChange }) => {
     const interval = setInterval(fetchUnreadCount, 30000); // Every 30 seconds
     return () => clearInterval(interval);
   }, [userId]);
+
+  // Fetch H3 hyperlocal home feed when coordinates are available
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('shopply_location') || 'null');
+      if (!stored?.lat || !stored?.lng) return;
+      setGeoLoading(true);
+      fetch(`${API_BASE_URL}/hyperlocal/feed/home?lat=${stored.lat}&lng=${stored.lng}&tier_index=0`)
+        .then(r => r.json())
+        .then(res => { if (res.success) setHyperlocalFeed(res.data); })
+        .catch(() => {})
+        .finally(() => setGeoLoading(false));
+    } catch {}
+  }, []);
 
   const itemsPerPage = 8;
 
@@ -188,7 +205,7 @@ export const HomeScreen = ({ location, onLocationChange }) => {
   const handleAddToCart = (product) => {
     if (!product?.id) return;
 
-    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
     const alreadyAdded = cart.findIndex(
       item => item.id === product.id && JSON.stringify(item.selectedVariant) === 'null'
     ) >= 0;
@@ -201,8 +218,8 @@ export const HomeScreen = ({ location, onLocationChange }) => {
 
     // Called from a component that doesn't manage its own cart state.
     cart.push({ ...product, quantity: 1, selectedVariant: null, addedAt: new Date().toISOString() });
-    localStorage.setItem('tsenga_cart', JSON.stringify(cart));
-    localStorage.setItem('tsenga_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
+    localStorage.setItem('shopply_cart', JSON.stringify(cart));
+    localStorage.setItem('shopply_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
     window.dispatchEvent(new Event('cartUpdated'));
 
     fetch(`${API_BASE_URL}/cart/items`, {
@@ -285,6 +302,78 @@ export const HomeScreen = ({ location, onLocationChange }) => {
           const categoryPath = category.room || encodeURIComponent(category.label.toLowerCase());
           navigate(`/category/${categoryPath}`);
         }} />
+
+        {/* H3 Hyperlocal Discovery */}
+        {(geoLoading || hyperlocalFeed?.totalProducts > 0) && (
+          <>
+            {geoLoading && (
+              <>
+                <FeedHeader>
+                  <FeedEyebrow>Near you</FeedEyebrow>
+                  <FeedTitle>Finding top picks nearby...</FeedTitle>
+                </FeedHeader>
+                <ProductGridSkeleton count={6} />
+              </>
+            )}
+            {hyperlocalFeed?.wasAutoExpanded && (
+              <FeedHeader>
+                <ExpansionBanner
+                  wasAutoExpanded={hyperlocalFeed.wasAutoExpanded}
+                  expansionReason={hyperlocalFeed.expansionReason}
+                  effectiveLabel={hyperlocalFeed.tierLabel}
+                  effectiveRadius={hyperlocalFeed.radiusKm}
+                  expanded={false}
+                />
+              </FeedHeader>
+            )}
+            {hyperlocalFeed?.modules?.topNearYou?.length > 0 && (
+              <>
+                <FeedHeader>
+                  <FeedEyebrow>
+                    {hyperlocalFeed.wasAutoExpanded ? 'Nearest available' : 'Near you'}
+                  </FeedEyebrow>
+                  <FeedTitle>Top picks · {hyperlocalFeed.tierLabel}</FeedTitle>
+                </FeedHeader>
+                <ProductGrid
+                  products={hyperlocalFeed.modules.topNearYou}
+                  onProductClick={handleProductClick}
+                  onAddToCart={handleAddToCart}
+                  loading={false}
+                />
+              </>
+            )}
+            {hyperlocalFeed?.modules?.bestSellersNearby?.length > 0 && (
+              <>
+                <FeedHeader>
+                  <FeedEyebrow>Best sellers</FeedEyebrow>
+                  <FeedTitle>
+                    {hyperlocalFeed.wasAutoExpanded ? 'Top-rated picks' : 'Popular in your area'}
+                  </FeedTitle>
+                </FeedHeader>
+                <ProductGrid
+                  products={hyperlocalFeed.modules.bestSellersNearby}
+                  onProductClick={handleProductClick}
+                  onAddToCart={handleAddToCart}
+                  loading={false}
+                />
+              </>
+            )}
+            {hyperlocalFeed?.modules?.topRatedSellers?.length > 0 && (
+              <>
+                <FeedHeader>
+                  <FeedEyebrow>Top rated</FeedEyebrow>
+                  <FeedTitle>From highest-rated sellers near you</FeedTitle>
+                </FeedHeader>
+                <ProductGrid
+                  products={hyperlocalFeed.modules.topRatedSellers}
+                  onProductClick={handleProductClick}
+                  onAddToCart={handleAddToCart}
+                  loading={false}
+                />
+              </>
+            )}
+          </>
+        )}
 
         {hotProducts.length > 0 && (
           <DiscoveryModule

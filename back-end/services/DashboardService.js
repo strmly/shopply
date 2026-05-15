@@ -93,7 +93,7 @@ class DashboardServiceClass {
         return {
           seller: {
             id: seller.id,
-            storeName: seller.storeSetup?.name || seller.legalBusinessName || 'Tsenga Seller',
+            storeName: seller.storeSetup?.name || seller.legalBusinessName || 'Shopply Seller',
             storeType: seller.storeBasicInfo?.storeType || 'Furniture seller',
             status: seller.onboardingStatus || 'draft',
             rating: seller.rating || 0,

@@ -140,7 +140,7 @@ export async function seedBundles() {
       ...data,
       category: 'furniture',
       storeId: 0,
-      storeName: 'Tsenga Home Furniture',
+      storeName: 'Shopply Home Furniture',
       stock: 'in',
       stockQuantity: 20,
       isTrending: true,

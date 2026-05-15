@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import API_BASE_URL from '@config/api';
 import { AuthModal } from '../auth';
 import { isSignedIn, getAuthUser } from '../../utils/authState';
 import { useUser } from '../../context/UserContext';
-import { useAuth } from '../../hooks/useAuth';
 
 /* ─── Shell ───────────────────────────────────────────── */
 
@@ -937,7 +936,7 @@ const getCartItems = (cart) => {
 
 const readLocalCartPreview = () => {
   try {
-    const localCart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+    const localCart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
     if (!Array.isArray(localCart)) return null;
     const items = localCart.map(item => ({
       id: item.id,
@@ -987,9 +986,9 @@ const timeAgo = (value) => {
   return `${days}d ago`;
 };
 
-const getInitials = (name = 'Guest User') => {
+const getInitials = (name = '') => {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return 'T';
+  if (parts.length === 0) return 'S';
   return parts.slice(0, 2).map(part => part[0]?.toUpperCase()).join('');
 };
 
@@ -1009,8 +1008,7 @@ export const TopNavigation = ({
 }) => {
   const navigate = useNavigate();
   const routerLocation = useLocation();
-  const { user: contextUser } = useUser();
-  const { role } = useAuth();
+  const { user: contextUser, role, loading: contextLoading } = useUser();
   const [cartCount, setCartCount] = useState(cartCountProp || 0);
   const [cartPreview, setCartPreview] = useState(null);
   const [cartLoading, setCartLoading] = useState(false);
@@ -1022,7 +1020,7 @@ export const TopNavigation = ({
   const [profilePreview, setProfilePreview] = useState(null);
   const [profilePrefs, setProfilePrefs] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
-  const [profileSignedIn, setProfileSignedIn] = useState(() => isSignedIn());
+  const profileSignedIn = contextLoading ? isSignedIn() : role !== 'guest';
   const [showAuthModal, setShowAuthModal] = useState(false);
   const suburb = location?.suburb || 'Your Area';
   const city = location?.city || '';
@@ -1041,8 +1039,8 @@ export const TopNavigation = ({
     }));
     setCartPreview(cart);
     setCartCount(count || 0);
-    localStorage.setItem('tsenga_cart', JSON.stringify(localItems));
-    localStorage.setItem('tsenga_cart_count', String(count || 0));
+    localStorage.setItem('shopply_cart', JSON.stringify(localItems));
+    localStorage.setItem('shopply_cart_count', String(count || 0));
   };
 
   const loadCartPreview = async () => {
@@ -1132,11 +1130,7 @@ export const TopNavigation = ({
       if (profileData.success) setProfilePreview(profileData.data);
       if (prefsData.success) setProfilePrefs(prefsData.data);
     } catch {
-      setProfilePreview({
-        name: 'Guest User',
-        email: 'guest@example.com',
-        avatarUrl: '',
-      });
+      setProfilePreview(null);
     } finally {
       setProfileLoading(false);
     }
@@ -1145,18 +1139,6 @@ export const TopNavigation = ({
   useEffect(() => {
     setNotificationUnread(unreadCount);
   }, [unreadCount]);
-
-  useEffect(() => {
-    const syncAuthState = () => setProfileSignedIn(isSignedIn());
-
-    syncAuthState();
-    window.addEventListener('authChanged', syncAuthState);
-    window.addEventListener('storage', syncAuthState);
-    return () => {
-      window.removeEventListener('authChanged', syncAuthState);
-      window.removeEventListener('storage', syncAuthState);
-    };
-  }, []);
 
   useEffect(() => {
     loadNotificationPreview();
@@ -1177,13 +1159,13 @@ export const TopNavigation = ({
 
     const loadCartCount = () => {
       try {
-        const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+        const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
         const count = Array.isArray(cart)
           ? cart.reduce((sum, item) => sum + (item.quantity || 1), 0)
-          : Number(localStorage.getItem('tsenga_cart_count') || 0);
+          : Number(localStorage.getItem('shopply_cart_count') || 0);
         setCartCount(count);
       } catch {
-        setCartCount(Number(localStorage.getItem('tsenga_cart_count') || 0));
+        setCartCount(Number(localStorage.getItem('shopply_cart_count') || 0));
       }
       loadCartPreview();
     };
@@ -1234,7 +1216,6 @@ export const TopNavigation = ({
     navigate(path);
   };
   const handleAuthSuccess = () => {
-    setProfileSignedIn(true);
     loadProfilePreview();
 
     if (onProfileClick) {
@@ -1247,10 +1228,10 @@ export const TopNavigation = ({
   const cartItems = getCartItems(cartPreview);
   const cartTotal = cartPreview?.totals?.total ?? cartPreview?.totals?.subtotal ?? cartPreview?.totals?.itemsTotal ?? 0;
   const displayUnread = notificationUnread ?? unreadCount;
-  const resolvedName = contextUser?.name || profilePreview?.name || 'Tsenga Shopper';
+  const resolvedName = contextUser?.name || profilePreview?.name || 'Shopply Shopper';
   const resolvedEmail = contextUser?.email || profilePreview?.email || profilePreview?.mobile || 'Manage your account';
   const resolvedAvatar = contextUser?.avatarUrl || profilePreview?.avatarUrl || '';
-  const profileName = profileSignedIn ? resolvedName : 'Sign in to Tsenga';
+  const profileName = profileSignedIn ? resolvedName : 'Sign in to Shopply';
   const profileEmail = profileSignedIn ? resolvedEmail : 'Unlock saved carts, orders, and local deals';
   const profileAvatar = profileSignedIn ? resolvedAvatar : '';
   const profileNotifications = profilePrefs?.notifications || {};
@@ -1313,8 +1294,8 @@ export const TopNavigation = ({
           ) : (
             <>
               <BrandButton type="button" onClick={() => navigate('/')} aria-label="Home">
-                <BrandGlyph>T</BrandGlyph>
-                <BrandText>Tsenga</BrandText>
+                <BrandGlyph>S</BrandGlyph>
+                <BrandText>Shopply</BrandText>
               </BrandButton>
               <LocationButton onClick={onLocationClick}>
                 <LocationDot aria-hidden="true" />
@@ -1567,27 +1548,36 @@ export const TopNavigation = ({
               {profileSignedIn ? (
                 <>
                   <ProfileActionGrid>
-                    <ProfileActionButton onClick={() => handleProfileRoute('/account/edit-profile')}>
-                      <ProfileActionTitle>Edit profile</ProfileActionTitle>
-                      <ProfileActionMeta>Name, email, photo</ProfileActionMeta>
-                    </ProfileActionButton>
-                    <ProfileActionButton onClick={() => handleProfileRoute('/orders')}>
-                      <ProfileActionTitle>Orders</ProfileActionTitle>
-                      <ProfileActionMeta>Track purchases</ProfileActionMeta>
-                    </ProfileActionButton>
-                    <ProfileActionButton onClick={() => handleProfileRoute('/addresses')}>
-                      <ProfileActionTitle>Addresses</ProfileActionTitle>
-                      <ProfileActionMeta>Delivery places</ProfileActionMeta>
-                    </ProfileActionButton>
-                    <ProfileActionButton onClick={() => handleProfileRoute('/account/notifications')}>
-                      <ProfileActionTitle>Preferences</ProfileActionTitle>
-                      <ProfileActionMeta>Alerts and settings</ProfileActionMeta>
-                    </ProfileActionButton>
+                    {(
+                      role === 'admin' ? [
+                        { title: 'Edit profile', meta: 'Name, email, photo',          route: '/account/edit-profile' },
+                        { title: 'Admin panel',  meta: 'Platform management',         route: '/admin' },
+                        { title: 'All orders',   meta: 'Every order on the platform', route: '/admin' },
+                        { title: 'Preferences',  meta: 'Alerts and settings',         route: '/account/notifications' },
+                      ] : role === 'seller' ? [
+                        { title: 'Edit profile',  meta: 'Name, email, photo',        route: '/account/edit-profile' },
+                        { title: 'My orders',     meta: 'Track your purchases',      route: '/orders' },
+                        { title: 'Seller orders', meta: 'Orders through your store', route: '/seller/orders' },
+                        { title: 'Preferences',   meta: 'Alerts and settings',       route: '/account/notifications' },
+                      ] : [
+                        { title: 'Edit profile', meta: 'Name, email, photo',  route: '/account/edit-profile' },
+                        { title: 'Orders',       meta: 'Track purchases',     route: '/orders' },
+                        { title: 'Addresses',    meta: 'Delivery places',     route: '/addresses' },
+                        { title: 'Preferences',  meta: 'Alerts and settings', route: '/account/notifications' },
+                      ]
+                    ).map(a => (
+                      <ProfileActionButton key={a.title} onClick={() => handleProfileRoute(a.route)}>
+                        <ProfileActionTitle>{a.title}</ProfileActionTitle>
+                        <ProfileActionMeta>{a.meta}</ProfileActionMeta>
+                      </ProfileActionButton>
+                    ))}
                   </ProfileActionGrid>
 
                   <HoverFooter>
                     <HoverBtn onClick={() => handleProfileRoute('/profile')}>Account hub</HoverBtn>
-                    {(role === 'seller' || role === 'admin') ? (
+                    {role === 'admin' ? (
+                      <HoverBtn $primary onClick={() => handleProfileRoute('/admin')}>Admin panel</HoverBtn>
+                    ) : role === 'seller' ? (
                       <HoverBtn $primary onClick={() => handleProfileRoute('/seller/dashboard')}>Seller tools</HoverBtn>
                     ) : (
                       <HoverBtn $primary onClick={() => handleProfileRoute('/become-a-seller')}>Become a seller</HoverBtn>

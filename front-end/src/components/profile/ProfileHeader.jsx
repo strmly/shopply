@@ -112,8 +112,8 @@ const Pill = styled.span`
 `;
 
 export const ProfileHeader = ({ user, location }) => {
-  const userName = user?.name || 'Guest User';
-  const userEmail = user?.email || 'guest@example.com';
+  const userName = user?.name || 'Shopper';
+  const userEmail = user?.email || '';
   const userLocation = location?.suburb || 'Location not set';
   const initials = userName
     .split(' ')
@@ -126,7 +126,7 @@ export const ProfileHeader = ({ user, location }) => {
     <Container>
       <Avatar>{initials}</Avatar>
       <Info>
-        <Eyebrow><DotMark />Your Tsenga profile</Eyebrow>
+        <Eyebrow><DotMark />Your Shopply profile</Eyebrow>
         <Name>{userName}</Name>
         <Email>{userEmail}</Email>
         <Location>

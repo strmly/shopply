@@ -10,9 +10,9 @@ class UserServiceClass {
   async seedDefaultUsers() {
     if (this.users.length > 0) return;
     const seeds = [
-      { id: 1, name: 'Admin', email: 'admin@shopply.com', role: 'admin', password: 'Admin@123' },
-      { id: 2, name: 'Demo Seller', email: 'seller@shopply.com', role: 'seller', password: 'Seller@123' },
-      { id: 3, name: 'Demo Buyer', email: 'buyer@shopply.com', role: 'buyer', password: 'Buyer@123' },
+      { id: 1, name: 'Admin', email: 'admin@shopply.co.za', role: 'admin', password: 'Admin@123' },
+      { id: 2, name: 'Demo Seller', email: 'seller@shopply.co.za', role: 'seller', password: 'Seller@123' },
+      { id: 3, name: 'Demo Buyer', email: 'buyer@shopply.co.za', role: 'buyer', password: 'Buyer@123' },
     ];
     for (const s of seeds) {
       await this.createUser({

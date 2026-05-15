@@ -1,5 +1,21 @@
 import Store from '../models/Store.js';
 import { indexStore } from './H3IndexingService.js';
+import { latLngToCell, gridDisk } from 'h3-js';
+
+/**
+ * Compute delivery cells for a store given its lat/lng and delivery radius (km).
+ * Uses H3 resolution 7 (approx. 1.2 km per hex).
+ */
+function computeDeliveryCells(lat, lng, deliveryRadiusKm) {
+  if (!lat || !lng || !deliveryRadiusKm || deliveryRadiusKm <= 0) return [];
+  try {
+    const centerCell = latLngToCell(lat, lng, 7);
+    const ringSize = Math.ceil(deliveryRadiusKm / 1.2);
+    return gridDisk(centerCell, ringSize);
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Store Service
@@ -35,7 +51,18 @@ export function getStoresBySeller(sellerId) {
  */
 export function createStore(storeData, seller = null) {
   const store = new Store(storeData);
-  
+
+  // Compute deliveryCells from store lat/lng and delivery radius
+  const lat = store.address?.lat;
+  const lng = store.address?.lng;
+  const deliveryRadiusKm = storeData.deliveryRadiusKm
+    || seller?.deliveryRadiusKm
+    || store.policies?.deliveryRadiusKm
+    || 0;
+  if (!store.deliveryCells || store.deliveryCells.length === 0) {
+    store.deliveryCells = computeDeliveryCells(lat, lng, deliveryRadiusKm);
+  }
+
   // Validate store
   const validation = store.validate();
   if (!validation.valid) {

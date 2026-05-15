@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -179,7 +179,7 @@ export const FastDeliveryPage = ({ location }) => {
         addedAt: new Date().toISOString(),
       };
 
-      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
       const existingIndex = cart.findIndex(item => 
         item.id === product.id && 
         JSON.stringify(item.selectedVariant) === JSON.stringify(null)
@@ -191,9 +191,9 @@ export const FastDeliveryPage = ({ location }) => {
         cart.push(cartItem);
       }
 
-      localStorage.setItem('tsenga_cart', JSON.stringify(cart));
+      localStorage.setItem('shopply_cart', JSON.stringify(cart));
       const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      localStorage.setItem('tsenga_cart_count', cartCount.toString());
+      localStorage.setItem('shopply_cart_count', cartCount.toString());
 
       try {
         await fetch(`${API_BASE_URL}/cart/items`, {

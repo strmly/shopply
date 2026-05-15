@@ -1,4 +1,5 @@
 import { Seller } from '../models/Seller.js';
+import { calculateSellerQualityScore } from './QualityService.js';
 
 /**
  * Seller Service
@@ -35,7 +36,7 @@ class SellerServiceClass {
 
     return {
       sellerId: seller.id,
-      storeName: seller.storeSetup?.name || seller.legalBusinessName || 'Tsenga Seller',
+      storeName: seller.storeSetup?.name || seller.legalBusinessName || 'Shopply Seller',
       hours: seller.storeSetup?.hours || this.getDefaultHours(),
       policies: {
         pickupAvailable: seller.policies?.pickupAvailable ?? true,
@@ -145,7 +146,10 @@ class SellerServiceClass {
     });
 
     this.sellers.push(seller);
-    return seller.toJSON();
+    const json = seller.toJSON();
+    json.qualityScore = calculateSellerQualityScore(json, null);
+    seller.qualityScore = json.qualityScore;
+    return json;
   }
 
   /**
@@ -235,7 +239,10 @@ class SellerServiceClass {
     });
 
     this.sellers[index] = merged;
-    return merged.toJSON();
+    const json = merged.toJSON();
+    json.qualityScore = calculateSellerQualityScore(json, null);
+    merged.qualityScore = json.qualityScore;
+    return json;
   }
 
   /**
@@ -280,7 +287,7 @@ class SellerServiceClass {
       },
       storeSetup: {
         name: storeName,
-        description: data.description || `${storeName} is preparing to sell on Tsenga.`,
+        description: data.description || `${storeName} is preparing to sell on Shopply.`,
       },
       address: {
         street: data.street || '',
@@ -324,9 +331,9 @@ class SellerServiceClass {
 
     return {
       hero: {
-        eyebrow: 'Sell on Tsenga',
+        eyebrow: 'Sell on Shopply',
         title: 'A beautiful way to sell furniture locally',
-        subtitle: 'Tsenga helps furniture sellers launch a trusted local storefront, get discovered by nearby buyers, and manage orders from one calm dashboard.',
+        subtitle: 'Shopply helps furniture sellers launch a trusted local storefront, get discovered by nearby buyers, and manage orders from one calm dashboard.',
         primaryCta: 'Become a seller',
         secondaryCta: 'View onboarding steps',
       },
@@ -347,7 +354,7 @@ class SellerServiceClass {
       ],
       steps: [
         { title: 'Apply', description: 'Share your store name, category, location, and contact details.' },
-        { title: 'Verify', description: 'Complete identity, store address, and payout setup so buyers can trust your storefront.' },
+        { title: 'Set up', description: 'Complete your store address, categories, and payout setup so your storefront is ready for buyers.' },
         { title: 'List', description: 'Add furniture, images, pricing, room tags, delivery options, and bundles.' },
         { title: 'Sell', description: 'Receive orders from nearby shoppers and manage fulfillment from the seller dashboard.' },
       ],
@@ -364,7 +371,7 @@ class SellerServiceClass {
         },
         {
           question: 'Do I need my own delivery team?',
-          answer: 'No. You can offer pickup, local delivery, or use Tsenga-supported fulfillment options where available.',
+          answer: 'No. You can offer pickup, local delivery, or use Shopply-supported fulfillment options where available.',
         },
         {
           question: 'What can I sell?',
@@ -372,6 +379,31 @@ class SellerServiceClass {
         },
       ],
     };
+  }
+
+  /**
+   * Update a seller (admin use)
+   */
+  async updateSeller(id, updates = {}) {
+    return this.updateOnboarding(id, updates);
+  }
+
+  /**
+   * Delete a seller
+   */
+  async deleteSeller(id) {
+    const numericId = parseInt(id, 10);
+    const index = this.sellers.findIndex(s => s.id === numericId);
+    if (index === -1) return false;
+    this.sellers.splice(index, 1);
+    return true;
+  }
+
+  /**
+   * Update seller onboarding status (approve/reject)
+   */
+  async updateSellerStatus(id, status) {
+    return this.updateOnboarding(id, { onboardingStatus: status });
   }
 
   /**
@@ -417,7 +449,7 @@ class SellerServiceClass {
       email: 'demo@seller.com',
       legalBusinessName: 'Demo Store',
       onboardingStatus: 'approved',
-      onboardingStep: 7, // Completed
+      onboardingStep: 6, // Completed
       storeBasicInfo: {
         storeType: 'retail',
         storePhone: '+27123456789',
@@ -425,7 +457,7 @@ class SellerServiceClass {
       },
       storeSetup: {
         name: 'Demo Store',
-        description: 'A demo store for testing the Tsenga platform',
+        description: 'A demo store for testing the Shopply platform',
         logo: null,
         hours: {
           monday: { open: '08:00', close: '18:00', closed: false },
@@ -445,6 +477,9 @@ class SellerServiceClass {
         lat: -26.1076,
         lng: 28.0567,
       },
+      deliveryRadiusKm: 10,
+      qualityScore: 0.82,
+      rating: 4.7,
       categories: ['Groceries', 'Braai', 'Electronics'],
       kycDocuments: {
         idDocument: null,

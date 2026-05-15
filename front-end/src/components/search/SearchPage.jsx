@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -6,6 +6,8 @@ import { SearchIdleState } from './SearchIdleState';
 import { SearchAutocomplete } from './SearchAutocomplete';
 import { SearchResults } from './SearchResults';
 import { FilterOverlay } from './FilterOverlay';
+import ExpansionBanner from '../hyperlocal/ExpansionBanner';
+import ProgressiveExpansionLoader from '../hyperlocal/ProgressiveExpansionLoader';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -411,6 +413,21 @@ const ControlsRow = styled.div`
   flex-wrap: wrap;
 `;
 
+const H3Banner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px min(5vw, 48px) 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.primarySoftBg};
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 12px;
+  font-weight: 900;
+  width: fit-content;
+`;
+
 import API_BASE_URL from '@config/api';
 
 const ROOM_OPTIONS = [
@@ -444,6 +461,9 @@ export const SearchPage = ({ location, onBack }) => {
   const [searchPage, setSearchPage] = useState(1);
   const [hasMoreResults, setHasMoreResults] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
+  const [h3TierLabel, setH3TierLabel] = useState(null);
+  const [expansionData, setExpansionData] = useState(null);
+  // { expanded, expansionSteps, tierLabel, effectiveRadiusKm }
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -468,6 +488,7 @@ export const SearchPage = ({ location, onBack }) => {
       setSearchPage(1);
       setHasMoreResults(false);
       setTotalResults(0);
+      setExpansionData(null);
       return;
     }
 
@@ -573,10 +594,57 @@ export const SearchPage = ({ location, onBack }) => {
     }
 
     try {
+      // Try to get coordinates from localStorage for H3 search
+      let storedLocation = null;
+      try {
+        storedLocation = JSON.parse(localStorage.getItem('shopply_location') || 'null');
+      } catch {}
+
+      const hasCoords = storedLocation?.lat && storedLocation?.lng;
+
+      if (hasCoords && page === 1) {
+        // Use H3 hyperlocal search when we have real coordinates
+        const h3Params = new URLSearchParams({
+          q: query,
+          lat: storedLocation.lat.toString(),
+          lng: storedLocation.lng.toString(),
+          min_results: '30',
+        });
+
+        const response = await fetch(`${API_BASE_URL}/hyperlocal/search?${h3Params}`);
+        const data = await response.json();
+
+        if (data.success) {
+          const results = data.data?.results || [];
+          if (resetResults) {
+            setSearchResults(results);
+          } else {
+            setSearchResults(prev => [...prev, ...results]);
+          }
+          setSearchState('results');
+          setSearchPage(page);
+          setHasMoreResults(false); // H3 search returns all results at once
+          setTotalResults(results.length);
+          setH3TierLabel(data.data?.tierLabel || null);
+          setExpansionData({
+            expanded: data.data?.expanded || false,
+            wasAutoExpanded: data.data?.wasAutoExpanded || false,
+            expansionReason: data.data?.expansionReason || null,
+            expansionSteps: data.data?.expansionSteps || [],
+            tierLabel: data.data?.tierLabel || null,
+            effectiveRadiusKm: data.data?.effectiveRadiusKm || null,
+          });
+          return;
+        }
+      }
+
+      // Fallback: standard search
+      setH3TierLabel(null);
+      setExpansionData(null);
       const suburb = location?.suburb || 'Sandton';
       const city = location?.city || 'Johannesburg';
-      const lat = location?.lat || -26.1076;
-      const lng = location?.lng || 28.0567;
+      const lat = storedLocation?.lat || location?.lat || -26.1076;
+      const lng = storedLocation?.lng || location?.lng || 28.0567;
 
       const params = new URLSearchParams({
         q: query,
@@ -592,7 +660,7 @@ export const SearchPage = ({ location, onBack }) => {
 
       const response = await fetch(`${API_BASE_URL}/search/products?${params}`);
       const data = await response.json();
-      
+
       if (data.success) {
         if (resetResults) {
           setSearchResults(data.data || []);
@@ -689,15 +757,15 @@ export const SearchPage = ({ location, onBack }) => {
   };
 
   const handleAddToCart = (product) => {
-    const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+    const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
     const idx = cart.findIndex(i => String(i.id) === String(product.id) && JSON.stringify(i.selectedVariant) === 'null');
     if (idx >= 0) {
       cart[idx].quantity += 1;
     } else {
       cart.push({ ...product, quantity: 1, selectedVariant: null, addedAt: new Date().toISOString() });
     }
-    localStorage.setItem('tsenga_cart', JSON.stringify(cart));
-    localStorage.setItem('tsenga_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
+    localStorage.setItem('shopply_cart', JSON.stringify(cart));
+    localStorage.setItem('shopply_cart_count', cart.reduce((s, i) => s + (i.quantity || 1), 0).toString());
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
@@ -754,7 +822,7 @@ export const SearchPage = ({ location, onBack }) => {
               <RoomSelectChevron aria-hidden="true" />
             </RoomSelectWrap>
             <SearchWrapper>
-              <SearchIcon>T</SearchIcon>
+              <SearchIcon>S</SearchIcon>
               <SearchInput
                 ref={inputRef}
                 type="text"
@@ -772,6 +840,9 @@ export const SearchPage = ({ location, onBack }) => {
             </SearchWrapper>
             <CancelButton onClick={handleBack} aria-label="Go back">&lt;</CancelButton>
           </SearchBarContainer>
+          {searchState === 'results' && h3TierLabel && (
+            <H3Banner>Showing results within {h3TierLabel}</H3Banner>
+          )}
           {searchState === 'results' && (
             <ControlsRow>
               <FilterButton
@@ -837,6 +908,22 @@ export const SearchPage = ({ location, onBack }) => {
           suggestions={suggestions}
           query={query}
           onSuggestionClick={handleSuggestionClick}
+        />
+      )}
+
+      {loading && (
+        <ProgressiveExpansionLoader isSearching={true} />
+      )}
+
+      {!loading && searchState === 'results' && (expansionData?.expanded || expansionData?.wasAutoExpanded) && (
+        <ExpansionBanner
+          expanded={expansionData.expanded}
+          wasAutoExpanded={expansionData.wasAutoExpanded}
+          expansionReason={expansionData.expansionReason}
+          expansionSteps={expansionData.expansionSteps}
+          effectiveLabel={expansionData.tierLabel}
+          effectiveRadius={expansionData.effectiveRadiusKm}
+          query={query}
         />
       )}
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -7,207 +7,252 @@ import { AddressCardSkeleton } from './AddressCardSkeleton';
 import { BottomNavigation } from '../home/BottomNavigation';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { toast } from '../ui/Toast';
+import API_BASE_URL from '@config/api';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
-  animation: ${fadeIn} 0.5s ease-in;
-  padding-bottom: 100px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 52%, #ffffff 100%);
+  animation: ${fadeIn} 0.45s ease;
+  padding-bottom: 104px;
 `;
 
-const Header = styled.div`
+const Header = styled.header`
   position: sticky;
   top: 0;
   z-index: 100;
-  background: ${props => props.theme.colors.background};
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: ${props => props.theme.spacing.md};
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.98), rgba(241,247,255,0.95)) padding-box,
+    ${props => props.theme.colors.gradient.primary} border-box;
+  border: 1px solid transparent;
+  border-radius: 0 0 30px 30px;
+  box-shadow: 0 24px 62px rgba(16, 24, 40, 0.1);
 `;
 
-const HeaderLeft = styled.div`
+const HeaderInner = styled.div`
+  width: min(1020px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: calc(18px + env(safe-area-inset-top)) 0 18px;
+
+  @media (max-width: 560px) {
+    width: min(100% - 24px, 1020px);
+  }
+`;
+
+const HeaderTop = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.md};
+  gap: 14px;
 `;
 
 const BackButton = styled.button`
-  background: none;
-  border: none;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(228, 231, 236, 0.95);
+  border-radius: 16px;
+  background: #ffffff;
+  color: ${props => props.theme.colors.primarySoftText};
   font-size: 24px;
+  font-weight: 900;
   cursor: pointer;
-  color: ${props => props.theme.colors.text.primary};
-  padding: ${props => props.theme.spacing.xs};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: ${props => props.theme.transitions.swift};
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.06);
+`;
 
-  &:hover {
-    color: ${props => props.theme.colors.primary};
-    transform: translateX(-2px);
-  }
+const TitleBlock = styled.div`
+  min-width: 0;
+  flex: 1;
+`;
+
+const Eyebrow = styled.div`
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading2}
+  margin: 3px 0 0;
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 24px;
-  margin: 0;
+  font-size: clamp(30px, 7vw, 52px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
 const AddButton = styled.button`
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
+  border: 0;
+  border-radius: 999px;
   background: ${props => props.theme.colors.gradient.primary};
-  color: ${props => props.theme.colors.text.inverse};
-  border: none;
-  border-radius: ${props => props.theme.radii.md};
+  color: #ffffff;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 900;
   cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  ${props => props.theme.typography.button}
-  font-weight: 600;
-  font-size: 14px;
+  box-shadow: 0 16px 30px rgba(61, 129, 239, 0.2);
 
-  &:hover {
-    background: ${props => props.theme.colors.primaryHover};
-    transform: translateY(-1px);
-    box-shadow: ${props => props.theme.shadows.md};
-  }
-
-  &:active {
-    transform: translateY(0);
+  @media (max-width: 520px) {
+    padding: 11px 13px;
   }
 `;
 
-const Content = styled.div`
-  padding: ${props => props.theme.spacing.xl};
-  max-width: 100%;
+const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+
+  @media (max-width: 620px) {
+    grid-template-columns: repeat(3, minmax(92px, 1fr));
+    overflow-x: auto;
+  }
+`;
+
+const Stat = styled.div`
+  min-width: 0;
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(228, 231, 236, 0.92);
+  border-radius: 18px;
+  padding: 13px;
+`;
+
+const StatValue = styled.div`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const StatLabel = styled.div`
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 5px;
+`;
+
+const Content = styled.main`
+  width: min(1020px, calc(100% - 32px));
   margin: 0 auto;
+  padding: 22px 0 0;
+
+  @media (max-width: 560px) {
+    width: min(100% - 24px, 1020px);
+  }
 `;
 
 const AddressList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
+  display: grid;
+  gap: 14px;
 `;
 
-const EmptyState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: ${props => props.theme.spacing.xxl} ${props => props.theme.spacing.xl};
+const StatePanel = styled.div`
+  min-height: 330px;
+  display: grid;
+  place-items: center;
   text-align: center;
-  gap: ${props => props.theme.spacing.lg};
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94)) padding-box,
+    linear-gradient(140deg, rgba(61, 129, 239, 0.2), rgba(228,231,236,0.9), rgba(21,161,124,0.16)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  padding: 34px 20px;
+  box-shadow: 0 24px 54px rgba(16, 24, 40, 0.08);
 `;
 
-const EmptyIcon = styled.div`
-  font-size: 64px;
-  opacity: 0.5;
+const StateMark = styled.div`
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  border-radius: 24px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 22px;
+  font-weight: 900;
+  border: 1px solid rgba(61, 129, 239, 0.18);
 `;
 
-const EmptyTitle = styled.h3`
-  ${props => props.theme.typography.heading3}
+const StateTitle = styled.h2`
+  margin: 0;
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  margin: 0;
+  font-size: clamp(22px, 5vw, 32px);
+  line-height: 1;
+  font-weight: 900;
 `;
 
-const EmptyText = styled.p`
-  ${props => props.theme.typography.body2}
+const StateText = styled.p`
+  max-width: 390px;
+  margin: 10px auto 0;
   color: ${props => props.theme.colors.text.secondary};
-  max-width: 400px;
-  margin: 0;
+  font-weight: 700;
+  line-height: 1.45;
 `;
 
-const EmptyButton = styled.button`
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.xl};
+const PrimaryButton = styled.button`
+  margin-top: 18px;
+  border: 0;
+  border-radius: 999px;
+  padding: 13px 18px;
   background: ${props => props.theme.colors.gradient.primary};
-  color: ${props => props.theme.colors.text.inverse};
-  border: none;
-  border-radius: ${props => props.theme.radii.md};
+  color: #ffffff;
+  font-weight: 900;
   cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  ${props => props.theme.typography.button}
-  font-weight: 600;
-  font-size: 16px;
-
-  &:hover {
-    background: ${props => props.theme.colors.primaryHover};
-    transform: translateY(-2px);
-    box-shadow: ${props => props.theme.shadows.lg};
-  }
+  box-shadow: 0 16px 30px rgba(61, 129, 239, 0.2);
 `;
-
-const LoadingState = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: ${props => props.theme.spacing.xxl};
-  color: ${props => props.theme.colors.text.secondary};
-`;
-
-import API_BASE_URL from '@config/api';
 
 export const AddressManagementPage = ({ location }) => {
   const navigate = useNavigate();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(null);
-  const [mapViewAddress, setMapViewAddress] = useState(null);
+  const [error, setError] = useState(null);
+  const userId = 'default';
 
-  const userId = 'default'; // TODO: Get from auth context
-
-  useEffect(() => {
-    loadAddresses();
-  }, []);
-
-  const loadAddresses = async () => {
+  const loadAddresses = useCallback(async () => {
     try {
       setLoading(true);
-      // Include current location for distance calculation
-      const url = location
-        ? `${API_BASE_URL}/addresses/my-addresses?userId=${userId}&lat=${location.lat}&lng=${location.lng}`
-        : `${API_BASE_URL}/addresses/my-addresses?userId=${userId}`;
-      
-      const response = await fetch(url);
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setAddresses(data.data || []);
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        toast.error(errorData.message || 'Failed to load addresses');
+      setError(null);
+      const params = new URLSearchParams({ userId });
+      if (location?.lat && location?.lng) {
+        params.set('lat', location.lat);
+        params.set('lng', location.lng);
       }
-    } catch (error) {
-      console.error('Error loading addresses:', error);
-      toast.error('Failed to load addresses. Please check your connection.');
+
+      const response = await fetch(`${API_BASE_URL}/addresses/my-addresses?${params.toString()}`);
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Failed to load addresses');
+      setAddresses(data.data || []);
+    } catch (err) {
+      console.error('Error loading addresses:', err);
+      setError(err.message || 'Failed to load addresses');
+      toast.error('Failed to load addresses');
     } finally {
       setLoading(false);
     }
-  };
+  }, [location?.lat, location?.lng]);
 
-  const handleAddAddress = () => {
-    navigate('/addresses/new');
-  };
+  useEffect(() => {
+    loadAddresses();
+  }, [loadAddresses]);
 
-  const handleEdit = (address) => {
-    navigate(`/addresses/${address.id}/edit`);
-  };
+  const stats = useMemo(() => {
+    const defaultAddress = addresses.find(address => address.isDefault);
+    return [
+      { label: 'Saved', value: addresses.length },
+      { label: 'Default', value: defaultAddress?.label || 'None' },
+      { label: 'Area', value: defaultAddress?.suburb || addresses[0]?.suburb || 'Nearby' },
+    ];
+  }, [addresses]);
 
   const handleDelete = (address) => {
     setDeleteDialog({
       address,
-      message: 'Delete this address?',
-      description: 'This won\'t affect past orders.',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
+      message: `Delete ${address.label || 'address'}?`,
+      description: "This won't affect past orders, but you may need another address at checkout.",
     });
   };
 
@@ -215,21 +260,15 @@ export const AddressManagementPage = ({ location }) => {
     if (!deleteDialog) return;
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/addresses/${deleteDialog.address.id}?userId=${userId}`,
-        { method: 'DELETE' }
-      );
-
-      if (response.ok) {
-        toast.success('Address deleted successfully');
-        loadAddresses();
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        toast.error(errorData.message || 'Failed to delete address');
-      }
-    } catch (error) {
-      console.error('Error deleting address:', error);
-      toast.error('Failed to delete address');
+      const response = await fetch(`${API_BASE_URL}/addresses/${deleteDialog.address.id}?userId=${userId}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) throw new Error(data.message || 'Failed to delete address');
+      toast.success('Address deleted');
+      await loadAddresses();
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete address');
     } finally {
       setDeleteDialog(null);
     }
@@ -237,88 +276,75 @@ export const AddressManagementPage = ({ location }) => {
 
   const handleSetDefault = async (address) => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/addresses/${address.id}/set-default`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          toast.success(`${address.label || 'Address'} set as default`);
-          loadAddresses();
-        }
-      } else {
-        toast.error('Failed to set default address');
-      }
-    } catch (error) {
-      console.error('Error setting default address:', error);
-      toast.error('Failed to set default address');
+      const response = await fetch(`${API_BASE_URL}/addresses/${address.id}/set-default`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Failed to set default address');
+      toast.success(`${address.label || 'Address'} is now your default`);
+      await loadAddresses();
+    } catch (err) {
+      toast.error(err.message || 'Failed to set default address');
     }
   };
-
-  const handleMapClick = (address) => {
-    setMapViewAddress(address);
-    navigate(`/addresses/${address.id}/map`);
-  };
-
-  if (loading) {
-    return (
-      <Container>
-        <Header>
-          <HeaderLeft>
-            <BackButton onClick={() => navigate(-1)}>←</BackButton>
-            <Title>My Addresses</Title>
-          </HeaderLeft>
-          <AddButton onClick={handleAddAddress}>+ Add Address</AddButton>
-        </Header>
-        <LoadingState>Loading addresses...</LoadingState>
-        <BottomNavigation currentPath="/addresses" />
-      </Container>
-    );
-  }
 
   return (
     <Container>
       <Header>
-        <HeaderLeft>
-          <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <Title>My Addresses</Title>
-        </HeaderLeft>
-        <AddButton onClick={handleAddAddress}>+ Add Address</AddButton>
+        <HeaderInner>
+          <HeaderTop>
+            <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
+            <TitleBlock>
+              <Eyebrow>Shopply delivery</Eyebrow>
+              <Title>My Addresses</Title>
+            </TitleBlock>
+            <AddButton onClick={() => navigate('/addresses/new')}>Add</AddButton>
+          </HeaderTop>
+          <StatsGrid>
+            {stats.map(stat => (
+              <Stat key={stat.label}>
+                <StatValue>{stat.value}</StatValue>
+                <StatLabel>{stat.label}</StatLabel>
+              </Stat>
+            ))}
+          </StatsGrid>
+        </HeaderInner>
       </Header>
 
       <Content>
         {loading ? (
           <AddressList>
-            {[1, 2, 3].map((i) => (
-              <AddressCardSkeleton key={i} />
-            ))}
+            {[1, 2, 3].map((item) => <AddressCardSkeleton key={item} />)}
           </AddressList>
+        ) : error ? (
+          <StatePanel>
+            <div>
+              <StateMark>!</StateMark>
+              <StateTitle>Addresses could not load</StateTitle>
+              <StateText>{error}</StateText>
+              <PrimaryButton onClick={loadAddresses}>Try again</PrimaryButton>
+            </div>
+          </StatePanel>
         ) : addresses.length === 0 ? (
-          <EmptyState>
-            <EmptyIcon>📍</EmptyIcon>
-            <EmptyTitle>No saved addresses</EmptyTitle>
-            <EmptyText>
-              Add an address to see local stores and delivery times.
-            </EmptyText>
-            <EmptyButton onClick={handleAddAddress}>Add Address</EmptyButton>
-          </EmptyState>
+          <StatePanel>
+            <div>
+              <StateMark>A</StateMark>
+              <StateTitle>No saved addresses</StateTitle>
+              <StateText>Add a delivery address so Shopply can show local availability and send orders to the right place.</StateText>
+              <PrimaryButton onClick={() => navigate('/addresses/new')}>Add address</PrimaryButton>
+            </div>
+          </StatePanel>
         ) : (
           <AddressList>
-            {addresses.map((address) => (
+            {addresses.map(address => (
               <AddressCard
                 key={address.id}
                 address={address}
-                onEdit={handleEdit}
+                onEdit={(selected) => navigate(`/addresses/${selected.id}/edit`)}
                 onDelete={handleDelete}
                 onSetDefault={handleSetDefault}
-                onMapClick={handleMapClick}
-                currentLocation={location}
                 distance={address.distance}
               />
             ))}
@@ -328,14 +354,14 @@ export const AddressManagementPage = ({ location }) => {
 
       {deleteDialog && (
         <ConfirmDialog
-          isOpen={true}
+          isOpen
           title={deleteDialog.message}
           message={deleteDialog.description}
-          confirmText={deleteDialog.confirmText}
-          cancelText={deleteDialog.cancelText}
+          confirmText="Delete"
+          cancelText="Cancel"
           onConfirm={confirmDelete}
           onCancel={() => setDeleteDialog(null)}
-          danger={true}
+          danger
         />
       )}
 
@@ -343,4 +369,3 @@ export const AddressManagementPage = ({ location }) => {
     </Container>
   );
 };
-

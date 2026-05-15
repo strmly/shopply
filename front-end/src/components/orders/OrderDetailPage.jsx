@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -7,174 +7,143 @@ import { Button } from '../ui/Button';
 import { BottomNavigation } from '../home/BottomNavigation';
 import { OrderTimeline } from './OrderTimeline';
 import { OrderListSkeleton } from './SkeletonLoader';
+import API_BASE_URL from '@config/api';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: ${props => props.theme.colors.background};
-  animation: ${fadeIn} 0.5s ease-in;
-  padding-bottom: 100px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 52%, #ffffff 100%);
+  animation: ${fadeIn} 0.45s ease;
+  padding-bottom: 104px;
 `;
 
-const Header = styled.div`
-  background: ${props => props.theme.colors.surface};
-  padding: ${props => props.theme.spacing.xl};
-  padding-top: calc(${props => props.theme.spacing.xl} + env(safe-area-inset-top));
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
+const Header = styled.header`
   position: sticky;
   top: 0;
   z-index: 10;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.98), rgba(241,247,255,0.95)) padding-box,
+    ${props => props.theme.colors.gradient.primary} border-box;
+  border: 1px solid transparent;
+  border-radius: 0 0 30px 30px;
+  box-shadow: 0 24px 62px rgba(16, 24, 40, 0.1);
+`;
+
+const HeaderInner = styled.div`
+  width: min(960px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: calc(18px + env(safe-area-inset-top)) 0 18px;
 `;
 
 const HeaderTop = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: ${props => props.theme.spacing.md};
+  gap: 14px;
+  margin-bottom: 14px;
 `;
 
 const BackButton = styled.button`
-  background: none;
-  border: none;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(228, 231, 236, 0.95);
+  border-radius: 16px;
+  background: #ffffff;
+  color: ${props => props.theme.colors.primarySoftText};
   font-size: 24px;
+  font-weight: 900;
   cursor: pointer;
-  padding: ${props => props.theme.spacing.xs};
-  color: ${props => props.theme.colors.text.primary};
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.06);
+`;
+
+const TitleWrap = styled.div`
+  min-width: 0;
+  flex: 1;
+`;
+
+const Eyebrow = styled.div`
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading2}
+  margin: 3px 0 0;
   color: ${props => props.theme.colors.text.primary};
-  font-size: 24px;
-  margin: 0;
-`;
-
-const Content = styled.div`
-  padding: ${props => props.theme.spacing.xl};
-`;
-
-const Section = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.lg};
-  padding: ${props => props.theme.spacing.md};
-  margin-bottom: ${props => props.theme.spacing.md};
-  border: 1px solid ${props => props.theme.colors.border.light};
-`;
-
-const SectionTitle = styled.h3`
-  ${props => props.theme.typography.heading3}
-  color: ${props => props.theme.colors.text.primary};
-  font-size: 18px;
-  margin: 0 0 ${props => props.theme.spacing.md} 0;
-`;
-
-const StatusSection = styled(Section)`
-  position: relative;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 18px;
-  padding: 24px;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94) 58%, rgba(241,247,255,0.9)) padding-box,
-    linear-gradient(140deg, rgba(61, 129, 239, 0.24), rgba(228, 231, 236, 0.86), rgba(245, 158, 11, 0.14)) border-box;
-  border: 1px solid transparent;
-  border-radius: 28px;
-  box-shadow: 0 22px 50px rgba(16, 24, 40, 0.08);
-
-  &::after {
-    content: '';
-    position: absolute;
-    right: -48px;
-    top: -54px;
-    width: 150px;
-    height: 150px;
-    border-radius: 999px;
-    background: rgba(61, 129, 239, 0.07);
-    pointer-events: none;
-  }
-
-  @media (max-width: 560px) {
-    grid-template-columns: 1fr;
-  }
-
-  > div:last-child {
-    grid-column: 1 / -1;
-    position: relative;
-    z-index: 1;
-    margin-top: 0 !important;
-    width: 100% !important;
-    height: 8px !important;
-    background: rgba(228, 231, 236, 0.78) !important;
-    border-radius: 999px !important;
-    overflow: hidden !important;
-    box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.06);
-  }
-
-  > div:last-child > div {
-    border-radius: inherit;
-  }
-`;
-
-const StatusIcon = styled.div`
-  position: relative;
-  z-index: 1;
-  width: 64px;
-  height: 64px;
-  display: grid;
-  place-items: center;
-  border-radius: 22px;
-  background: ${props => props.theme.colors.gradient.soft};
-  color: ${props => props.theme.colors.primarySoftText};
-  border: 1px solid rgba(61, 129, 239, 0.18);
-  font-size: 0;
-  font-weight: 900;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.82);
-
-  &::before {
-    content: 'OS';
-    font-size: 16px;
-  }
-`;
-
-const StatusText = styled.div`
-  ${props => props.theme.typography.body1}
-  color: ${props => props.theme.colors.text.secondary};
-  margin-top: ${props => props.theme.spacing.sm};
-  font-weight: 700;
-`;
-
-const StatusContent = styled.div`
-  position: relative;
-  z-index: 1;
-  min-width: 0;
-`;
-
-const StatusEyebrow = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.primarySoftText};
-  font-weight: 900;
-  text-transform: uppercase;
-  margin-bottom: 5px;
-`;
-
-const StatusHeading = styled.h2`
-  color: ${props => props.theme.colors.text.primary};
-  margin: 0;
-  font-size: clamp(22px, 5vw, 34px);
+  font-size: clamp(26px, 6vw, 44px);
   line-height: 1;
   font-weight: 900;
   letter-spacing: 0;
 `;
 
+const HeaderMeta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+`;
+
+const Content = styled.main`
+  width: min(960px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 22px 0 0;
+`;
+
+const StatusHero = styled.section`
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94)) padding-box,
+    linear-gradient(140deg, rgba(61,129,239,0.22), rgba(228,231,236,0.9), rgba(245,158,11,0.14)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  padding: clamp(18px, 4vw, 26px);
+  box-shadow: 0 22px 50px rgba(16, 24, 40, 0.08);
+  margin-bottom: 16px;
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const StatusMark = styled.div`
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  font-size: 20px;
+  font-weight: 900;
+`;
+
+const StatusHeading = styled.h2`
+  margin: 0;
+  color: ${props => props.theme.colors.text.primary};
+  font-size: clamp(24px, 5vw, 36px);
+  line-height: 1;
+  font-weight: 900;
+`;
+
+const MutedText = styled.p`
+  margin: 8px 0 0;
+  color: ${props => props.theme.colors.text.secondary};
+  line-height: 1.45;
+  font-size: 14px;
+  font-weight: 700;
+`;
+
 const ProgressTrack = styled.div`
-  margin-top: 16px;
-  width: 100%;
+  grid-column: 1 / -1;
   height: 8px;
-  background: rgba(228, 231, 236, 0.78);
   border-radius: 999px;
+  background: rgba(228, 231, 236, 0.86);
   overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.06);
 `;
 
 const ProgressFill = styled.div`
@@ -184,279 +153,310 @@ const ProgressFill = styled.div`
   background: ${props => {
     if (props.$color === 'green') return props.theme.colors.successBase;
     if (props.$color === 'amber') return props.theme.colors.warningBase;
+    if (props.$color === 'red') return props.theme.colors.dangerBase;
     return props.theme.colors.primary;
   }};
-  transition: width 0.5s ease;
+`;
+
+const Section = styled.section`
+  background: rgba(255,255,255,0.96);
+  border: 1px solid rgba(228, 231, 236, 0.92);
+  border-radius: 24px;
+  padding: clamp(16px, 3vw, 22px);
+  margin-bottom: 16px;
+  box-shadow: 0 16px 34px rgba(16, 24, 40, 0.06);
+`;
+
+const SectionTitle = styled.h3`
+  margin: 0 0 14px;
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 18px;
+  font-weight: 900;
 `;
 
 const ItemsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
+  display: grid;
+  gap: 12px;
 `;
 
 const ItemCard = styled.div`
-  display: flex;
-  gap: ${props => props.theme.spacing.md};
-  padding: ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.radii.md};
-  background: ${props => props.theme.colors.background};
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 18px;
+  background: #f8fbff;
+  border: 1px solid rgba(228, 231, 236, 0.9);
+
+  @media (max-width: 560px) {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
 `;
 
 const ItemImage = styled.div`
-  width: 64px;
-  height: 64px;
-  border-radius: ${props => props.theme.radii.sm};
-  background: ${props => props.theme.colors.surface};
-  border: 1px solid ${props => props.theme.colors.border.light};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-weight: 900;
+
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: ${props => props.theme.radii.sm};
+  }
+
+  @media (max-width: 560px) {
+    width: 58px;
+    height: 58px;
   }
 `;
 
-const ItemInfo = styled.div`
-  flex: 1;
-`;
-
 const ItemName = styled.div`
-  ${props => props.theme.typography.body1}
-  font-weight: 600;
   color: ${props => props.theme.colors.text.primary};
-  margin-bottom: ${props => props.theme.spacing.xs};
+  font-size: 15px;
+  font-weight: 900;
 `;
 
 const ItemDetails = styled.div`
-  ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.text.secondary};
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 4px;
 `;
 
 const ItemPrice = styled.div`
-  ${props => props.theme.typography.body1}
-  font-weight: 700;
   color: ${props => props.theme.colors.text.primary};
+  font-weight: 900;
   text-align: right;
+
+  @media (max-width: 560px) {
+    grid-column: 2;
+    text-align: left;
+  }
+`;
+
+const InfoGrid = styled.div`
+  display: grid;
+  gap: 10px;
 `;
 
 const InfoRow = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: ${props => props.theme.spacing.sm} 0;
-  border-bottom: 1px solid ${props => props.theme.colors.border.light};
-  
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(228, 231, 236, 0.88);
+
   &:last-child {
-    border-bottom: none;
+    border-bottom: 0;
   }
 `;
 
 const InfoLabel = styled.div`
-  ${props => props.theme.typography.body2}
   color: ${props => props.theme.colors.text.secondary};
-`;
-
-const InfoValue = styled.div`
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  text-align: right;
-`;
-
-const TotalRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: ${props => props.theme.spacing.md} 0;
-  margin-top: ${props => props.theme.spacing.md};
-  border-top: 2px solid ${props => props.theme.colors.border.default};
-`;
-
-const TotalLabel = styled.div`
-  ${props => props.theme.typography.heading3}
-  color: ${props => props.theme.colors.text.primary};
-  font-size: 18px;
-`;
-
-const TotalValue = styled.div`
-  ${props => props.theme.typography.heading3}
-  color: ${props => props.theme.colors.text.primary};
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 700;
 `;
 
-const ActionButtons = styled.div`
+const InfoValue = styled.div`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 14px;
+  font-weight: 900;
+  text-align: right;
+`;
+
+const TotalValue = styled(InfoValue)`
+  font-size: 22px;
+`;
+
+const Actions = styled.div`
   display: flex;
-  gap: ${props => props.theme.spacing.md};
-  margin-top: ${props => props.theme.spacing.lg};
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
 `;
 
-const LoadingState = styled.div`
+const WhatsAppButton = styled.a`
+  flex: 1;
+  min-width: 190px;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  border-radius: 999px;
+  background: #128c7e;
+  color: #ffffff;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 16px 30px rgba(18, 140, 126, 0.24);
+
+  &:hover {
+    background: #075e54;
+  }
+`;
+
+const StatePanel = styled(Section)`
+  min-height: 320px;
+  display: grid;
+  place-items: center;
   text-align: center;
-  padding: ${props => props.theme.spacing.xxl};
-  color: ${props => props.theme.colors.text.secondary};
 `;
 
-import API_BASE_URL from '@config/api';
+const formatStatus = (status = 'pending') => (
+  status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+);
 
-export const OrderDetailPage = ({ location }) => {
+const formatMoney = (value) => `R${parseFloat(value || 0).toFixed(2)}`;
+
+const formatPayment = (method = 'seller_whatsapp') => {
+  if (method === 'seller_whatsapp') return 'Confirm with seller on WhatsApp';
+  return method.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+export const OrderDetailPage = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [reordering, setReordering] = useState(false);
   const [itemsWithImages, setItemsWithImages] = useState([]);
-
-  const userId = 'default'; // In production, get from auth context
+  const userId = 'default';
 
   useEffect(() => {
+    const loadOrder = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/my-orders/${orderId}?userId=${userId}`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Order could not load');
+        setOrder(data.data);
+      } catch (err) {
+        console.error('Error loading order:', err);
+        setOrder(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadOrder();
   }, [orderId]);
 
   useEffect(() => {
-    if (order && order.items) {
-      loadItemImages();
-    }
-  }, [order]);
+    const loadItemImages = async () => {
+      if (!order?.items) return;
+      const nextItems = await Promise.all(order.items.map(async (item) => {
+        const thumbnail = order.productThumbnails?.find(t => t.id === item.productId);
+        if (thumbnail?.image) return { ...item, image: thumbnail.image, name: thumbnail.name };
 
-  const loadOrder = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/my-orders/${orderId}?userId=${userId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setOrder(data.data);
-      }
-    } catch (error) {
-      console.error('Error loading order:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadItemImages = async () => {
-    if (!order || !order.items) return;
-
-    try {
-      const itemsWithImagesData = await Promise.all(
-        order.items.map(async (item) => {
-          // If item already has image from productThumbnails, use it
-          const thumbnail = order.productThumbnails?.find(t => t.id === item.productId);
-          if (thumbnail?.image) {
-            return { ...item, image: thumbnail.image, name: thumbnail.name };
-          }
-
-          // Otherwise, fetch product details
-          try {
-            const response = await fetch(`${API_BASE_URL}/products/${item.productId}`);
-            const data = await response.json();
-            if (data.success && data.data) {
-              const product = data.data;
-              const image = product.images?.[0] || product.image || null;
-              return { ...item, image, name: product.name || item.name || 'Product' };
-            }
-          } catch (error) {
-            console.error(`Error loading product ${item.productId}:`, error);
-          }
+        try {
+          const response = await fetch(`${API_BASE_URL}/products/${item.productId}`);
+          const data = await response.json();
+          const product = data.success ? data.data : null;
+          return {
+            ...item,
+            image: product?.images?.[0] || product?.image || null,
+            name: product?.name || item.name || 'Product',
+          };
+        } catch {
           return { ...item, image: null, name: item.name || 'Product' };
-        })
-      );
-      setItemsWithImages(itemsWithImagesData);
-    } catch (error) {
-      console.error('Error loading item images:', error);
-      setItemsWithImages(order.items || []);
-    }
-  };
+        }
+      }));
+      setItemsWithImages(nextItems);
+    };
+
+    loadItemImages();
+  }, [order]);
 
   const handleReorder = async () => {
     try {
       setReordering(true);
       const response = await fetch(`${API_BASE_URL}/my-orders/${orderId}/reorder`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
       });
-
       const data = await response.json();
-
-      if (data.success) {
-        navigate('/cart');
-      } else {
-        alert(data.message || 'Failed to reorder');
-      }
-    } catch (error) {
-      console.error('Error reordering:', error);
+      if (data.success) navigate('/cart');
+      else alert(data.message || 'Failed to reorder');
+    } catch {
       alert('Failed to reorder. Please try again.');
     } finally {
       setReordering(false);
     }
   };
 
-  const handleTrackOrder = () => {
-    navigate(`/tracking/${orderId}`);
+  const handleCancel = async () => {
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/my-orders/${orderId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const data = await response.json();
+      if (data.success) navigate('/orders');
+      else alert(data.message || 'Failed to cancel order');
+    } catch {
+      alert('Failed to cancel order. Please try again.');
+    }
   };
 
-  if (loading) {
-    return (
-      <Container>
-        <Header>
+  const renderShell = (children, title = 'Order Details') => (
+    <Container>
+      <Header>
+        <HeaderInner>
           <HeaderTop>
-            <BackButton onClick={() => navigate(-1)}>←</BackButton>
-            <Title>Order Details</Title>
-            <div style={{ width: '40px' }}></div>
+            <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
+            <TitleWrap>
+              <Eyebrow>Shopply orders</Eyebrow>
+              <Title>{title}</Title>
+            </TitleWrap>
           </HeaderTop>
-        </Header>
-      <Content>
-        <OrderListSkeleton />
-      </Content>
-        <BottomNavigation currentPath="/orders" />
-      </Container>
-    );
+        </HeaderInner>
+      </Header>
+      <Content>{children}</Content>
+      <BottomNavigation currentPath="/orders" />
+    </Container>
+  );
+
+  if (loading) {
+    return renderShell(<OrderListSkeleton />);
   }
 
   if (!order) {
-    return (
-      <Container>
-        <Header>
-          <HeaderTop>
-            <BackButton onClick={() => navigate(-1)}>←</BackButton>
-            <Title>Order Not Found</Title>
-            <div style={{ width: '40px' }}></div>
-          </HeaderTop>
-        </Header>
-        <Content>
-          <LoadingState>Order not found</LoadingState>
-        </Content>
-        <BottomNavigation currentPath="/orders" />
-      </Container>
+    return renderShell(
+      <StatePanel>
+        <div>
+          <SectionTitle>Order not found</SectionTitle>
+          <MutedText>This order could not be loaded. It may have been removed or belongs to another account.</MutedText>
+          <Actions>
+            <Button variant="primary" onClick={() => navigate('/orders')}>Back to orders</Button>
+          </Actions>
+        </div>
+      </StatePanel>,
+      'Order Not Found'
     );
   }
 
   const statusMetadata = order.statusMetadata || {};
-  const storeGroups = order.storeGroups || [];
-  const primaryStore = storeGroups[0] || {};
-  const statusLabel = order.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const statusLabel = formatStatus(order.status);
+  const primaryStore = order.storeGroups?.[0] || {};
+  const items = itemsWithImages.length > 0 ? itemsWithImages : order.items || [];
+  const whatsappHandoffs = order.whatsappHandoff?.filter(item => item.href) || [];
+  const canCancel = ['pending', 'pending_seller_confirmation', 'confirmed'].includes(order.status);
+  const canTrack = ['processing', 'preparing', 'out_for_delivery'].includes(order.status);
 
-  return (
-    <Container>
-      <Header>
-        <HeaderTop>
-          <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <Title>Order #{order.id.slice(-8)}</Title>
-          <div style={{ width: '40px' }}></div>
-        </HeaderTop>
+  return renderShell(
+    <>
+      <HeaderMeta>
         <StatusBadge
           status={order.status}
           color={statusMetadata.badgeColor}
@@ -465,182 +465,125 @@ export const OrderDetailPage = ({ location }) => {
         >
           {statusLabel}
         </StatusBadge>
-        {statusMetadata.subtext && (
-          <StatusText>{statusMetadata.subtext}</StatusText>
-        )}
-      </Header>
+      </HeaderMeta>
 
-      <Content>
-        <StatusSection>
-          <StatusIcon>{statusMetadata.icon || '📦'}</StatusIcon>
-          <StatusText>{statusMetadata.subtext || 'Order in progress'}</StatusText>
-          {statusMetadata.progress !== undefined && (
-            <div style={{ 
-              marginTop: '16px', 
-              width: '100%', 
-              height: '4px', 
-              background: '#E4E7EC', 
-              borderRadius: '2px',
-              overflow: 'hidden'
-            }}>
-              <div style={{
-                width: `${statusMetadata.progress}%`,
-                height: '100%',
-                background: statusMetadata.badgeColor === 'green' 
-                  ? '#15A17C' 
-                  : statusMetadata.badgeColor === 'amber'
-                  ? '#F59E0B'
-                  : '#3D81EF',
-                transition: 'width 0.5s ease'
-              }} />
-            </div>
-          )}
-        </StatusSection>
+      <StatusHero>
+        <StatusMark>{String(statusMetadata.icon || statusLabel || 'O').slice(0, 1).toUpperCase()}</StatusMark>
+        <div>
+          <Eyebrow>Order status</Eyebrow>
+          <StatusHeading>{statusLabel}</StatusHeading>
+          <MutedText>{statusMetadata.subtext || 'Order in progress'}</MutedText>
+        </div>
+        <ProgressTrack>
+          <ProgressFill $progress={statusMetadata.progress ?? 0} $color={statusMetadata.badgeColor} />
+        </ProgressTrack>
+      </StatusHero>
 
-        {order.timeline && order.timeline.length > 0 && (
-          <OrderTimeline timeline={order.timeline} />
-        )}
-
+      {whatsappHandoffs.length > 0 && (
         <Section>
-          <SectionTitle>Items</SectionTitle>
-          <ItemsList>
-            {(itemsWithImages.length > 0 ? itemsWithImages : order.items || []).map((item, index) => (
-              <ItemCard key={index}>
-                <ItemImage>
-                  {item.image ? (
-                    <img src={item.image} alt={item.name} />
-                  ) : (
-                    <span>📦</span>
-                  )}
-                </ItemImage>
-                <ItemInfo>
-                  <ItemName>{item.name || `Item ${index + 1}`}</ItemName>
-                  <ItemDetails>
-                    Quantity: {item.quantity} {item.variant && `• ${item.variant.name}`}
-                  </ItemDetails>
-                </ItemInfo>
-                <ItemPrice>
-                  R{parseFloat((item.price || 0) * (item.quantity || 1)).toFixed(2)}
-                </ItemPrice>
-              </ItemCard>
+          <SectionTitle>Seller WhatsApp</SectionTitle>
+          <MutedText>Send or reopen your order message with the seller to confirm availability, delivery timing, and next steps.</MutedText>
+          <Actions>
+            {whatsappHandoffs.map(item => (
+              <WhatsAppButton
+                key={`${item.storeId}-${item.whatsappNumber}`}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                WhatsApp {item.storeName || 'seller'}
+              </WhatsAppButton>
             ))}
-          </ItemsList>
+          </Actions>
         </Section>
+      )}
 
-        <Section>
-          <SectionTitle>Store</SectionTitle>
+      {order.timeline?.length > 0 && <OrderTimeline timeline={order.timeline} />}
+
+      <Section>
+        <SectionTitle>Items</SectionTitle>
+        <ItemsList>
+          {items.map((item, index) => (
+            <ItemCard key={`${item.productId || 'item'}-${index}`}>
+              <ItemImage>
+                {item.image ? <img src={item.image} alt={item.name || 'Order item'} /> : (item.name || 'T').slice(0, 1).toUpperCase()}
+              </ItemImage>
+              <div>
+                <ItemName>{item.name || `Item ${index + 1}`}</ItemName>
+                <ItemDetails>
+                  Quantity: {item.quantity || 1}{item.variant?.name ? ` | ${item.variant.name}` : ''}
+                </ItemDetails>
+              </div>
+              <ItemPrice>{formatMoney((item.price || 0) * (item.quantity || 1))}</ItemPrice>
+            </ItemCard>
+          ))}
+        </ItemsList>
+      </Section>
+
+      <Section>
+        <SectionTitle>Order summary</SectionTitle>
+        <InfoGrid>
           <InfoRow>
-            <InfoLabel>Store Name</InfoLabel>
-            <InfoValue>{primaryStore.storeName || 'Store'}</InfoValue>
+            <InfoLabel>Store</InfoLabel>
+            <InfoValue>{primaryStore.storeName || 'Shopply seller'}</InfoValue>
           </InfoRow>
-        </Section>
-
-        <Section>
-          <SectionTitle>Delivery</SectionTitle>
           <InfoRow>
-            <InfoLabel>Method</InfoLabel>
-            <InfoValue>
-              {order.deliveryMethod === 'pickup' ? '🏬 Pickup' : 
-               order.deliveryMethod === 'group' ? '🚚 Group Delivery' : 
-               '🛵 Delivery'}
-            </InfoValue>
+            <InfoLabel>Fulfilment</InfoLabel>
+            <InfoValue>{order.deliveryMethod === 'pickup' ? 'Pickup' : 'Delivery'}</InfoValue>
           </InfoRow>
           {order.deliveryAddress && (
             <InfoRow>
               <InfoLabel>Address</InfoLabel>
-              <InfoValue>
-                {order.deliveryAddress.suburb || ''} {order.deliveryAddress.city || ''}
-              </InfoValue>
+              <InfoValue>{[order.deliveryAddress.suburb, order.deliveryAddress.city].filter(Boolean).join(', ') || 'Saved address'}</InfoValue>
             </InfoRow>
           )}
           {order.eta && (
             <InfoRow>
-              <InfoLabel>Estimated Arrival</InfoLabel>
+              <InfoLabel>Estimated arrival</InfoLabel>
               <InfoValue>{order.eta}</InfoValue>
             </InfoRow>
           )}
-        </Section>
-
-        <Section>
-          <SectionTitle>Payment</SectionTitle>
           <InfoRow>
-            <InfoLabel>Method</InfoLabel>
-            <InfoValue>{order.paymentMethod || 'Card'}</InfoValue>
+            <InfoLabel>Payment</InfoLabel>
+            <InfoValue>{formatPayment(order.paymentMethod)}</InfoValue>
           </InfoRow>
           <InfoRow>
-            <InfoLabel>Items Total</InfoLabel>
-            <InfoValue>R{parseFloat(order.totals?.itemsTotal || 0).toFixed(2)}</InfoValue>
+            <InfoLabel>Items total</InfoLabel>
+            <InfoValue>{formatMoney(order.totals?.itemsTotal)}</InfoValue>
           </InfoRow>
           {order.totals?.deliveryFee > 0 && (
             <InfoRow>
-              <InfoLabel>Delivery Fee</InfoLabel>
-              <InfoValue>R{parseFloat(order.totals.deliveryFee).toFixed(2)}</InfoValue>
+              <InfoLabel>Delivery fee</InfoLabel>
+              <InfoValue>{formatMoney(order.totals.deliveryFee)}</InfoValue>
             </InfoRow>
           )}
           {order.totals?.discount > 0 && (
             <InfoRow>
               <InfoLabel>Discount</InfoLabel>
-              <InfoValue>-R{parseFloat(order.totals.discount).toFixed(2)}</InfoValue>
+              <InfoValue>-{formatMoney(order.totals.discount)}</InfoValue>
             </InfoRow>
           )}
-          <TotalRow>
-            <TotalLabel>Total</TotalLabel>
-            <TotalValue>R{parseFloat(order.totals?.total || 0).toFixed(2)}</TotalValue>
-          </TotalRow>
-        </Section>
+          <InfoRow>
+            <InfoLabel>Total</InfoLabel>
+            <TotalValue>{formatMoney(order.totals?.total)}</TotalValue>
+          </InfoRow>
+        </InfoGrid>
+      </Section>
 
-        <ActionButtons>
-          {order.status === 'out_for_delivery' || order.status === 'processing' || order.status === 'preparing' ? (
-            <Button 
-              variant="primary" 
-              onClick={handleTrackOrder}
-              style={{ flex: 1 }}
-            >
-              Track Order
-            </Button>
-          ) : null}
-          {order.canReorder && (
-            <Button 
-              variant="secondary" 
-              onClick={handleReorder}
-              disabled={reordering}
-              style={{ flex: 1 }}
-            >
-              {reordering ? 'Adding to cart...' : 'Reorder'}
-            </Button>
-          )}
-          {(order.status === 'pending' || order.status === 'confirmed') && (
-            <Button 
-              variant="outline" 
-              onClick={async () => {
-                if (confirm('Are you sure you want to cancel this order?')) {
-                  try {
-                    const response = await fetch(`${API_BASE_URL}/my-orders/${orderId}/cancel`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ userId }),
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                      navigate('/orders');
-                    } else {
-                      alert(data.message || 'Failed to cancel order');
-                    }
-                  } catch (error) {
-                    alert('Failed to cancel order. Please try again.');
-                  }
-                }
-              }}
-              style={{ flex: 1, borderColor: '#C62850', color: '#C62850' }}
-            >
-              Cancel Order
-            </Button>
-          )}
-        </ActionButtons>
-      </Content>
-
-      <BottomNavigation currentPath="/orders" />
-    </Container>
+      <Actions>
+        {canTrack && <Button variant="primary" onClick={() => navigate(`/tracking/${orderId}`)} style={{ flex: 1 }}>Track order</Button>}
+        {order.canReorder && (
+          <Button variant="secondary" onClick={handleReorder} disabled={reordering} style={{ flex: 1 }}>
+            {reordering ? 'Adding to cart...' : 'Reorder'}
+          </Button>
+        )}
+        {canCancel && (
+          <Button variant="outline" onClick={handleCancel} style={{ flex: 1, borderColor: '#C62850', color: '#C62850' }}>
+            Cancel order
+          </Button>
+        )}
+      </Actions>
+    </>,
+    `Order #${String(order.id || '').slice(-8)}`
   );
 };
-

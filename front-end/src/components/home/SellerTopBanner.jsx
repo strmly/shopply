@@ -1,6 +1,7 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
+import { useUser } from '../../context/UserContext';
 
 const slide = keyframes`
   0%   { transform: translateX(0); }
@@ -97,21 +98,22 @@ const CloseBtn = styled.button`
 `;
 
 const MESSAGES = [
-  { text: 'Start selling on Tsenga — list in 5 minutes, reach buyers near you.', cta: 'Start now' },
+  { text: 'Start selling on Shopply — list in 5 minutes, reach buyers near you.', cta: 'Start now' },
   { text: '500+ local sellers. Free to list. Instant payouts.' },
-  { text: 'Turn your space into income — furniture sells fast on Tsenga.', cta: 'Become a seller' },
-  { text: 'Join local sellers making R2.4M+ per month on Tsenga.' },
+  { text: 'Turn your space into income — furniture sells fast on Shopply.', cta: 'Become a seller' },
+  { text: 'Join local sellers making R2.4M+ per month on Shopply.' },
 ];
 
-const STORAGE_KEY = 'tsenga_seller_banner_dismissed';
+const STORAGE_KEY = 'shopply_seller_banner_dismissed';
 
 export const SellerTopBanner = () => {
   const navigate = useNavigate();
+  const { role } = useUser();
   const [dismissed, setDismissed] = useState(
     () => sessionStorage.getItem(STORAGE_KEY) === '1'
   );
 
-  if (dismissed) return null;
+  if (dismissed || role === 'seller' || role === 'admin') return null;
 
   const handleDismiss = () => {
     sessionStorage.setItem(STORAGE_KEY, '1');

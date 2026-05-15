@@ -24,7 +24,7 @@ export class CheckoutController {
         deliveryAddress: deliveryAddress || location,
         deliveryMethod: deliveryMethod || 'delivery',
         deliverySpeed: deliverySpeed || 'standard',
-        paymentMethod: paymentMethod || 'card',
+        paymentMethod: paymentMethod || 'seller_whatsapp',
         contactInfo: contactInfo || {},
         orderInstructions: orderInstructions || null,
         voucherId: voucherId || null,
@@ -33,8 +33,8 @@ export class CheckoutController {
       notificationService.notify(
         userId,
         'order',
-        'Order Confirmed',
-        `Your order #${order.id} has been confirmed and is being prepared by the seller.`,
+        'Order sent to seller',
+        `Your order #${order.id} is ready to send through WhatsApp for seller confirmation.`,
         { actionUrl: `/orders/${order.id}`, metadata: { orderId: String(order.id) } }
       );
 

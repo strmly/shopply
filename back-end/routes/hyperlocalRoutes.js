@@ -1,5 +1,6 @@
 import express from 'express';
-import HyperlocalController from '../controllers/HyperlocalController.js';
+import { getHomeFeed, search, searchCategory, getTiers, getNearestAvailability, getTrending, getNearbySellers, getHeatmap } from '../controllers/HyperlocalController.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = express.Router();
 
@@ -8,20 +9,35 @@ const router = express.Router();
  * Handles hyperlocal search, feed, and discovery
  */
 
+const searchLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,             // 30 requests per minute per IP
+  message: 'Too many requests, please slow down.',
+});
+
 // Get hyperlocal home feed
-router.get('/feed/home', HyperlocalController.getHomeFeed);
+router.get('/feed/home', getHomeFeed);
 
 // Search with radius expansion
-router.get('/search', HyperlocalController.search);
+router.get('/search', searchLimiter, search);
 
 // Search by category
-router.get('/category/:category', HyperlocalController.searchCategory);
+router.get('/category/:category', searchCategory);
 
 // Get available tiers
-router.get('/tiers', HyperlocalController.getTiers);
+router.get('/tiers', getTiers);
 
 // Get nearest availability (for progressive expansion UI)
-router.get('/nearest-availability', HyperlocalController.getNearestAvailability);
+router.get('/nearest-availability', getNearestAvailability);
+
+// Trending products near the buyer
+router.get('/trending', getTrending);
+
+// Top-rated sellers near the buyer
+router.get('/sellers', getNearbySellers);
+
+// Cell-level heatmap (product counts + live activity)
+router.get('/heatmap', getHeatmap);
 
 export default router;
 

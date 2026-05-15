@@ -1,387 +1,190 @@
 import { useState } from 'react';
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
-const slideDown = keyframes`
-  from {
-    max-height: 0;
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    max-height: 500px;
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
-
-const Card = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.lg};
-  border: 1px solid ${props => props.theme.colors.border.light};
-  padding: ${props => props.theme.spacing.md};
-  transition: ${props => props.theme.transitions.swift};
-  animation: ${fadeIn} 0.3s ease-in;
+const Card = styled.article`
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94)) padding-box,
+    linear-gradient(140deg, rgba(61,129,239,0.2), rgba(228,231,236,0.9), rgba(21,161,124,0.14)) border-box;
+  border: 1px solid transparent;
+  border-radius: 26px;
+  padding: clamp(16px, 3vw, 22px);
+  box-shadow: 0 20px 46px rgba(16, 24, 40, 0.08);
+  animation: ${fadeIn} 0.3s ease;
 `;
 
 const TopRow = styled.div`
-  display: flex;
-  align-items: flex-start;
-  gap: ${props => props.theme.spacing.md};
-  margin-bottom: ${props => props.theme.spacing.md};
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+
+  @media (max-width: 700px) {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
 `;
 
 const ProductImage = styled.img`
-  width: 64px;
-  height: 64px;
-  border-radius: ${props => props.theme.radii.md};
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
   object-fit: cover;
-  flex-shrink: 0;
-  background: ${props => props.theme.colors.background};
 `;
 
 const ProductImagePlaceholder = styled.div`
-  width: 64px;
-  height: 64px;
-  border-radius: ${props => props.theme.radii.md};
-  background: ${props => props.theme.colors.background};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 22px;
+  font-weight: 900;
 `;
 
-const ProductInfo = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.xs};
-  min-width: 0;
-`;
-
-const ProductName = styled.div`
-  ${props => props.theme.typography.body1}
-  font-weight: 600;
+const ProductName = styled.h2`
+  margin: 0;
   color: ${props => props.theme.colors.text.primary};
-  font-size: 15px;
+  font-size: 17px;
+  line-height: 1.15;
+  font-weight: 900;
 `;
 
-const StoreName = styled.div`
-  ${props => props.theme.typography.body2}
+const Meta = styled.div`
   color: ${props => props.theme.colors.text.secondary};
   font-size: 13px;
+  font-weight: 700;
+  margin-top: 5px;
 `;
 
-const StarRating = styled.div`
+const Rating = styled.div`
   display: flex;
-  gap: ${props => props.theme.spacing.xs};
-  align-items: center;
-  flex-shrink: 0;
+  gap: 4px;
+
+  @media (max-width: 700px) {
+    grid-column: 1 / -1;
+  }
 `;
 
 const Star = styled.span`
-  font-size: 18px;
-  color: ${props => props.$filled 
-    ? '#FFB800' 
-    : props.theme.colors.border.light};
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: ${props => props.$filled ? props.theme.colors.gradient.primary : '#ffffff'};
+  color: ${props => props.$filled ? '#ffffff' : props.theme.colors.primarySoftText};
+  border: 1px solid rgba(228,231,236,0.95);
+  font-size: 12px;
+  font-weight: 900;
 `;
 
-const Body = styled.div`
-  margin-bottom: ${props => props.theme.spacing.md};
-`;
-
-const ReviewText = styled.div`
-  ${props => props.theme.typography.body2}
+const ReviewText = styled.p`
+  margin: 16px 0 0;
   color: ${props => props.theme.colors.text.primary};
   line-height: 1.5;
-  white-space: pre-wrap;
-`;
-
-const Footer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: ${props => props.theme.spacing.md};
-  border-top: 1px solid ${props => props.theme.colors.border.light};
-`;
-
-const SubmissionDate = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.tertiary};
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 700;
 `;
 
 const Actions = styled.div`
   display: flex;
-  gap: ${props => props.theme.spacing.md};
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(228,231,236,0.9);
 `;
 
 const ActionButton = styled.button`
-  background: none;
-  border: none;
-  ${props => props.theme.typography.body2}
-  color: ${props => props.$danger 
-    ? props.theme.colors.danger[600] 
-    : props.theme.colors.primary};
+  min-height: 40px;
+  border: 1px solid ${props => props.$danger ? 'rgba(198,40,80,0.22)' : 'rgba(228,231,236,0.95)'};
+  border-radius: 999px;
+  background: ${props => props.$primary ? props.theme.colors.gradient.primary : props.$danger ? 'rgba(198,40,80,0.08)' : '#ffffff'};
+  color: ${props => props.$primary ? '#ffffff' : props.$danger ? (props.theme.colors.dangerBase || '#C62850') : props.theme.colors.primarySoftText};
+  padding: 10px 14px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 900;
   cursor: pointer;
-  padding: ${props => props.theme.spacing.xs};
-  transition: ${props => props.theme.transitions.swift};
-  
-  &:hover {
-    opacity: 0.7;
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 const EditForm = styled.div`
-  margin-top: ${props => props.theme.spacing.md};
-  padding-top: ${props => props.theme.spacing.md};
-  border-top: 1px solid ${props => props.theme.colors.border.light};
-  animation: ${slideDown} 0.3s ease-out;
-  overflow: hidden;
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
 `;
 
-const EditStarSelector = styled.div`
-  display: flex;
-  gap: ${props => props.theme.spacing.xs};
-  align-items: center;
-  margin-bottom: ${props => props.theme.spacing.md};
-`;
-
-const EditStar = styled.button`
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  padding: ${props => props.theme.spacing.xs};
-  transition: ${props => props.theme.transitions.swift};
-  line-height: 1;
-  
-  &:hover {
-    transform: scale(1.2);
-  }
-  
-  &:active {
-    transform: scale(0.9);
-  }
-`;
-
-const EditTextInput = styled.textarea`
+const TextArea = styled.textarea`
   width: 100%;
-  min-height: 80px;
-  padding: ${props => props.theme.spacing.md};
-  border: 1px solid ${props => props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.md};
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.text.primary};
-  background: ${props => props.theme.colors.background};
-  resize: vertical;
+  min-height: 96px;
+  padding: 14px;
+  border: 1px solid rgba(228,231,236,0.95);
+  border-radius: 18px;
   font-family: inherit;
-  margin-bottom: ${props => props.theme.spacing.xs};
-  
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme.colors.primary};
-    box-shadow: 0 0 0 3px ${props => props.theme.colors.primarySoftBg};
-  }
+  font-size: 14px;
+  resize: vertical;
 `;
 
-const EditCharCount = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => {
-    if (props.$count > 900) return props.theme.colors.danger[600];
-    if (props.$count > 800) return props.theme.colors.warning[600];
-    return props.theme.colors.text.tertiary;
-  }};
-  font-size: 11px;
-  text-align: right;
-  margin-bottom: ${props => props.theme.spacing.md};
-`;
-
-const EditActions = styled.div`
-  display: flex;
-  gap: ${props => props.theme.spacing.md};
-`;
-
-const EditButton = styled.button`
-  flex: 1;
-  padding: ${props => props.theme.spacing.md};
-  background: ${props => props.$secondary
-    ? props.theme.colors.background
-    : props.theme.colors.primary};
-  color: ${props => props.$secondary
-    ? props.theme.colors.text.primary
-    : props.theme.colors.text.inverse};
-  border: ${props => props.$secondary
-    ? `1px solid ${props.theme.colors.border.light}`
-    : 'none'};
-  border-radius: ${props => props.theme.radii.md};
-  ${props => props.theme.typography.body1}
-  font-weight: 600;
-  cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  
-  &:hover {
-    background: ${props => props.$secondary
-      ? props.theme.colors.surface
-      : props.theme.colors.primaryHover};
-  }
-`;
-
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now - date);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric',
-    year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-  });
-};
+const formatDate = (value) => value ? new Date(value).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recently';
 
 const isEditable = (createdAt) => {
-  const date = new Date(createdAt);
-  const now = new Date();
-  const diffTime = Math.abs(now - date);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays <= 7;
+  const days = Math.ceil(Math.abs(new Date() - new Date(createdAt)) / 86400000);
+  return days <= 7;
 };
 
 export const ReviewHistoryCard = ({ review, onUpdate, onDelete }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editRating, setEditRating] = useState(review.rating);
-  const [editContent, setEditContent] = useState(review.content || '');
-  const [updating, setUpdating] = useState(false);
-
+  const [editing, setEditing] = useState(false);
+  const [rating, setRating] = useState(review.rating || 5);
+  const [content, setContent] = useState(review.content || '');
   const editable = isEditable(review.createdAt);
-  const maxChars = 1000;
-  const charCount = editContent.length;
 
-  const handleEdit = () => {
-    setIsEditing(true);
-    setEditRating(review.rating);
-    setEditContent(review.content || '');
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditRating(review.rating);
-    setEditContent(review.content || '');
-  };
-
-  const handleSave = async () => {
-    setUpdating(true);
-    try {
-      await onUpdate(review.id, {
-        rating: editRating,
-        content: editContent,
-      });
-      setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating review:', error);
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    await onDelete(review.id);
+  const save = async () => {
+    await onUpdate(review.id, { rating, content });
+    setEditing(false);
   };
 
   return (
     <Card>
       <TopRow>
         {review.productImage ? (
-          <ProductImage src={review.productImage} alt={review.productName} />
+          <ProductImage src={review.productImage} alt={review.productName || 'Product'} />
         ) : (
-          <ProductImagePlaceholder>📦</ProductImagePlaceholder>
+          <ProductImagePlaceholder>R</ProductImagePlaceholder>
         )}
-        <ProductInfo>
+        <div>
           <ProductName>{review.productName || 'Product'}</ProductName>
-          <StoreName>{review.storeName || 'Store'}</StoreName>
-        </ProductInfo>
-        <StarRating>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star key={star} $filled={star <= review.rating}>
-              ⭐
-            </Star>
+          <Meta>{review.storeName || 'Store'} | Submitted {formatDate(review.createdAt)}</Meta>
+        </div>
+        <Rating>
+          {[1, 2, 3, 4, 5].map(star => (
+            <Star key={star} $filled={star <= (editing ? rating : review.rating)}>{star}</Star>
           ))}
-        </StarRating>
+        </Rating>
       </TopRow>
 
-      <Body>
-        {isEditing ? (
-          <EditForm>
-            <EditStarSelector>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <EditStar
-                  key={star}
-                  onClick={() => setEditRating(star)}
-                  aria-label={`Rate ${star} out of 5 stars`}
-                >
-                  {star <= editRating ? '⭐' : '☆'}
-                </EditStar>
-              ))}
-            </EditStarSelector>
-            <EditTextInput
-              value={editContent}
-              onChange={(e) => {
-                if (e.target.value.length <= maxChars) {
-                  setEditContent(e.target.value);
-                }
-              }}
-              placeholder="Tell others what you liked (optional)"
-              maxLength={maxChars}
-            />
-            <EditCharCount $count={charCount}>
-              {charCount} / {maxChars}
-            </EditCharCount>
-            <EditActions>
-              <EditButton $secondary onClick={handleCancel} disabled={updating}>
-                Cancel
-              </EditButton>
-              <EditButton onClick={handleSave} disabled={updating || editRating === 0}>
-                {updating ? 'Updating...' : 'Update Review'}
-              </EditButton>
-            </EditActions>
-          </EditForm>
-        ) : (
-          <>
-            {review.content && (
-              <ReviewText>{review.content}</ReviewText>
-            )}
-            <Footer>
-              <SubmissionDate>
-                Submitted {formatDate(review.createdAt)}
-              </SubmissionDate>
-              <Actions>
-                {editable && (
-                  <ActionButton onClick={handleEdit}>
-                    Edit review
-                  </ActionButton>
-                )}
-                <ActionButton $danger onClick={handleDelete}>
-                  Delete
-                </ActionButton>
-              </Actions>
-            </Footer>
-          </>
-        )}
-      </Body>
+      {editing ? (
+        <EditForm>
+          <Rating>
+            {[1, 2, 3, 4, 5].map(star => (
+              <ActionButton key={star} $primary={star <= rating} onClick={() => setRating(star)}>{star}</ActionButton>
+            ))}
+          </Rating>
+          <TextArea value={content} maxLength={1000} onChange={event => setContent(event.target.value.slice(0, 1000))} />
+          <Actions>
+            <ActionButton onClick={() => setEditing(false)}>Cancel</ActionButton>
+            <ActionButton $primary onClick={save}>Update Review</ActionButton>
+          </Actions>
+        </EditForm>
+      ) : (
+        <>
+          {review.content && <ReviewText>{review.content}</ReviewText>}
+          <Actions>
+            {editable && <ActionButton onClick={() => setEditing(true)}>Edit review</ActionButton>}
+            <ActionButton $danger onClick={() => onDelete(review.id)}>Delete</ActionButton>
+          </Actions>
+        </>
+      )}
     </Card>
   );
 };
-

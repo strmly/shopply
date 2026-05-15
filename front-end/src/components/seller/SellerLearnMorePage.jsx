@@ -379,7 +379,7 @@ const CtaCopy = styled.p`
 
 const defaultContent = {
   hero: {
-    eyebrow: 'Sell on Tsenga',
+    eyebrow: 'Sell on Shopply',
     title: 'A beautiful way to sell furniture locally',
     subtitle: 'Launch a trusted storefront, reach nearby buyers, and manage orders from one calm dashboard.',
   },
@@ -416,7 +416,7 @@ export function SellerLearnMorePage({ location }) {
 
   return (
     <Page>
-      <TopNavigation location={location} title="Sell on Tsenga" />
+      <TopNavigation location={location} title="Sell on Shopply" />
       <Shell>
         <Hero>
           <div>
@@ -439,7 +439,7 @@ export function SellerLearnMorePage({ location }) {
           <VisualPanel>
             <DashboardMock>
               <MockTop>
-                <LogoMark>T</LogoMark>
+                <LogoMark>S</LogoMark>
                 <MockLabel>Seller dashboard preview</MockLabel>
               </MockTop>
               <MockGrid>
@@ -466,7 +466,7 @@ export function SellerLearnMorePage({ location }) {
 
         <Section>
           <SectionHead>
-            <SectionTitle>Why sellers choose Tsenga.</SectionTitle>
+            <SectionTitle>Why sellers choose Shopply.</SectionTitle>
             <SectionCopy>Everything is shaped around how furniture is actually bought: by room, distance, trust, delivery, and fit.</SectionCopy>
           </SectionHead>
           <CardGrid>
@@ -538,8 +538,8 @@ export function SellerLearnMorePage({ location }) {
 
         <CtaBand>
           <div>
-            <CtaTitle>Ready to sell on Tsenga?</CtaTitle>
-            <CtaCopy>Create a seller draft, then finish verification and payout setup.</CtaCopy>
+            <CtaTitle>Ready to sell on Shopply?</CtaTitle>
+            <CtaCopy>Create a seller draft, then finish store and payout setup.</CtaCopy>
           </div>
           <PrimaryButton type="button" onClick={() => navigate('/become-a-seller')}>
             Start application

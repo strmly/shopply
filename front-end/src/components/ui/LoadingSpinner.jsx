@@ -177,7 +177,7 @@ export const PageLoader = ({ label }) => (
     <LogoMark>
       <GlowRing />
       <LogoInner>
-        <LogoLetter>T</LogoLetter>
+        <LogoLetter>S</LogoLetter>
       </LogoInner>
     </LogoMark>
     <SkeletonLines>

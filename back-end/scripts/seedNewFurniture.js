@@ -131,7 +131,17 @@ function convertToProductModel(generatedProduct) {
   // Get real images that match the product subcategory
   const realImages = getRealImages(generatedProduct.subcategory, generatedProduct.id);
   const mainImage = realImages[0];
-  
+
+  // Derive a deterministic but varied qualityScore (0.60–0.92) from the product's rating
+  const rating = generatedProduct.rating || 4.0;
+  const normalizedRating = Math.min(1, Math.max(0, (rating - 3.5) / 1.5)); // 3.5→0, 5.0→1
+  // Add a small pseudo-random jitter using product id
+  const jitter = ((generatedProduct.id * 7919) % 100) / 1000; // 0–0.099
+  const qualityScore = parseFloat(Math.min(0.92, Math.max(0.60, 0.60 + normalizedRating * 0.32 + jitter)).toFixed(2));
+
+  // Varied salesCount: 10–500, seeded from product id
+  const salesCount = 10 + ((generatedProduct.id * 1009) % 491);
+
   // Map the generated product format to Product model format
   return {
     id: generatedProduct.id,
@@ -149,9 +159,11 @@ function convertToProductModel(generatedProduct) {
     dimensions: parseDimensions(generatedProduct.dimensions),
     stock: generatedProduct.inStock ? 'in' : 'out',
     stockQuantity: generatedProduct.inStock ? Math.floor(Math.random() * 50 + 10) : 0,
-    rating: generatedProduct.rating || 4.0,
+    rating,
     reviewCount: generatedProduct.reviewCount || 0,
-    
+    qualityScore,
+    salesCount,
+
     // Furniture-specific fields
     room: mapCategoryToRoom(generatedProduct.category),
     furnitureCategory: generatedProduct.subcategory || generatedProduct.category.toLowerCase(),
@@ -163,7 +175,7 @@ function convertToProductModel(generatedProduct) {
     leadTimeDaysMin: 0,
     leadTimeDaysMax: 7,
     stockType: generatedProduct.inStock ? 'in_stock' : 'out_of_stock',
-    
+
     // Additional metadata
     brand: generatedProduct.brand,
     warranty: generatedProduct.warranty,
@@ -171,7 +183,7 @@ function convertToProductModel(generatedProduct) {
 
     // Catalog products use storeId 0 so they don't appear in any seller's dashboard
     storeId: 0,
-    storeName: 'Tsenga Home Furniture',
+    storeName: 'Shopply Home Furniture',
   };
 }
 

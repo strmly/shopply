@@ -105,15 +105,22 @@ export class AddressService {
       throw new Error(errorMessages);
     }
 
-    // Check service area
-    const serviceAreaCheck = checkServiceArea(sanitized.latitude, sanitized.longitude);
-    if (!serviceAreaCheck.isInServiceArea) {
-      // Allow creation but warn user
-      console.warn(`Address outside service area: ${serviceAreaCheck.message}`);
+    // Check service area only when coordinates are present.
+    if (sanitized.latitude !== null && sanitized.latitude !== undefined && sanitized.longitude !== null && sanitized.longitude !== undefined) {
+      const serviceAreaCheck = checkServiceArea(sanitized.latitude, sanitized.longitude);
+      if (!serviceAreaCheck.isInServiceArea) {
+        console.warn(`Address outside service area: ${serviceAreaCheck.message}`);
+      }
     }
+
+    const uid = sanitized.userId ? String(sanitized.userId) : null;
+    const userAddressCount = uid
+      ? this.addresses.filter(addr => String(addr.userId) === uid).length
+      : 0;
 
     const address = new Address({
       ...sanitized,
+      isDefault: Boolean(sanitized.isDefault) || userAddressCount === 0,
       id: this.nextId++,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -127,7 +134,7 @@ export class AddressService {
     // If this is set as default, unset other defaults for this user
     if (address.isDefault && address.userId) {
       this.addresses.forEach(addr => {
-        if (addr.userId === address.userId && addr.id !== address.id) {
+        if (String(addr.userId) === String(address.userId) && addr.id !== address.id) {
           addr.isDefault = false;
           addr.updatedAt = new Date();
         }
@@ -169,8 +176,10 @@ export class AddressService {
     }
 
     // Check service area if coordinates changed
-    if (sanitized.latitude !== existingAddress.latitude || 
-        sanitized.longitude !== existingAddress.longitude) {
+    if ((sanitized.latitude !== existingAddress.latitude || 
+        sanitized.longitude !== existingAddress.longitude) &&
+        sanitized.latitude !== null && sanitized.latitude !== undefined &&
+        sanitized.longitude !== null && sanitized.longitude !== undefined) {
       const serviceAreaCheck = checkServiceArea(sanitized.latitude, sanitized.longitude);
       if (!serviceAreaCheck.isInServiceArea) {
         console.warn(`Updated address outside service area: ${serviceAreaCheck.message}`);
@@ -228,8 +237,37 @@ export class AddressService {
       }
     }
 
+    const wasDefault = address.isDefault;
     this.addresses.splice(addressIndex, 1);
+
+    if (wasDefault && address.userId) {
+      const replacement = this.addresses.find(addr => String(addr.userId) === String(address.userId));
+      if (replacement) {
+        replacement.isDefault = true;
+        replacement.updatedAt = new Date();
+      }
+    }
+
     return true;
+  }
+
+  /**
+   * Get lightweight summary for the address quick action and profile pages
+   */
+  async getAddressSummary(userId) {
+    const addresses = await this.getAddressesByUserId(userId);
+    const defaultAddress = addresses.find(addr => addr.isDefault) || null;
+
+    return {
+      total: addresses.length,
+      defaultAddress: defaultAddress ? defaultAddress.toJSON() : null,
+      hasDefault: Boolean(defaultAddress),
+      subtext: defaultAddress
+        ? `${defaultAddress.label || 'Default'} • ${defaultAddress.suburb || defaultAddress.city || 'Saved address'}`
+        : addresses.length > 0
+          ? `${addresses.length} saved address${addresses.length === 1 ? '' : 'es'}`
+          : 'Add a delivery address',
+    };
   }
 
   /**

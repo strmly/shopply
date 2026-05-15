@@ -32,6 +32,9 @@ const toPlain = (value) => (value && typeof value.toJSON === 'function' ? value.
 const removePrivateProfileFields = (user = {}) => {
   const plainUser = toPlain(user);
   const safeUser = { ...plainUser, hasPassword: Boolean(plainUser.passwordHash) };
+  const nameParts = String(safeUser.name || '').trim().split(/\s+/).filter(Boolean);
+  safeUser.firstName = safeUser.firstName || nameParts[0] || '';
+  safeUser.lastName = safeUser.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : '');
   delete safeUser.passwordHash;
   delete safeUser.passwordUpdatedAt;
   delete safeUser.passwordHistory;
@@ -114,25 +117,17 @@ const getRemainingAttempts = (userKey) => {
  */
 export class ProfileController {
   async ensureUser(userId) {
-    let user = await UserService.getUserById(userId);
+    const user = await UserService.getUserById(userId);
+    if (user) return user;
 
-    if (!user) {
-      const userData = {
-        name: 'Guest User',
-        email: 'guest@example.com',
-        mobile: '',
-        avatarUrl: '',
-        preferences: buildDefaultPreferences(),
-      };
-
-      if (userId === 'default') {
-        userData.id = 1;
-      }
-
-      user = await UserService.createUser(userData);
+    if (userId === 'default' || userId === '1' || userId === 1) {
+      const seeded = await UserService.getUserById(1);
+      if (seeded) return seeded;
     }
 
-    return user;
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
   }
 
   async buildProfileDashboard(userId) {
@@ -176,11 +171,11 @@ export class ProfileController {
       reviews: normalizedReviews.length,
       pendingReviews: (pendingReviews || []).length,
     };
-    const sellerName = seller?.storeSetup?.name || seller?.legalBusinessName || 'Tsenga Seller';
+    const sellerName = seller?.storeSetup?.name || seller?.legalBusinessName || 'Shopply Seller';
     const quickActions = [
       {
         key: 'shop-nearby',
-        icon: 'T',
+        icon: 'S',
         title: 'Shop nearby',
         text: 'Search refined finds nearby',
         metric: 'Nearby',
@@ -254,7 +249,7 @@ export class ProfileController {
           title: 'Edit profile',
           text: 'Name, phone, email, and avatar',
           route: '/account/edit-profile',
-          status: safeUser.email && safeUser.email !== 'guest@example.com' ? 'Ready' : 'Add details',
+          status: safeUser.email ? 'Ready' : 'Add details',
         },
         {
           key: 'verify-email',
@@ -390,21 +385,7 @@ export class ProfileController {
       let user = await UserService.getUserById(userId);
 
       if (!user) {
-        const userData = {
-          name: 'Guest User',
-          email: 'guest@example.com',
-          mobile: '',
-          avatarUrl: '',
-        };
-
-        if (userId === 'default') {
-          userData.id = 1;
-        }
-
-        user = await UserService.createUser({
-          ...userData,
-          preferences: buildDefaultPreferences(),
-        });
+        return res.status(404).json({ success: false, message: 'User not found' });
       }
 
       const prefs = (user && user.preferences) || buildDefaultPreferences();
@@ -441,7 +422,7 @@ export class ProfileController {
   async updateProfile(req, res, next) {
     try {
       const { userId } = req.params;
-      const { name, email, mobile, avatarUrl } = req.body || {};
+      const { name, firstName, lastName, email, mobile, avatarUrl } = req.body || {};
 
       // Reject base64 blobs — avatar must now be a file path (/uploads/...)
       if (typeof avatarUrl === 'string' && avatarUrl.startsWith('data:')) {
@@ -453,7 +434,14 @@ export class ProfileController {
 
       // Only allow explicit profile fields to be updated
       const updates = {};
-      if (typeof name === 'string') updates.name = name;
+      if (typeof firstName === 'string' || typeof lastName === 'string') {
+        const existing = removePrivateProfileFields(await this.ensureUser(userId));
+        const nextFirst = typeof firstName === 'string' ? firstName.trim() : existing.firstName;
+        const nextLast = typeof lastName === 'string' ? lastName.trim() : existing.lastName;
+        updates.name = [nextFirst, nextLast].filter(Boolean).join(' ').trim();
+      } else if (typeof name === 'string') {
+        updates.name = name.trim();
+      }
       if (typeof email === 'string' || email === null) updates.email = email || '';
       if (typeof mobile === 'string' || mobile === null) updates.mobile = mobile || '';
       if (typeof avatarUrl === 'string' || avatarUrl === null) updates.avatarUrl = avatarUrl || '';
@@ -468,9 +456,7 @@ export class ProfileController {
         });
       }
 
-      const safeUser = user.toJSON ? user.toJSON() : user;
-      delete safeUser.passwordHash;
-      delete safeUser.passwordUpdatedAt;
+      const safeUser = removePrivateProfileFields(user);
 
       res.json({
         success: true,
@@ -507,21 +493,7 @@ export class ProfileController {
       let user = await UserService.getUserById(userId);
 
       if (!user) {
-        const userData = {
-          name: 'Guest User',
-          email: 'guest@example.com',
-          mobile: '',
-          avatarUrl: '',
-        };
-
-        if (userId === 'default') {
-          userData.id = 1;
-        }
-
-        user = await UserService.createUser({
-          ...userData,
-          preferences: buildDefaultPreferences(),
-        });
+        return res.status(404).json({ success: false, message: 'User not found' });
       }
 
       const currentPrefs = user.preferences || buildDefaultPreferences();
@@ -598,6 +570,24 @@ export class ProfileController {
           notifications: prefs.notifications || currentNotifs,
         },
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Delete account
+   */
+  async deleteAccount(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const user = await UserService.getUserById(userId);
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+      const deleted = await UserService.deleteUser(user.id);
+      if (!deleted) return res.status(500).json({ success: false, message: 'Could not delete account' });
+
+      res.json({ success: true, message: 'Account deleted' });
     } catch (error) {
       next(error);
     }

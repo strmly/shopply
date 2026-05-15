@@ -22,13 +22,16 @@ const SkeletonBase = styled.div`
 `;
 
 const Card = styled.div`
-  background: ${props => props.theme.colors.background};
-  border: 1px solid ${props => props.theme.colors.border.light};
-  border-radius: ${props => props.theme.radii.lg};
-  padding: ${props => props.theme.spacing.md};
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94)) padding-box,
+    linear-gradient(140deg, rgba(61,129,239,0.16), rgba(228,231,236,0.9), rgba(21,161,124,0.12)) border-box;
+  border: 1px solid transparent;
+  border-radius: 26px;
+  padding: clamp(16px, 3vw, 22px);
   display: flex;
   flex-direction: column;
   gap: ${props => props.theme.spacing.md};
+  box-shadow: 0 20px 46px rgba(16, 24, 40, 0.08);
 `;
 
 const Header = styled.div`
@@ -65,13 +68,6 @@ const LineSkeleton = styled(SkeletonBase)`
   width: ${props => props.$width || '100%'};
 `;
 
-const MapSkeleton = styled(SkeletonBase)`
-  width: 100px;
-  height: 80px;
-  border-radius: ${props => props.theme.radii.md};
-  flex-shrink: 0;
-`;
-
 const ActionsSkeleton = styled.div`
   display: flex;
   gap: ${props => props.theme.spacing.sm};
@@ -81,8 +77,8 @@ const ActionsSkeleton = styled.div`
 
 const ButtonSkeleton = styled(SkeletonBase)`
   flex: 1;
-  height: 36px;
-  border-radius: ${props => props.theme.radii.md};
+  height: 42px;
+  border-radius: 999px;
 `;
 
 export const AddressCardSkeleton = () => {
@@ -97,7 +93,6 @@ export const AddressCardSkeleton = () => {
           <LineSkeleton $width="80%" />
           <LineSkeleton $width="60%" />
         </TextContent>
-        <MapSkeleton />
       </Content>
       <ActionsSkeleton>
         <ButtonSkeleton />

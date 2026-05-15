@@ -1,344 +1,190 @@
-import { useState, useEffect } from 'react';
-import styled, { keyframes, css } from 'styled-components';
+import { useEffect, useState } from 'react';
+import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
-const pulse = keyframes`
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.95;
-    transform: scale(1.01);
-  }
-`;
-
-const shimmer = keyframes`
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
-`;
-
-const Card = styled.div`
-  background: ${props => {
-    if (props.$status === 'used') return props.theme.colors.neutral[100];
-    if (props.$status === 'expired') return props.theme.colors.neutral[50];
-    if (props.$expiringSoon) {
-      return `linear-gradient(135deg, ${props.theme.colors.warning[100]} 0%, ${props.theme.colors.warning[50]} 100%)`;
-    }
-    return `linear-gradient(135deg, ${props.theme.colors.surface} 0%, ${props.theme.colors.primarySoftBg} 100%)`;
-  }};
-  border: 2px solid ${props => {
-    if (props.$status === 'used') return props.theme.colors.neutral[200];
-    if (props.$status === 'expired') return props.theme.colors.neutral[200];
-    if (props.$expiringSoon) return props.theme.colors.warning[400];
-    return props.theme.colors.primary;
-  }};
-  border-radius: ${props => props.theme.radii.xl};
-  padding: ${props => props.theme.spacing.lg};
-  cursor: ${props => props.$clickable ? 'pointer' : 'default'};
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: ${fadeIn} 0.4s ease-in;
+const Card = styled.article`
   position: relative;
   overflow: hidden;
-  opacity: ${props => props.$status === 'expired' || props.$status === 'used' ? 0.7 : 1};
-  box-shadow: ${props => {
-    if (props.$status === 'used' || props.$status === 'expired') {
-      return props.theme.shadows.sm;
-    }
-    if (props.$expiringSoon) {
-      return `0 4px 12px ${props.theme.colors.warning[200]}`;
-    }
-    return props.theme.shadows.md;
-  }};
+  cursor: ${props => props.$clickable ? 'pointer' : 'default'};
+  opacity: ${props => props.$status === 'active' ? 1 : 0.76};
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94)) padding-box,
+    linear-gradient(140deg, rgba(61,129,239,0.22), rgba(228,231,236,0.9), rgba(245,158,11,0.16)) border-box;
+  border: 1px solid transparent;
+  border-radius: 26px;
+  padding: clamp(16px, 3vw, 22px);
+  box-shadow: 0 20px 46px rgba(16, 24, 40, 0.08);
+  animation: ${fadeIn} 0.3s ease;
 
-  &::before {
+  &::after {
     content: '';
     position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.3),
-      transparent
-    );
-    transition: left 0.5s;
+    right: -64px;
+    top: -72px;
+    width: 170px;
+    height: 170px;
+    border-radius: 999px;
+    background: ${props => props.$expiringSoon ? 'rgba(245, 158, 11, 0.1)' : 'rgba(61, 129, 239, 0.08)'};
+    pointer-events: none;
   }
 
   &:hover {
-    ${props => props.$clickable && `
-      transform: translateY(-4px) scale(1.02);
-      box-shadow: ${props.theme.shadows.lg};
-      border-color: ${props.theme.colors.primary};
-      
-      &::before {
-        left: 100%;
-      }
-    `}
+    transform: ${props => props.$clickable ? 'translateY(-2px)' : 'none'};
+    box-shadow: ${props => props.$clickable ? '0 28px 58px rgba(16, 24, 40, 0.12)' : '0 20px 46px rgba(16, 24, 40, 0.08)'};
   }
-
-  ${props => props.$expiringSoon && props.$clickable && css`
-    animation: ${fadeIn} 0.4s ease-in, ${pulse} 2s ease-in-out infinite;
-  `}
 `;
 
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: ${props => props.theme.spacing.md};
+const TopRow = styled.div`
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+
+  @media (max-width: 620px) {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
 `;
 
-const ValueSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.xs};
+const ValueMark = styled.div`
+  min-width: 84px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: ${props => props.theme.colors.gradient.soft};
+  color: ${props => props.theme.colors.primarySoftText};
+  border: 1px solid rgba(61, 129, 239, 0.18);
+  font-size: 28px;
+  font-weight: 900;
 `;
 
-const Value = styled.div`
-  ${props => props.theme.typography.heading2}
-  color: ${props => {
-    if (props.$status === 'used' || props.$status === 'expired') {
-      return props.theme.colors.text.secondary;
-    }
-    return props.theme.colors.primary;
-  }};
-  font-weight: 800;
-  font-size: 32px;
-  line-height: 1;
-  letter-spacing: -0.5px;
-  background: ${props => {
-    if (props.$status === 'active' && !props.$expiringSoon) {
-      return `linear-gradient(135deg, ${props.theme.colors.primary} 0%, ${props.theme.colors.primaryHover} 100%)`;
-    }
-    return 'none';
-  }};
-  -webkit-background-clip: ${props => props.$status === 'active' && !props.$expiringSoon ? 'text' : 'none'};
-  -webkit-text-fill-color: ${props => {
-    if (props.$status === 'active' && !props.$expiringSoon) {
-      return 'transparent';
-    }
-    if (props.$status === 'used' || props.$status === 'expired') {
-      return props.theme.colors.text.secondary;
-    }
-    return props.theme.colors.primary;
-  }};
-  background-clip: ${props => props.$status === 'active' && !props.$expiringSoon ? 'text' : 'none'};
-`;
-
-const ValueLabel = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 12px;
-`;
-
-const StatusBadge = styled.div`
-  padding: 4px 10px;
-  border-radius: ${props => props.theme.radii.pill};
-  font-size: 11px;
-  font-weight: 600;
-  background: ${props => {
-    if (props.$status === 'used') return props.theme.colors.neutral[200];
-    if (props.$status === 'expired') return props.theme.colors.neutral[200];
-    if (props.$expiringSoon) return props.theme.colors.warning[300];
-    return props.theme.colors.success[200];
-  }};
-  color: ${props => {
-    if (props.$status === 'used') return props.theme.colors.text.secondary;
-    if (props.$status === 'expired') return props.theme.colors.text.secondary;
-    if (props.$expiringSoon) return props.theme.colors.warning[700];
-    return props.theme.colors.success[700];
-  }};
-`;
-
-const Title = styled.div`
-  ${props => props.theme.typography.body1}
+const Title = styled.h2`
+  margin: 0;
   color: ${props => props.theme.colors.text.primary};
-  font-weight: 600;
-  font-size: 16px;
-  margin-bottom: ${props => props.theme.spacing.xs};
+  font-size: clamp(18px, 4vw, 24px);
+  line-height: 1.05;
+  font-weight: 900;
 `;
 
-const Description = styled.div`
-  ${props => props.theme.typography.body2}
+const Description = styled.p`
+  margin: 8px 0 0;
   color: ${props => props.theme.colors.text.secondary};
   font-size: 14px;
-  margin-bottom: ${props => props.theme.spacing.sm};
-`;
-
-const Conditions = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 12px;
-  padding: ${props => props.theme.spacing.sm};
-  background: ${props => props.theme.colors.neutral[50]};
-  border-radius: ${props => props.theme.radii.md};
-  margin-bottom: ${props => props.theme.spacing.sm};
-`;
-
-const ExpirySection = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: ${props => props.theme.spacing.sm};
-  border-top: 1px solid ${props => props.theme.colors.border.light};
-`;
-
-const ExpiryLabel = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 12px;
-`;
-
-const Countdown = styled.div`
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.warning[700]};
+  line-height: 1.45;
   font-weight: 700;
-  font-size: 13px;
-  display: flex;
+`;
+
+const Badge = styled.span`
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  
-  &::before {
-    content: '⏰';
-    font-size: 14px;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: ${props => props.$active ? props.theme.colors.gradient.primary : '#ffffff'};
+  color: ${props => props.$active ? '#ffffff' : props.theme.colors.text.secondary};
+  border: 1px solid ${props => props.$active ? 'transparent' : 'rgba(228,231,236,0.95)'};
+  font-size: 12px;
+  font-weight: 900;
+
+  @media (max-width: 620px) {
+    grid-column: 1 / -1;
+    width: fit-content;
   }
+`;
+
+const MetaRow = styled.div`
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+`;
+
+const Pill = styled.span`
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid rgba(228,231,236,0.95);
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  font-weight: 800;
 `;
 
 const Hint = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.primary};
-  font-size: 12px;
-  font-weight: 700;
-  margin-top: ${props => props.theme.spacing.sm};
-  text-align: center;
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.sm};
+  position: relative;
+  z-index: 1;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 18px;
   background: ${props => props.theme.colors.primarySoftBg};
-  border-radius: ${props => props.theme.radii.md};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  
-  &::before {
-    content: '💡';
-    font-size: 14px;
-  }
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
 `;
 
 const formatCountdown = (expiresAt) => {
   if (!expiresAt) return null;
-  
-  const now = new Date();
-  const expiry = new Date(expiresAt);
-  const diff = expiry - now;
-  
+  const diff = new Date(expiresAt) - new Date();
   if (diff <= 0) return 'Expired';
-  
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  if (minutes > 0) return `${minutes}m ${seconds}s`;
-  return `${seconds}s`;
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  if (days > 0) return `${days}d ${hours}h left`;
+  if (hours > 0) return `${hours}h ${minutes}m left`;
+  return `${minutes}m left`;
 };
 
 export const VoucherCard = ({ voucher, onClick, showHint = false }) => {
-  const [countdown, setCountdown] = useState(null);
+  const [countdown, setCountdown] = useState(formatCountdown(voucher.expiresAt));
 
   useEffect(() => {
-    if (voucher.expiresAt && voucher.status === 'active') {
-      const updateCountdown = () => {
-        setCountdown(formatCountdown(voucher.expiresAt));
-      };
-      
-      updateCountdown();
-      // Update every second for better UX
-      const interval = setInterval(updateCountdown, 1000);
-      
-      return () => clearInterval(interval);
-    }
+    if (voucher.status !== 'active') return undefined;
+    const interval = setInterval(() => setCountdown(formatCountdown(voucher.expiresAt)), 30000);
+    return () => clearInterval(interval);
   }, [voucher.expiresAt, voucher.status]);
 
-  const formatValue = () => {
-    if (voucher.type === 'percentage') {
-      return `${voucher.value}%`;
-    }
-    return `R${voucher.value.toFixed(0)}`;
-  };
-
-  const formatConditions = () => {
-    const conditions = [];
-    if (voucher.minPurchase > 0) {
-      conditions.push(`Min. purchase: R${voucher.minPurchase}`);
-    }
-    if (voucher.maxDiscount && voucher.type === 'percentage') {
-      conditions.push(`Max. discount: R${voucher.maxDiscount}`);
-    }
-    return conditions.join(' • ');
-  };
-
-  const formatExpiry = () => {
-    if (!voucher.expiresAt) return 'No expiry';
-    const date = new Date(voucher.expiresAt);
-    return date.toLocaleDateString('en-ZA', { 
-      day: 'numeric', 
-      month: 'short',
-      year: 'numeric'
-    });
-  };
-
-  const isClickable = voucher.status === 'active' && onClick;
-  const expiringSoon = voucher.isExpiringSoon || false;
+  const value = voucher.type === 'percentage' ? `${voucher.value}%` : `R${Number(voucher.value || 0).toFixed(0)}`;
+  const expiry = voucher.expiresAt ? new Date(voucher.expiresAt).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No expiry';
+  const conditions = [
+    voucher.minPurchase > 0 ? `Min R${voucher.minPurchase}` : null,
+    voucher.maxDiscount && voucher.type === 'percentage' ? `Max R${voucher.maxDiscount}` : null,
+    voucher.code ? `Code ${voucher.code}` : null,
+  ].filter(Boolean);
+  const active = voucher.status === 'active';
+  const expiringSoon = Boolean(voucher.isExpiringSoon);
+  const statusText = active && expiringSoon ? 'Expiring soon' : active ? 'Active' : voucher.status === 'used' ? 'Used' : 'Expired';
 
   return (
-    <Card 
-      $status={voucher.status} 
+    <Card
+      $status={voucher.status}
       $expiringSoon={expiringSoon}
-      $clickable={isClickable}
-      onClick={isClickable ? onClick : undefined}
+      $clickable={active && onClick}
+      onClick={active && onClick ? onClick : undefined}
     >
-      <Header>
-        <ValueSection>
-          <Value $status={voucher.status}>{formatValue()}</Value>
-          <ValueLabel>OFF</ValueLabel>
-        </ValueSection>
-        <StatusBadge $status={voucher.status} $expiringSoon={expiringSoon}>
-          {voucher.status === 'active' && expiringSoon ? 'Expiring Soon' : 
-           voucher.status === 'active' ? 'Active' :
-           voucher.status === 'used' ? 'Used' : 'Expired'}
-        </StatusBadge>
-      </Header>
+      <TopRow>
+        <ValueMark>{value}</ValueMark>
+        <div>
+          <Title>{voucher.title || 'Shopply voucher'}</Title>
+          {voucher.description && <Description>{voucher.description}</Description>}
+        </div>
+        <Badge $active={active}>{statusText}</Badge>
+      </TopRow>
 
-      <Title>{voucher.title}</Title>
-      {voucher.description && (
-        <Description>{voucher.description}</Description>
-      )}
+      <MetaRow>
+        <Pill>Expires {expiry}</Pill>
+        {countdown && active && <Pill>{countdown}</Pill>}
+        {conditions.map(condition => <Pill key={condition}>{condition}</Pill>)}
+      </MetaRow>
 
-      {formatConditions() && (
-        <Conditions>{formatConditions()}</Conditions>
-      )}
-
-      <ExpirySection>
-        <ExpiryLabel>Expires: {formatExpiry()}</ExpiryLabel>
-        {voucher.status === 'active' && countdown && (
-          <Countdown>{countdown} left</Countdown>
-        )}
-      </ExpirySection>
-
-      {showHint && voucher.status === 'active' && (
-        <Hint>Apply at checkout</Hint>
-      )}
+      {showHint && active && <Hint>Tap to apply this voucher from your cart</Hint>}
     </Card>
   );
 };
-

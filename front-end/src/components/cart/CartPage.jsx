@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -101,7 +101,7 @@ export const CartPage = ({ location, onClose }) => {
   }, [routerLocation.state]);
 
   const loadDeliveryAddress = () => {
-    const savedLocation = localStorage.getItem('tsenga_location');
+    const savedLocation = localStorage.getItem('shopply_location');
     if (savedLocation) {
       try {
         const locationData = JSON.parse(savedLocation);
@@ -139,14 +139,14 @@ export const CartPage = ({ location, onClose }) => {
         storeId: item.storeId,
         storeName: item.storeName,
       }));
-    localStorage.setItem('tsenga_cart', JSON.stringify(localCart));
-    localStorage.setItem('tsenga_cart_count', (cartData.itemCount || 0).toString());
+    localStorage.setItem('shopply_cart', JSON.stringify(localCart));
+    localStorage.setItem('shopply_cart_count', (cartData.itemCount || 0).toString());
     window.dispatchEvent(new Event('cartUpdated'));
   };
 
   const readLocalCart = () => {
     try {
-      const cart = JSON.parse(localStorage.getItem('tsenga_cart') || '[]');
+      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
       if (!Array.isArray(cart)) return [];
 
       const merged = new Map();

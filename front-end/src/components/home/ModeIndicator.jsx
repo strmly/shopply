@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { fadeIn } from '../../theme/animations';
@@ -51,12 +51,12 @@ const Icon = styled.span`
 export const ModeIndicator = ({ onToggle }) => {
   const navigate = useNavigate();
   const [mode, setMode] = useState(() => {
-    return localStorage.getItem('tsenga_user_mode') || 'buyer';
+    return localStorage.getItem('shopply_user_mode') || 'buyer';
   });
 
   useEffect(() => {
     const handleStorageChange = () => {
-      const newMode = localStorage.getItem('tsenga_user_mode') || 'buyer';
+      const newMode = localStorage.getItem('shopply_user_mode') || 'buyer';
       setMode(newMode);
     };
 

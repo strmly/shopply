@@ -1,6 +1,19 @@
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
+function estimateETA(distanceKm) {
+  if (!distanceKm || distanceKm <= 0) return { min: 30, max: 60, label: '30–60 min' };
+  // Assume 30 km/h average urban delivery speed + 10 min prep
+  const driveMin = Math.ceil((distanceKm / 30) * 60);
+  const totalMin = driveMin + 10;
+  const low = Math.max(20, totalMin - 10);
+  const high = totalMin + 15;
+  if (high < 60) return { min: low, max: high, label: `${low}–${high} min` };
+  const lowH = (low / 60).toFixed(1);
+  const highH = (high / 60).toFixed(1);
+  return { min: low, max: high, label: `${lowH}–${highH} hrs` };
+}
+
 const Container = styled.section`
   padding: 18px;
   background: #ffffff;
@@ -65,8 +78,26 @@ export const DeliveryETASummary = ({ cart }) => {
   const isMultiStore = cart.storeGroups && cart.storeGroups.length > 1;
   const deliveryFee = cart.totals?.deliveryFee || 0;
 
+  // Prefer distance-based ETA when distanceKm is available on a store group
   let etaText = 'Today, 4-6 PM';
-  if (isMultiStore && cart.storeGroups) {
+  const firstGroup = cart.storeGroups?.[0];
+  const firstDistanceKm = firstGroup?.distanceKm ?? firstGroup?.store?.distanceKm ?? null;
+
+  if (firstDistanceKm != null) {
+    if (isMultiStore && cart.storeGroups) {
+      // Use the largest distance across all groups for the upper bound
+      const maxDistanceKm = Math.max(
+        ...cart.storeGroups.map(g => g.distanceKm ?? g.store?.distanceKm ?? 0)
+      );
+      const firstEta = estimateETA(firstDistanceKm);
+      const lastEta = estimateETA(maxDistanceKm);
+      etaText = firstEta.label === lastEta.label
+        ? firstEta.label
+        : `${firstEta.label} – ${lastEta.label}`;
+    } else {
+      etaText = estimateETA(firstDistanceKm).label;
+    }
+  } else if (isMultiStore && cart.storeGroups) {
     const etas = cart.storeGroups.map(g => g.eta).filter(Boolean);
     if (etas.length > 0) {
       etaText = `Today, ${etas[0].split(' ')[1] || '4-6 PM'}`;
@@ -75,8 +106,8 @@ export const DeliveryETASummary = ({ cart }) => {
         etaText = `Today, ${etas[0].split(' ')[1] || '4 PM'}-${lastEta}`;
       }
     }
-  } else if (cart.storeGroups && cart.storeGroups[0]) {
-    etaText = cart.storeGroups[0].eta || 'Today, 4-6 PM';
+  } else if (firstGroup) {
+    etaText = firstGroup.eta || 'Today, 4-6 PM';
   }
 
   return (

@@ -259,7 +259,7 @@ export const ChangePasswordPage = () => {
           <BackButton onClick={() => navigate(-1)} aria-label="Back">&lt;</BackButton>
           <div>
             <Title>{hasPassword ? 'Update password' : 'Set password'}</Title>
-            <Subtext>Use a strong password for your Tsenga sign-in after phone verification.</Subtext>
+            <Subtext>Use a strong password for your Shopply sign-in after phone verification.</Subtext>
           </div>
         </Header>
 

@@ -366,6 +366,56 @@ const DirtyText = styled.div`
   font-weight: 850;
 `;
 
+const TierGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @media (max-width: 380px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+`;
+
+const TierButton = styled.button`
+  display: grid;
+  gap: 3px;
+  padding: 10px 8px;
+  border-radius: 16px;
+  border: 1.5px solid ${props => props.$active ? 'transparent' : 'rgba(61, 129, 239, 0.14)'};
+  background: ${props => props.$active ? props.theme.colors.gradient.primary : '#ffffff'};
+  color: ${props => props.$active ? '#ffffff' : props.theme.colors.text.primary};
+  font-size: 11px;
+  font-weight: 950;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: ${props => props.$active ? '0 10px 22px rgba(61, 129, 239, 0.22)' : '0 4px 12px rgba(16, 24, 40, 0.04)'};
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: ${props => props.$active ? 'transparent' : 'rgba(61, 129, 239, 0.28)'};
+  }
+`;
+
+const TierSublabel = styled.span`
+  display: block;
+  font-size: 10px;
+  font-weight: 750;
+  opacity: 0.78;
+`;
+
+const RadiusCaption = styled.p`
+  margin: 8px 0 0;
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 750;
+`;
+
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const DEFAULT_HOURS = {
@@ -383,7 +433,16 @@ const defaultPolicies = {
   orderPrepTimeMinutes: 45,
   deliveryEstimateMinutes: 90,
   returnPolicy: '',
+  deliveryRadiusKm: 10,
 };
+
+const DELIVERY_TIERS = [
+  { km: 1,   label: 'Hyperlocal', sublabel: '1 km' },
+  { km: 5,   label: 'Neighbourhood', sublabel: '5 km' },
+  { km: 10,  label: 'Local', sublabel: '10 km' },
+  { km: 35,  label: 'City-wide', sublabel: '35 km' },
+  { km: 110, label: 'Province', sublabel: '110 km' },
+];
 
 const isOpenNow = (hours) => {
   if (!hours) return true;
@@ -559,7 +618,7 @@ export const StoreHoursPage = ({ location }) => {
             </Badge>
             <Title>Manage Hours</Title>
             <Subtitle>
-              Set when {storeName} can accept orders, pickup windows, and buyer ETA messaging across Tsenga.
+              Set when {storeName} can accept orders, pickup windows, and buyer ETA messaging across Shopply.
             </Subtitle>
             <HeroActions>
               <Button type="button" onClick={() => navigate('/seller/dashboard')}>Dashboard</Button>
@@ -667,6 +726,25 @@ export const StoreHoursPage = ({ location }) => {
                       onChange={(event) => setPolicy('deliveryEstimateMinutes', event.target.value)}
                     />
                   </Field>
+                  <div>
+                    <Label>Delivery Radius</Label>
+                    <TierGrid style={{ marginTop: 8 }}>
+                      {DELIVERY_TIERS.map(tier => (
+                        <TierButton
+                          key={tier.km}
+                          type="button"
+                          $active={Number(policies.deliveryRadiusKm) === tier.km}
+                          onClick={() => setPolicy('deliveryRadiusKm', tier.km)}
+                        >
+                          {tier.label}
+                          <TierSublabel>{tier.sublabel}</TierSublabel>
+                        </TierButton>
+                      ))}
+                    </TierGrid>
+                    <RadiusCaption>
+                      Buyers within this radius see your products first. A smaller radius means stronger local ranking.
+                    </RadiusCaption>
+                  </div>
                 </Stack>
               </Panel>
 
@@ -678,7 +756,7 @@ export const StoreHoursPage = ({ location }) => {
                   </div>
                 </PanelHeader>
                 <Stack>
-                  <Button type="button" onClick={() => applyTemplate('reset')}>Reset to Tsenga default</Button>
+                  <Button type="button" onClick={() => applyTemplate('reset')}>Reset to Shopply default</Button>
                   <Button $primary type="button" onClick={saveHours} disabled={saving}>
                     {saving ? 'Saving...' : 'Save schedule'}
                   </Button>

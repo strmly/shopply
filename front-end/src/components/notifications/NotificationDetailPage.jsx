@@ -448,7 +448,7 @@ export const NotificationDetailPage = ({ location }) => {
           <HeaderInner>
             <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
             <HeaderCopy>
-              <HeaderEyebrow>Tsenga</HeaderEyebrow>
+              <HeaderEyebrow>Shopply</HeaderEyebrow>
               <HeaderTitle>Notification</HeaderTitle>
             </HeaderCopy>
           </HeaderInner>
@@ -474,7 +474,7 @@ export const NotificationDetailPage = ({ location }) => {
           <HeaderInner>
             <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
             <HeaderCopy>
-              <HeaderEyebrow>Tsenga</HeaderEyebrow>
+              <HeaderEyebrow>Shopply</HeaderEyebrow>
               <HeaderTitle>Notification</HeaderTitle>
             </HeaderCopy>
           </HeaderInner>
@@ -502,7 +502,7 @@ export const NotificationDetailPage = ({ location }) => {
         <HeaderInner>
           <BackButton onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
           <HeaderCopy>
-            <HeaderEyebrow>Tsenga</HeaderEyebrow>
+            <HeaderEyebrow>Shopply</HeaderEyebrow>
             <HeaderTitle>Notification Details</HeaderTitle>
           </HeaderCopy>
         </HeaderInner>

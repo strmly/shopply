@@ -152,7 +152,10 @@ export const VerifyEmailPage = () => {
   const [devCode, setDevCode] = useState('');
 
   useEffect(() => {
-    setEmail(user?.email && user.email !== 'guest@example.com' ? user.email : '');
+    const savedEmail = String(user?.email || '').trim().toLowerCase();
+    const demoEmails = new Set(['guest@example.com', 'admin@shopply.com', 'seller@shopply.com', 'buyer@shopply.com', 'admin@shopply.co.za', 'seller@shopply.co.za', 'buyer@shopply.co.za']);
+    const isDemoEmail = !savedEmail || demoEmails.has(savedEmail);
+    setEmail(isDemoEmail ? '' : savedEmail);
   }, [user]);
 
   const digits = useMemo(() => code.padEnd(6, '').slice(0, 6).split(''), [code]);
@@ -181,7 +184,7 @@ export const VerifyEmailPage = () => {
       } else {
         setSent(true);
         setDevCode(data.data?.devCode || '');
-        toast.success('Verification code sent');
+        toast.success(`Verification code sent to ${email}`);
       }
     } catch (err) {
       setError(err.message || 'Could not send verification email');
@@ -232,7 +235,7 @@ export const VerifyEmailPage = () => {
           <BackButton onClick={() => navigate(-1)} aria-label="Back">&lt;</BackButton>
           <div>
             <Title>Verify email</Title>
-            <Subtext>Confirm your email so Tsenga can protect your account, password resets, receipts, and order updates.</Subtext>
+            <Subtext>Confirm your email so Shopply can protect your account, password resets, receipts, and order updates.</Subtext>
           </div>
         </Hero>
 
@@ -280,7 +283,7 @@ export const VerifyEmailPage = () => {
           )}
 
           {devCode && <Notice>Local development code: {devCode}</Notice>}
-          {success && <Notice $success>Email verified. Your Tsenga account is safer now.</Notice>}
+          {success && <Notice $success>Email verified. Your Shopply account is safer now.</Notice>}
           {error && <ErrorMessage>{error}</ErrorMessage>}
 
           <ButtonRow>

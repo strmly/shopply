@@ -45,7 +45,7 @@ export class StorefrontController {
       const storeName = store?.name
         || seller?.storeSetup?.name
         || firstProduct.storeName
-        || 'Tsenga Store';
+        || 'Shopply Store';
 
       const address = store?.address
         || seller?.address
@@ -72,7 +72,7 @@ export class StorefrontController {
         logo: store?.logo || seller?.storeSetup?.logo || null,
         description: store?.description
           || seller?.storeSetup?.description
-          || `${storeName} sells curated furniture and home pieces on Tsenga.`,
+          || `${storeName} sells curated furniture and home pieces on Shopply.`,
         address,
         phone,
         whatsappNumber: phone,

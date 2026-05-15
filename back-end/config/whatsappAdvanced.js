@@ -173,7 +173,7 @@ export const whatsappAdvancedConfig = {
       'analytics_charts',
       'complex_reports',
     ],
-    baseUrl: process.env.APP_URL || 'https://tsenga.app',
+    baseUrl: process.env.APP_URL || 'https://shopply.co.za',
   },
 
   /**
