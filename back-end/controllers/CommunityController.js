@@ -1,6 +1,7 @@
 import { ProductService } from '../services/ProductService.js';
 import { BundleService } from '../services/BundleService.js';
 import ReviewService from '../services/ReviewService.js';
+import CommunityService from '../services/CommunityService.js';
 
 /**
  * Community Controller
@@ -63,57 +64,42 @@ export class CommunityController {
   async getRecommendations(req, res, next) {
     try {
       const limit = parseInt(req.query.limit) || 5;
-      let location = null;
-      
-      if (req.query.location) {
+
+      // Accept coordinates directly or embedded in a location JSON string
+      let lat = req.query.lat ? parseFloat(req.query.lat) : null;
+      let lng = req.query.lng ? parseFloat(req.query.lng) : null;
+
+      if ((!lat || !lng) && req.query.location) {
         try {
-          location = JSON.parse(decodeURIComponent(req.query.location));
-        } catch (e) {
-          // Invalid location format, continue with null
-        }
+          const loc = JSON.parse(decodeURIComponent(req.query.location));
+          lat = loc.lat ?? null;
+          lng = loc.lng ?? null;
+        } catch { /* ignore malformed location */ }
       }
 
-      // Bundle type configurations
+      const suburb = req.query.suburb || req.query.city || 'your area';
+      const neighborFeed = await CommunityService.getRecommendedByNeighbors({ lat, lng, suburb, limit });
+
+      return res.json({
+        success: true,
+        data: neighborFeed,
+        count: neighborFeed.products.length,
+        source: lat && lng ? 'h3_neighborhood' : 'global',
+      });
+
+      // Legacy bundle curator path kept below for backward-compat routes
       const bundleConfigs = {
-        'grocery-stores': {
-          id: '1',
-          title: 'Best Grocery Stores Near You',
-          description: 'Local shoppers recommend these stores for fresh produce and great prices',
-          category: 'Grocery',
-        },
-        'electronics': {
-          id: '2',
-          title: 'Top Rated Electronics',
-          description: 'Community favorites for tech and gadgets',
-          category: 'Electronics',
-        },
-        'food-favorites': {
-          id: '3',
-          title: 'Local Food Favorites',
-          description: 'Restaurants and food items loved by your neighbors',
-          category: 'Food',
-        },
+        'grocery-stores': { id: '1', title: 'Best Grocery Stores Near You', description: 'Local shoppers recommend these stores for fresh produce and great prices', category: 'Grocery' },
+        'electronics':    { id: '2', title: 'Top Rated Electronics',         description: 'Community favorites for tech and gadgets',                               category: 'Electronics' },
+        'food-favorites': { id: '3', title: 'Local Food Favorites',           description: 'Restaurants and food items loved by your neighbors',                     category: 'Food' },
       };
 
-      // Get all bundles that have been curated (have at least one curator)
-      const recommendations = [];
-      
+      const legacyRecs = [];
       for (const [bundleType, config] of Object.entries(bundleConfigs)) {
         try {
-          // Get curator count for this bundle
-          const curatorCount = await BundleService.getCuratorCount(bundleType, location);
-          
-          // Only include bundles that have been curated (at least one curator)
+          const curatorCount = await BundleService.getCuratorCount(bundleType, null);
           if (curatorCount > 0) {
-            recommendations.push({
-              id: config.id,
-              title: config.title,
-              description: config.description,
-              curatorCount,
-              category: config.category,
-              bundleType,
-              location: location?.suburb || 'Your Area',
-            });
+            legacyRecs.push({ id: config.id, title: config.title, description: config.description, curatorCount, category: config.category, bundleType });
           }
         } catch (error) {
           console.error(`Error getting curator count for ${bundleType}:`, error);
@@ -129,6 +115,29 @@ export class CommunityController {
         success: true,
         data: limitedRecommendations,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getNeighborRecommendations(req, res, next) {
+    try {
+      const limit = parseInt(req.query.limit, 10) || 12;
+      let lat = req.query.lat ? parseFloat(req.query.lat) : null;
+      let lng = req.query.lng ? parseFloat(req.query.lng) : null;
+      let suburb = req.query.suburb || req.query.city || 'your area';
+
+      if ((!lat || !lng || !req.query.suburb) && req.query.location) {
+        try {
+          const loc = JSON.parse(decodeURIComponent(req.query.location));
+          lat = lat ?? loc.lat ?? null;
+          lng = lng ?? loc.lng ?? null;
+          suburb = req.query.suburb || loc.suburb || loc.city || suburb;
+        } catch { /* ignore malformed location */ }
+      }
+
+      const data = await CommunityService.getRecommendedByNeighbors({ lat, lng, suburb, limit });
+      res.json({ success: true, data, count: data.products.length });
     } catch (error) {
       next(error);
     }

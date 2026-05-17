@@ -1002,7 +1002,7 @@ export const SearchPage = ({ location, onBack }) => {
           q: query,
           lat: storedLocation.lat.toString(),
           lng: storedLocation.lng.toString(),
-          min_results: '30',
+          min_results: '8',
         });
 
         const response = await fetch(`${API_BASE_URL}/hyperlocal/search?${h3Params}`);

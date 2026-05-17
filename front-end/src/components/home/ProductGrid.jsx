@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { ProductCard } from './ProductCard';
+
+const spin = keyframes`
+  to { transform: rotate(360deg); }
+`;
 
 const Container = styled.div`
   padding: 0 clamp(14px, 5vw, 48px);
@@ -86,11 +90,45 @@ const LoadMoreButton = styled.button`
     border-top-color: currentColor;
     border-radius: 999px;
     transform: none;
-    animation: loadSpin 0.8s linear infinite;
+    animation: ${spin} 0.8s linear infinite;
+  }
+`;
+
+const SeeMoreButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: min(100%, 420px);
+  min-height: 48px;
+  margin: 24px auto 0;
+  padding: 0 22px;
+  background: transparent;
+  color: ${props => props.theme.colors.primary};
+  border: 1.5px solid ${props => props.theme.colors.primary};
+  border-radius: 999px;
+  ${props => props.theme.typography.button}
+  font-weight: 700;
+  cursor: pointer;
+  transition: ${props => props.theme.transitions.swift};
+
+  &::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-1px);
+    transition: ${props => props.theme.transitions.swift};
   }
 
-  @keyframes loadSpin {
-    to { transform: rotate(360deg); }
+  &:hover {
+    background: ${props => props.theme.colors.primary}12;
+    transform: translateY(-1px);
+  }
+
+  &:hover::after {
+    transform: rotate(45deg) translate(2px, -3px);
   }
 `;
 
@@ -101,51 +139,39 @@ const LoadingText = styled.div`
   color: ${props => props.theme.colors.text.secondary};
 `;
 
-export const ProductGrid = ({ 
-  products = [], 
-  onProductClick, 
+export const ProductGrid = ({
+  products = [],
+  onProductClick,
   onAddToCart,
   onLoadMore,
+  onSeeMore,
   hasMore = false,
   loading = false,
-  itemsPerPage = 4,
+  itemsPerPage = 8,
 }) => {
   const [displayedCount, setDisplayedCount] = useState(itemsPerPage);
 
-  // Reset displayed count when products change (for client-side pagination)
   useEffect(() => {
     if (!onLoadMore && products.length > 0) {
       setDisplayedCount(itemsPerPage);
     }
   }, [products.length, onLoadMore, itemsPerPage]);
-  
-  // Filter out invalid products
+
   const validProducts = products.filter(p => p && p.id && p.name);
-  
-  // If onLoadMore is provided, show all products (API pagination)
-  // Otherwise, show only displayedCount items (client-side pagination)
-  const displayedProducts = onLoadMore 
-    ? validProducts 
+
+  const displayedProducts = onLoadMore
+    ? validProducts
     : validProducts.slice(0, displayedCount);
-  
-  const canLoadMore = onLoadMore 
-    ? hasMore 
-    : displayedCount < validProducts.length;
+
+  const canLoadMore = !!onLoadMore && !onSeeMore && hasMore;
+
+  const canSeeMore = !!onSeeMore && validProducts.length > itemsPerPage;
 
   const handleLoadMore = () => {
     if (onLoadMore) {
-      // If there's a load more handler, use it (for API pagination)
       onLoadMore();
-    } else {
-      // Otherwise, just show more items from the current list
-      setDisplayedCount(prev => prev + itemsPerPage);
     }
   };
-
-  // Debug logging
-  if (products.length > 0 && validProducts.length === 0) {
-    console.warn('ProductGrid: All products are invalid', products);
-  }
 
   if (validProducts.length === 0 && !loading) return null;
 
@@ -161,30 +187,22 @@ export const ProductGrid = ({
           />
         ))}
       </Grid>
-      
+
       {canLoadMore && (
-        <LoadMoreButton
-          onClick={handleLoadMore}
-          disabled={loading}
-        >
+        <LoadMoreButton onClick={handleLoadMore} disabled={loading}>
           {loading ? 'Loading...' : 'Load More'}
         </LoadMoreButton>
       )}
-      
+
+      {canSeeMore && (
+        <SeeMoreButton onClick={onSeeMore}>
+          See More
+        </SeeMoreButton>
+      )}
+
       {loading && !canLoadMore && (
         <LoadingText>Loading more products...</LoadingText>
       )}
     </Container>
   );
 };
-
-
-
-
-
-
-
-
-
-
-

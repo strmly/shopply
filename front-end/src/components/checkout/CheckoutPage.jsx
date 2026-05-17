@@ -180,6 +180,7 @@ const LoadingContainer = styled.div`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 export const CheckoutPage = ({ location, onClose }) => {
   const navigate = useNavigate();
@@ -228,7 +229,7 @@ export const CheckoutPage = ({ location, onClose }) => {
   const loadCart = async () => {
     try {
       setLoading(true);
-      const userId = 'default';
+      const userId = getCurrentUserId();
       const locationParam = location ? encodeURIComponent(JSON.stringify(location)) : '';
       const response = await fetch(`${API_BASE_URL}/cart?userId=${userId}&location=${locationParam}`);
       
@@ -278,7 +279,7 @@ export const CheckoutPage = ({ location, onClose }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: 'default',
+            userId: getCurrentUserId(),
             productId: item.id,
             quantity: item.quantity || 1,
             variant: item.selectedVariant || null,
@@ -356,7 +357,7 @@ export const CheckoutPage = ({ location, onClose }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'default',
+          userId: getCurrentUserId(),
           location: location,
           deliveryAddress: deliveryAddress,
           deliveryMethod: deliveryMethod,

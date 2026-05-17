@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -8,6 +8,7 @@ import { BottomNavigation } from '../home/BottomNavigation';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { toast } from '../ui/Toast';
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -210,7 +211,7 @@ export const AddressManagementPage = ({ location }) => {
   const [loading, setLoading] = useState(true);
   const [deleteDialog, setDeleteDialog] = useState(null);
   const [error, setError] = useState(null);
-  const userId = 'default';
+  const userId = getCurrentUserId();
 
   const loadAddresses = useCallback(async () => {
     try {

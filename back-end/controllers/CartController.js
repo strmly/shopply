@@ -1,6 +1,12 @@
 import { CartService } from '../services/CartService.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
+// Prefer the JWT-authenticated userId (set by auth middleware) over any
+// client-supplied value, so carts are properly isolated per user.
+function uid(req) {
+  return req.user?.userId || req.query.userId || req.body.userId || 'default';
+}
+
 /**
  * Cart Controller
  */
@@ -9,7 +15,7 @@ class CartControllerClass {
    * Get cart
    */
   getCart = asyncHandler(async (req, res) => {
-    const userId = req.query.userId || 'default';
+    const userId = uid(req);
     const location = req.query.location ? JSON.parse(req.query.location) : null;
     
     const cart = CartService.getCart(userId);
@@ -34,7 +40,7 @@ class CartControllerClass {
    * Add item to cart
    */
   addItem = asyncHandler(async (req, res) => {
-    const userId = req.body.userId || 'default';
+    const userId = uid(req);
     const { productId, quantity, variant, storeId } = req.body;
 
     if (!productId) {
@@ -57,7 +63,7 @@ class CartControllerClass {
    * Update item quantity
    */
   updateQuantity = asyncHandler(async (req, res) => {
-    const userId = req.query.userId || req.body.userId || 'default';
+    const userId = uid(req);
     const { itemId } = req.params;
     const { quantity } = req.body;
 
@@ -103,7 +109,7 @@ class CartControllerClass {
    * Remove item from cart
    */
   removeItem = asyncHandler(async (req, res) => {
-    const userId = req.query.userId || 'default';
+    const userId = uid(req);
     const { itemId } = req.params;
 
     if (!itemId) {
@@ -126,7 +132,7 @@ class CartControllerClass {
    * Update quantity by productId (no server item ID needed)
    */
   updateByProduct = asyncHandler(async (req, res) => {
-    const userId = req.query.userId || req.body.userId || 'default';
+    const userId = uid(req);
     const { productId } = req.params;
     const { quantity, variant } = req.body;
     try {
@@ -141,7 +147,7 @@ class CartControllerClass {
    * Remove item by productId
    */
   removeByProduct = asyncHandler(async (req, res) => {
-    const userId = req.query.userId || 'default';
+    const userId = uid(req);
     const { productId } = req.params;
     const variant = req.query.variant ? JSON.parse(req.query.variant) : null;
     const cart = CartService.removeByProduct(userId, productId, variant);
@@ -152,7 +158,7 @@ class CartControllerClass {
    * Clear cart
    */
   clearCart = asyncHandler(async (req, res) => {
-    const userId = req.query.userId || 'default';
+    const userId = uid(req);
     const cart = CartService.clearCart(userId);
     
     res.json({
@@ -166,7 +172,7 @@ class CartControllerClass {
    * Apply promo code
    */
   applyPromoCode = asyncHandler(async (req, res) => {
-    const userId = req.body.userId || 'default';
+    const userId = uid(req);
     const { code } = req.body;
 
     if (!code) {
@@ -195,7 +201,7 @@ class CartControllerClass {
    * Remove promo code
    */
   removePromoCode = asyncHandler(async (req, res) => {
-    const userId = req.query.userId || 'default';
+    const userId = uid(req);
     const cart = CartService.removePromoCode(userId);
     
     res.json({
@@ -209,7 +215,7 @@ class CartControllerClass {
    * Set delivery address
    */
   setDeliveryAddress = asyncHandler(async (req, res) => {
-    const userId = req.body.userId || 'default';
+    const userId = uid(req);
     const { address } = req.body;
 
     if (!address) {
@@ -232,7 +238,7 @@ class CartControllerClass {
    * Set delivery method
    */
   setDeliveryMethod = asyncHandler(async (req, res) => {
-    const userId = req.body.userId || 'default';
+    const userId = uid(req);
     const { method } = req.body;
 
     if (!method) {
@@ -255,7 +261,7 @@ class CartControllerClass {
    * Set payment method
    */
   setPaymentMethod = asyncHandler(async (req, res) => {
-    const userId = req.body.userId || 'default';
+    const userId = uid(req);
     const { method } = req.body;
 
     if (!method) {
@@ -278,7 +284,7 @@ class CartControllerClass {
    * Get optimization suggestions
    */
   getOptimizationSuggestions = asyncHandler(async (req, res) => {
-    const userId = req.query.userId || 'default';
+    const userId = uid(req);
     const location = req.query.location ? JSON.parse(req.query.location) : null;
 
     const suggestions = await CartService.getOptimizationSuggestions(userId, location);

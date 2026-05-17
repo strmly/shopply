@@ -1,44 +1,8 @@
 import { ProductService } from '../services/ProductService.js';
 import { SellerService } from '../services/SellerService.js';
 import { getStoreById } from '../services/StoreService.js';
-
-const SA_STORE_CITIES = [
-  { suburb: 'Sandton', city: 'Johannesburg', province: 'Gauteng', lat: -26.1076, lng: 28.0567 },
-  { suburb: 'Cape Town CBD', city: 'Cape Town', province: 'Western Cape', lat: -33.9249, lng: 18.4241 },
-  { suburb: 'Durban CBD', city: 'Durban', province: 'KwaZulu-Natal', lat: -29.8587, lng: 31.0218 },
-  { suburb: 'Pretoria CBD', city: 'Pretoria', province: 'Gauteng', lat: -25.7459, lng: 28.1878 },
-  { suburb: 'Bloemfontein CBD', city: 'Bloemfontein', province: 'Free State', lat: -29.0852, lng: 26.1596 },
-  { suburb: 'Gqeberha CBD', city: 'Gqeberha', province: 'Eastern Cape', lat: -33.9608, lng: 25.6022 },
-  { suburb: 'East London CBD', city: 'East London', province: 'Eastern Cape', lat: -33.0292, lng: 27.8793 },
-  { suburb: 'Polokwane CBD', city: 'Polokwane', province: 'Limpopo', lat: -23.9045, lng: 29.4688 },
-  { suburb: 'Mbombela CBD', city: 'Mbombela', province: 'Mpumalanga', lat: -25.4753, lng: 30.9694 },
-  { suburb: 'Rustenburg CBD', city: 'Rustenburg', province: 'North West', lat: -25.6671, lng: 27.2419 },
-  { suburb: 'Kimberley CBD', city: 'Kimberley', province: 'Northern Cape', lat: -28.7282, lng: 24.7499 },
-  { suburb: 'Pietermaritzburg CBD', city: 'Pietermaritzburg', province: 'KwaZulu-Natal', lat: -29.6180, lng: 30.3920 },
-];
-
-function haversineKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const toRad = d => d * Math.PI / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
-
-function getStoreLocation(storeId) {
-  return SA_STORE_CITIES[(storeId || 0) % SA_STORE_CITIES.length];
-}
-
-function enrichProduct(product, userLoc) {
-  if (!userLoc) return product;
-  const storeLoc = (product.storeLocation?.lat && product.storeLocation?.lng)
-    ? product.storeLocation
-    : getStoreLocation(product.storeId);
-  const km = haversineKm(userLoc.lat, userLoc.lng, storeLoc.lat, storeLoc.lng);
-  const days = km < 30 ? '1–2' : km < 100 ? '2–3' : km < 400 ? '3–5' : '5–7';
-  return { ...product, storeLocation: storeLoc, distanceKm: km, deliveryDays: `${days} days` };
-}
+import { TrendingService } from '../services/TrendingService.js';
+import { getRanked } from '../services/H3ProductRanker.js';
 
 function parseUserLoc(query) {
   const { lat, lng } = query;
@@ -88,37 +52,35 @@ export class ProductController {
   async getAllProducts(req, res, next) {
     try {
       const userLoc = parseUserLoc(req.query);
+      const page  = parseInt(req.query.page)  || 1;
+      const limit = parseInt(req.query.limit) || 20;
 
       if (userLoc) {
-        // With location: fetch all, sort by distance, then paginate — keeps page ordering stable
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
-        const allResult = await ProductService.getAllProducts({ ...req.query, page: 1, limit: 99999 });
-        let products = allResult.products.map(p => p.toJSON());
-        products = products.map(p => enrichProduct(p, userLoc)).sort((a, b) => a.distanceKm - b.distanceKm);
-        const startIndex = (page - 1) * limit;
-        const pageProducts = products.slice(startIndex, startIndex + limit);
-        res.json({
-          success: true,
-          data: pageProducts,
-          count: pageProducts.length,
-          pagination: {
-            page,
-            limit,
-            total: products.length,
-            totalPages: Math.ceil(products.length / limit),
-            hasMore: startIndex + limit < products.length,
-          },
-        });
-      } else {
-        const result = await ProductService.getAllProducts(req.query);
-        res.json({
-          success: true,
-          data: result.products.map(p => p.toJSON()),
-          count: result.products.length,
-          pagination: result.pagination,
-        });
+        const all = await getRanked(userLoc.lat, userLoc.lng, () => true, { limit: 99999 });
+        if (all) {
+          const startIndex = (page - 1) * limit;
+          const pageProducts = all.slice(startIndex, startIndex + limit);
+          return res.json({
+            success: true,
+            data: pageProducts,
+            count: pageProducts.length,
+            pagination: {
+              page, limit,
+              total: all.length,
+              totalPages: Math.ceil(all.length / limit),
+              hasMore: startIndex + limit < all.length,
+            },
+          });
+        }
       }
+
+      const result = await ProductService.getAllProducts(req.query);
+      res.json({
+        success: true,
+        data: result.products.map(p => p.toJSON ? p.toJSON() : p),
+        count: result.products.length,
+        pagination: result.pagination,
+      });
     } catch (error) {
       next(error);
     }
@@ -142,12 +104,18 @@ export class ProductController {
       const productData = product.toJSON();
       const sellerContact = await getSellerContactForProduct(productData);
 
+      // Track view in TrendingService using the store's H3 cells
+      try {
+        const store = getStoreById(productData.storeId) || getStoreById(String(productData.storeId));
+        if (store) {
+          const cells = [store.h3_r6, store.h3_r7, store.h3_r8].filter(Boolean);
+          if (cells.length) TrendingService.trackView(productData.id, cells);
+        }
+      } catch { /* non-fatal */ }
+
       res.json({
         success: true,
-        data: {
-          ...productData,
-          sellerContact,
-        },
+        data: { ...productData, sellerContact },
       });
     } catch (error) {
       next(error);
@@ -160,12 +128,17 @@ export class ProductController {
   async getHotProducts(req, res, next) {
     try {
       const userLoc = parseUserLoc(req.query);
-      const products = await ProductService.getHotProductsNearLocation(userLoc, parseInt(req.query.limit) || 10);
-      let data = products.map(p => p.toJSON());
+      const limit = parseInt(req.query.limit) || 10;
       if (userLoc) {
-        data = data.map(p => enrichProduct(p, userLoc)).sort((a, b) => a.distanceKm - b.distanceKm);
+        const ranked = await getRanked(
+          userLoc.lat, userLoc.lng,
+          p => p.isTrending || p.isNew || (p.reviewCount || 0) > 50,
+          { limit },
+        );
+        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
       }
-      res.json({ success: true, data, count: data.length });
+      const products = await ProductService.getHotProductsNearLocation(userLoc, limit);
+      res.json({ success: true, data: products.map(p => p.toJSON ? p.toJSON() : p), count: products.length });
     } catch (error) {
       next(error);
     }
@@ -196,12 +169,13 @@ export class ProductController {
   async getNewArrivals(req, res, next) {
     try {
       const userLoc = parseUserLoc(req.query);
-      const products = await ProductService.getNewArrivals(parseInt(req.query.limit) || 10);
-      let data = products.map(p => p.toJSON());
+      const limit = parseInt(req.query.limit) || 10;
       if (userLoc) {
-        data = data.map(p => enrichProduct(p, userLoc)).sort((a, b) => a.distanceKm - b.distanceKm);
+        const ranked = await getRanked(userLoc.lat, userLoc.lng, p => p.isNew, { limit });
+        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
       }
-      res.json({ success: true, data, count: data.length });
+      const products = await ProductService.getNewArrivals(limit);
+      res.json({ success: true, data: products.map(p => p.toJSON ? p.toJSON() : p), count: products.length });
     } catch (error) {
       next(error);
     }
@@ -210,29 +184,36 @@ export class ProductController {
   async getRecommended(req, res, next) {
     try {
       const userLoc = parseUserLoc(req.query);
-      const products = await ProductService.getRecommendedProducts(req.query.userId, parseInt(req.query.limit) || 10);
-      let data = products.map(p => p.toJSON());
+      const limit = parseInt(req.query.limit) || 10;
       if (userLoc) {
-        data = data.map(p => enrichProduct(p, userLoc)).sort((a, b) => a.distanceKm - b.distanceKm);
+        const ranked = await getRanked(
+          userLoc.lat, userLoc.lng,
+          p => (p.rating || 0) >= 4.0 || (p.reviewCount || 0) > 20,
+          { limit },
+        );
+        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
       }
-      res.json({ success: true, data, count: data.length });
+      const products = await ProductService.getRecommendedProducts(req.query.userId, limit);
+      res.json({ success: true, data: products.map(p => p.toJSON ? p.toJSON() : p), count: products.length });
     } catch (error) {
       next(error);
     }
   }
 
-  /**
-   * Get top-rated products
-   */
   async getTopRated(req, res, next) {
     try {
       const userLoc = parseUserLoc(req.query);
-      const products = await ProductService.getTopRated(parseInt(req.query.limit) || 10);
-      let data = products.map(p => p.toJSON());
+      const limit = parseInt(req.query.limit) || 10;
       if (userLoc) {
-        data = data.map(p => enrichProduct(p, userLoc)).sort((a, b) => a.distanceKm - b.distanceKm);
+        const ranked = await getRanked(
+          userLoc.lat, userLoc.lng,
+          p => (p.rating || 0) >= 4.0 && p.stock !== 'out',
+          { limit },
+        );
+        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
       }
-      res.json({ success: true, data, count: data.length });
+      const products = await ProductService.getTopRated(limit);
+      res.json({ success: true, data: products.map(p => p.toJSON ? p.toJSON() : p), count: products.length });
     } catch (error) {
       next(error);
     }
@@ -241,20 +222,29 @@ export class ProductController {
   async getBundles(req, res, next) {
     try {
       const userLoc = parseUserLoc(req.query);
-      const result = await ProductService.getBundles({
-        limit: req.query.limit,
-        page: req.query.page,
-        room: req.query.room,
-        sort: req.query.sort,
-      });
-      let data = result.products;
+      const limit = parseInt(req.query.limit) || 10;
       if (userLoc) {
-        data = data.map(p => enrichProduct(p, userLoc)).sort((a, b) => a.distanceKm - b.distanceKm);
+        const room = req.query.room;
+        const BUNDLE_TERMS = ['bundle', 'set', 'collection', 'package'];
+        const ranked = await getRanked(
+          userLoc.lat, userLoc.lng,
+          p => {
+            const isBundle = (p.tags || []).some(t => BUNDLE_TERMS.includes(t.toLowerCase()))
+              || BUNDLE_TERMS.some(t => (p.name || '').toLowerCase().includes(t));
+            return isBundle && (!room || p.room === room);
+          },
+          { limit },
+        );
+        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
       }
+      const result = await ProductService.getBundles({
+        limit: req.query.limit, page: req.query.page,
+        room: req.query.room, sort: req.query.sort,
+      });
       res.json({
         success: true,
-        data,
-        count: data.length,
+        data: result.products,
+        count: result.products.length,
         summary: result.summary,
         featured: result.featured,
         pagination: result.pagination,

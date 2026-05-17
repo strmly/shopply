@@ -80,6 +80,7 @@ const LoadingContainer = styled.div`
 
 import API_BASE_URL from '@config/api';
 import { toast } from '../ui/Toast';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 export const ProductDetailPage = ({ location }) => {
   const { id } = useParams();
@@ -334,7 +335,7 @@ export const ProductDetailPage = ({ location }) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        userId: 'default',
+        userId: getCurrentUserId(),
         productId: product.id,
         quantity,
         variant: selectedVariant,

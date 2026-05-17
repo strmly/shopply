@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -6,6 +6,7 @@ import { OrderCard } from './OrderCard';
 import { BottomNavigation } from '../home/BottomNavigation';
 import { OrderListSkeleton } from './SkeletonLoader';
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -274,7 +275,7 @@ export const OrdersListPage = () => {
   const [pagination, setPagination] = useState(null);
   const [tabCounts, setTabCounts] = useState({ all: 0, active: 0, past: 0, cancelled: 0 });
 
-  const userId = 'default';
+  const userId = getCurrentUserId();
 
   const stats = useMemo(() => ([
     { label: 'Active', value: tabCounts.active },

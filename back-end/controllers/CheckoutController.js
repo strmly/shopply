@@ -11,7 +11,9 @@ export class CheckoutController {
    */
   async createOrder(req, res, next) {
     try {
-      const { userId, location, deliveryAddress, deliveryMethod, deliverySpeed, paymentMethod, contactInfo, orderInstructions, voucherId } = req.body;
+      const { location, deliveryAddress, deliveryMethod, deliverySpeed, paymentMethod, contactInfo, orderInstructions, voucherId } = req.body;
+      // JWT takes priority; fall back to body userId for unauthenticated/legacy requests
+      const userId = req.user?.userId || req.body.userId || 'default';
 
       if (!userId) {
         return res.status(400).json({

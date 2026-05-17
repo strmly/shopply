@@ -53,6 +53,7 @@ import { ReviewsPage } from './components/reviews';
 import { VouchersWalletPage } from './components/vouchers';
 import ToastContainer, { toast } from './components/ui/Toast';
 import { socket, joinUserRoom } from './utils/notificationSocket';
+import { getCurrentUserId } from './utils/currentUser';
 
 const DEFAULT_LOCATION = {
   lat: -26.1076,
@@ -121,7 +122,7 @@ const App = () => {
 
   // Real-time notification socket
   useEffect(() => {
-    joinUserRoom('default');
+    joinUserRoom(getCurrentUserId());
 
     const handleNew = (notification) => {
       window.dispatchEvent(new Event('notificationUpdated'));

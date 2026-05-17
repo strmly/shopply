@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -191,6 +191,7 @@ const SaveButton = styled.button`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 const LABEL_OPTIONS = ['Home', 'Work', 'Mom\'s House', 'Other'];
 
@@ -198,7 +199,7 @@ export const AddEditAddressPage = ({ location }) => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
-  const userId = 'default'; // TODO: Get from auth context
+  const userId = getCurrentUserId();
 
   const [formData, setFormData] = useState({
     label: 'Home',

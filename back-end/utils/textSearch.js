@@ -29,56 +29,18 @@ function editDistance(a, b) {
 }
 
 /**
- * Standard DP Levenshtein (no early-exit optimisation) — used for the
- * typo-tolerant fuzzy fallback so we can check distance ≤ 2 reliably.
+ * Returns 'exact' | 'stem' | 'fuzzy' | null.
+ * allowFuzzy should only be true for trusted fields (name, subcategory, brand).
+ * Fuzzy requires term ≥ 5 chars to avoid "soft"↔"sofa" type false positives.
  */
-function levenshtein(a, b) {
-  const m = a.length;
-  const n = b.length;
-  // Allocate a (m+1) × (n+1) matrix
-  const dp = Array.from({ length: m + 1 }, (_, i) => {
-    const row = new Array(n + 1);
-    row[0] = i;
-    return row;
-  });
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      dp[i][j] = a[i - 1] === b[j - 1]
-        ? dp[i - 1][j - 1]
-        : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
-    }
-  }
-  return dp[m][n];
-}
-
-/**
- * Returns 'exact' | 'stem' | 'fuzzy' | null
- * Checks if `term` appears in `text` (already lowercase).
- *
- * Match priority:
- *  1. Exact substring match
- *  2. Stemmed substring match
- *  3. Single-edit-distance fuzzy (existing behaviour)
- *  4. Typo-tolerant fallback: Levenshtein ≤ min(2, floor(len/3)) for words >= 4 chars
- */
-export function matchTerm(text, term) {
+export function matchTerm(text, term, allowFuzzy = false) {
   const stemmed = stem(term);
   if (text.includes(term)) return 'exact';
   if (stemmed !== term && text.includes(stemmed)) return 'stem';
-  if (term.length >= 4) {
-    const words = text.split(/\W+/).filter(w => w.length >= 4);
-    // Pass 1: edit distance of exactly 1 (original behaviour)
+  if (allowFuzzy && term.length >= 5) {
+    const words = text.split(/\W+/).filter(w => w.length >= 5);
     for (const w of words) {
       if (editDistance(w, term) === 1 || (stemmed !== term && editDistance(w, stemmed) === 1)) return 'fuzzy';
-    }
-    // Pass 2: typo-tolerant — allow up to min(2, floor(termLen/3)) edits
-    const maxDist = Math.min(2, Math.floor(term.length / 3));
-    if (maxDist >= 2) {
-      for (const w of words) {
-        if (levenshtein(w, term) <= maxDist) return 'fuzzy';
-        if (stemmed !== term && levenshtein(w, stemmed) <= maxDist) return 'fuzzy';
-      }
     }
   }
   return null;
@@ -86,21 +48,24 @@ export function matchTerm(text, term) {
 
 /**
  * Score a product against a multi-word query.
- * Returns 0 if no terms match, >0 otherwise (higher = better match).
- * Checks name (weight 10), category (weight 6), tags (weight 4), description (weight 2).
+ * Returns 0 if not all terms match a primary field — filters out unrelated products.
+ *
+ * Description is excluded: it's too noisy and causes unrelated products to appear
+ * (e.g. a dresser description saying "pairs well with your sofa" matching a sofa search).
+ * Fuzzy matching is restricted to name/subcategory/brand to prevent field noise.
  */
 export function scoreProductText(product, rawQuery) {
-  if (!rawQuery?.trim()) return 1; // empty query matches everything
+  if (!rawQuery?.trim()) return 1;
 
   const terms = rawQuery.toLowerCase().split(/\s+/).filter(t => t.length > 1 && !STOP_WORDS.has(t));
   if (terms.length === 0) return 1;
 
   const fields = [
-    { text: (product.name || '').toLowerCase(), weight: 10 },
-    { text: (product.normalizedTitle || product.name || '').toLowerCase(), weight: 8 },
-    { text: (product.category || '').toLowerCase(), weight: 6 },
-    { text: ((product.tags || []).join(' ')).toLowerCase(), weight: 4 },
-    { text: (product.description || '').toLowerCase(), weight: 2 },
+    { text: (product.name || '').toLowerCase(),                                    weight: 10, fuzzy: true },
+    { text: (product.normalizedTitle || product.name || '').toLowerCase(),         weight: 8,  fuzzy: true },
+    { text: (product.subcategory || product.furnitureCategory || '').toLowerCase(), weight: 6,  fuzzy: true },
+    { text: (product.category || '').toLowerCase(),                                weight: 5,  fuzzy: false },
+    { text: ((product.tags || []).join(' ')).toLowerCase(),                         weight: 4,  fuzzy: false },
   ];
 
   let totalScore = 0;
@@ -108,8 +73,8 @@ export function scoreProductText(product, rawQuery) {
 
   for (const term of terms) {
     let termBestScore = 0;
-    for (const { text, weight } of fields) {
-      const matchType = matchTerm(text, term);
+    for (const { text, weight, fuzzy } of fields) {
+      const matchType = matchTerm(text, term, fuzzy);
       if (!matchType) continue;
       const multiplier = matchType === 'exact' ? 1.0 : matchType === 'stem' ? 0.85 : 0.55;
       termBestScore = Math.max(termBestScore, weight * multiplier);
@@ -118,7 +83,6 @@ export function scoreProductText(product, rawQuery) {
     totalScore += termBestScore;
   }
 
-  // Require ALL terms to match for multi-word queries
   if (matchedTerms < terms.length) return 0;
   return totalScore;
 }

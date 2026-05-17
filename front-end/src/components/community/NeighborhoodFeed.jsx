@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { FeedPost } from './FeedPost';
@@ -75,6 +75,7 @@ const EmptyState = styled.div`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 export const NeighborhoodFeed = ({ location }) => {
   const [posts, setPosts] = useState([]);
@@ -111,7 +112,7 @@ export const NeighborhoodFeed = ({ location }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'default',
+          userId: getCurrentUserId(),
           reaction,
         }),
       });

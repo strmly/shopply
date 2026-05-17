@@ -468,7 +468,7 @@ const toggleWish = (id) => {
 };
 
 import API_BASE_URL from '@config/api';
-const UID = 'default';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 /* Read qty for this product from localStorage (no API call) */
 const readLocalQty = (productId) => {
@@ -533,7 +533,7 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
       fetch(`${API_BASE_URL}/cart/items`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: UID, productId: product.id, quantity: 1, variant: null, storeId: product.storeId }),
+        body: JSON.stringify({ userId: getCurrentUserId(), productId: product.id, quantity: 1, variant: null, storeId: product.storeId }),
       }).catch(() => {});
 
       if (onAddToCart) onAddToCart(product);
@@ -554,12 +554,12 @@ export const ProductCard = ({ product, variant, onClick, onAddToCart }) => {
       if (next === 0) {
         if (idx >= 0) cart.splice(idx, 1);
         // Remove from server
-        fetch(`${API_BASE_URL}/cart/items/by-product/${product.id}?userId=${UID}`, { method: 'DELETE' }).catch(() => {});
+        fetch(`${API_BASE_URL}/cart/items/by-product/${product.id}?userId=${getCurrentUserId()}`, { method: 'DELETE' }).catch(() => {});
       } else {
         if (idx >= 0) { cart[idx].quantity = next; }
         else { cart.push({ ...product, quantity: next, selectedVariant: null, addedAt: new Date().toISOString() }); }
         // Update server
-        fetch(`${API_BASE_URL}/cart/items/by-product/${product.id}?userId=${UID}`, {
+        fetch(`${API_BASE_URL}/cart/items/by-product/${product.id}?userId=${getCurrentUserId()}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ quantity: next, variant: null }),

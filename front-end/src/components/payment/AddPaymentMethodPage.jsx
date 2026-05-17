@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -295,6 +295,7 @@ const InstructionText = styled.div`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 // Luhn algorithm validation
 const validateCardNumber = (cardNumber) => {
@@ -362,7 +363,7 @@ export const AddPaymentMethodPage = ({ location }) => {
   const [loading, setLoading] = useState(false);
   const [detectedBrand, setDetectedBrand] = useState('');
 
-  const userId = 'default'; // TODO: Get from auth context
+  const userId = getCurrentUserId();
 
   useEffect(() => {
     // Check camera permission

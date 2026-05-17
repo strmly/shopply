@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -264,6 +264,7 @@ const Toast = styled.div`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 const BUNDLE_CONFIG = {
   'grocery-stores': {
@@ -293,7 +294,7 @@ export const CurateBundlePage = ({ location }) => {
   const [curating, setCurating] = useState({});
   const [curatedProductIds, setCuratedProductIds] = useState(new Set());
   const [toast, setToast] = useState(null);
-  const userId = 'default'; // In production, get from auth context
+  const userId = getCurrentUserId();
   const userName = 'Local Shopper'; // In production, get from user profile
 
   const config = BUNDLE_CONFIG[bundleType] || BUNDLE_CONFIG['grocery-stores'];

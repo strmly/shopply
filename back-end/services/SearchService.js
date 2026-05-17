@@ -31,13 +31,13 @@ function editDistance(a, b) {
   return prev[b.length];
 }
 
-// Returns true if the term exists in the text, with stemmed or fuzzy fallback
-function textMatch(text, term, stemmedTerm) {
+// Returns match type. allowFuzzy restricts fuzzy to name/subcategory/brand only.
+function textMatch(text, term, stemmedTerm, allowFuzzy = false) {
   if (text.includes(term)) return 'exact';
   if (stemmedTerm !== term && text.includes(stemmedTerm)) return 'stem';
-  // Fuzzy: check each word in text against the term (only for words ≥ 4 chars)
-  if (term.length >= 4) {
-    const words = text.split(/\W+/).filter(w => w.length >= 4);
+  // Fuzzy: only on trusted fields, only for terms ≥ 5 chars (prevents "soft"→"sofa" etc.)
+  if (allowFuzzy && term.length >= 5) {
+    const words = text.split(/\W+/).filter(w => w.length >= 5);
     for (const w of words) {
       if (editDistance(w, term) === 1) return 'fuzzy';
       if (stemmedTerm !== term && editDistance(w, stemmedTerm) === 1) return 'fuzzy';
@@ -122,16 +122,18 @@ class SearchServiceClass {
     const normalizedQuery = query.toLowerCase().trim();
     const expandedTerms = this.synonyms(normalizedQuery);
 
-    // Split into words; separate "key" words (not stop words) from all words
     const allWords = normalizedQuery.split(/\s+/).filter(w => w.length > 1);
     const keyWords = allWords.filter(w => !STOP_WORDS.has(w) && w.length > 2);
     const stemmedKeyWords = keyWords.map(stem);
 
-    const products = await ProductService.getAll();
+    // Use the inverted index to narrow candidates before full scoring.
+    // This turns an O(n) scan into O(candidates), which is much smaller for specific queries.
+    const candidateIds = ProductService.getCandidateIds(normalizedQuery);
+    const allProducts = await ProductService.getAll();
+    const products = candidateIds ? allProducts.filter(p => candidateIds.has(p.id)) : allProducts;
 
     const scoredProducts = products.map(product => {
       const name = (product.name || '').toLowerCase();
-      const desc = (product.description || '').toLowerCase();
       const category = (product.category || '').toLowerCase();
       const subcategory = (product.subcategory || product.furnitureCategory || '').toLowerCase();
       const brand = (product.brand || '').toLowerCase();
@@ -142,43 +144,43 @@ class SearchServiceClass {
       const features = (product.features || []).join(' ').toLowerCase();
       const subtitle = (product.subtitle || '').toLowerCase();
 
-      // Field weights: how much each field matters
+      // Description is excluded from scoring — too noisy, causes unrelated results.
+      // fuzzy:true restricts fuzzy matching to these fields only (name/subcategory/brand).
       const fields = [
-        { text: name,        weight: 5,   isName: true },
-        { text: subcategory, weight: 4 },
-        { text: tags,        weight: 3.5 },
-        { text: brand,       weight: 3 },
-        { text: subtitle,    weight: 2 },
-        { text: style,       weight: 2 },
-        { text: material,    weight: 2 },
-        { text: room,        weight: 1.5 },
-        { text: category,    weight: 1.5 },
-        { text: features,    weight: 1 },
-        { text: desc,        weight: 0.8 },
+        { text: name,        weight: 5,   fuzzy: true },
+        { text: subcategory, weight: 4,   fuzzy: true },
+        { text: tags,        weight: 3.5, fuzzy: false },
+        { text: brand,       weight: 3,   fuzzy: true },
+        { text: subtitle,    weight: 2,   fuzzy: false },
+        { text: style,       weight: 2,   fuzzy: false },
+        { text: material,    weight: 2,   fuzzy: false },
+        { text: room,        weight: 1.5, fuzzy: false },
+        { text: category,    weight: 1.5, fuzzy: false },
+        { text: features,    weight: 1,   fuzzy: false },
       ];
 
       let textScore = 0;
 
-      // 1. Whole-phrase match (e.g. full query "living room sofa" in name)
-      const phraseMatchType = textMatch(name, normalizedQuery, stem(normalizedQuery));
+      // 1. Whole-phrase match in name (fuzzy allowed)
+      const phraseMatchType = textMatch(name, normalizedQuery, stem(normalizedQuery), true);
       if (phraseMatchType) textScore += matchScore(phraseMatchType, 300);
 
-      // 2. Expanded synonym terms scored against all fields
+      // 2. Synonym expansion — scored against all fields (respects per-field fuzzy flag)
       expandedTerms.forEach(term => {
         const stemmedTerm = stem(term);
-        fields.forEach(({ text, weight }) => {
-          const m = textMatch(text, term, stemmedTerm);
+        fields.forEach(({ text, weight, fuzzy }) => {
+          const m = textMatch(text, term, stemmedTerm, fuzzy);
           if (m) textScore += matchScore(m, 40 * weight);
         });
       });
 
-      // 3. Per-keyword scoring + count how many key words matched
+      // 3. Per-keyword scoring + count matched keywords
       let keyWordsMatched = 0;
       keyWords.forEach((word, i) => {
         const stemmedWord = stemmedKeyWords[i];
         let wordMatched = false;
-        fields.forEach(({ text, weight }) => {
-          const m = textMatch(text, word, stemmedWord);
+        fields.forEach(({ text, weight, fuzzy }) => {
+          const m = textMatch(text, word, stemmedWord, fuzzy);
           if (m) {
             textScore += matchScore(m, 20 * weight);
             wordMatched = true;
@@ -189,12 +191,12 @@ class SearchServiceClass {
 
       // 4. All-keywords-matched bonus (precision signal)
       if (keyWords.length > 0 && keyWordsMatched === keyWords.length) {
-        textScore += 80 * keyWords.length; // big bonus for matching everything
+        textScore += 80 * keyWords.length;
       }
 
-      // 5. Multi-word penalty: if fewer than half the key words matched, heavily penalise
-      if (keyWords.length >= 2 && keyWordsMatched < Math.ceil(keyWords.length / 2)) {
-        textScore = Math.round(textScore * 0.15);
+      // 5. Multi-word penalty: require 75% of keywords to match, not just 50%
+      if (keyWords.length >= 2 && keyWordsMatched < Math.ceil(keyWords.length * 0.75)) {
+        textScore = Math.round(textScore * 0.1);
       }
 
       // 6. Quality signals only apply if there's a text match
@@ -212,8 +214,8 @@ class SearchServiceClass {
       return { ...product, relevanceScore: score };
     });
 
-    // Minimum score threshold scales with query length
-    const minScore = keyWords.length >= 2 ? 40 : 1;
+    // Raise thresholds: single-word needs ≥50, multi-word needs ≥80
+    const minScore = keyWords.length >= 2 ? 80 : 50;
     let results = scoredProducts.filter(p => p.relevanceScore >= minScore);
 
     // Apply filters

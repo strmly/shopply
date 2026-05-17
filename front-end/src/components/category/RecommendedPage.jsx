@@ -1,281 +1,203 @@
-﻿import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import API_BASE_URL from '@config/api';
 import { fadeIn } from '../../theme/animations';
 import { TopNavigation } from '../home/TopNavigation';
 import { ProductGrid } from '../home/ProductGrid';
 import { BottomNavigation } from '../home/BottomNavigation';
 
-const Container = styled.div`
+const Page = styled.div`
   min-height: 100vh;
-  background: linear-gradient(180deg, #FDF4FF 0%, #FAE8FF 15%, #FFFFFF 30%);
-  animation: ${fadeIn} 0.3s ease-in;
-  padding-bottom: 100px;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(61,129,239,0.14), transparent 30%),
+    radial-gradient(circle at 90% 20%, rgba(21,161,124,0.12), transparent 26%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 54%, #ffffff 100%);
+  animation: ${fadeIn} 0.35s ease;
+  padding-bottom: 104px;
 `;
 
-const Content = styled.div`
-  max-width: 100%;
+const Hero = styled.header`
+  width: min(1180px, calc(100% - 28px));
+  margin: 18px auto 20px;
+  border-radius: 30px;
+  padding: clamp(18px, 5vw, 34px);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.96), rgba(241,247,255,0.94)) padding-box,
+    ${props => props.theme.colors.gradient.primary} border-box;
+  border: 1px solid transparent;
+  box-shadow: 0 24px 62px rgba(16,24,40,0.1);
 `;
 
-const HeroHeader = styled.div`
-  padding: ${props => props.theme.spacing.xl} ${props => props.theme.spacing.xl} ${props => props.theme.spacing.lg};
-  background: linear-gradient(135deg, #A855F7 0%, #9333EA 50%, #7C3AED 100%);
-  color: white;
-  position: relative;
-  overflow: hidden;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
-    animation: sparkle 4s ease-in-out infinite;
-  }
-  
-  @keyframes sparkle {
-    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
-    50% { transform: scale(1.2) rotate(180deg); opacity: 0.8; }
-  }
+const BackButton = styled.button`
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(228,231,236,0.95);
+  border-radius: 16px;
+  background: #ffffff;
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 24px;
+  font-weight: 900;
+  cursor: pointer;
+  margin-bottom: 18px;
 `;
 
-const HeaderContent = styled.div`
-  position: relative;
-  z-index: 1;
-`;
-
-const StarIcon = styled.div`
-  font-size: 48px;
-  margin-bottom: ${props => props.theme.spacing.md};
-  animation: twinkle 2s ease-in-out infinite;
-  filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
-  
-  @keyframes twinkle {
-    0%, 100% { opacity: 1; transform: scale(1) rotate(0deg); }
-    50% { opacity: 0.8; transform: scale(1.15) rotate(180deg); }
-  }
+const Eyebrow = styled.div`
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
 `;
 
 const Title = styled.h1`
-  ${props => props.theme.typography.heading1}
-  color: white;
-  margin: 0 0 ${props => props.theme.spacing.xs} 0;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  margin: 6px 0 0;
+  color: ${props => props.theme.colors.text.primary};
+  font-size: clamp(34px, 9vw, 64px);
+  line-height: 0.96;
+  font-weight: 900;
+  letter-spacing: 0;
 `;
 
 const Subtitle = styled.p`
-  ${props => props.theme.typography.body1}
-  color: rgba(255,255,255,0.95);
-  margin: 0;
-  font-weight: 500;
-`;
-
-const PersonalBadge = styled.div`
-  margin-top: ${props => props.theme.spacing.md};
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  background: rgba(255,255,255,0.2);
-  border-radius: ${props => props.theme.radii.md};
-  backdrop-filter: blur(10px);
-  display: inline-flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  ${props => props.theme.typography.body2}
-  font-weight: 600;
-  border: 1px solid rgba(255,255,255,0.3);
-`;
-
-const ProductCount = styled.div`
-  margin-top: ${props => props.theme.spacing.sm};
-  ${props => props.theme.typography.caption}
-  opacity: 0.9;
-`;
-
-const LoadingContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  padding: ${props => props.theme.spacing.xxl};
+  max-width: 760px;
+  margin: 14px 0 0;
   color: ${props => props.theme.colors.text.secondary};
+  font-size: clamp(14px, 2.5vw, 17px);
+  line-height: 1.5;
+  font-weight: 700;
 `;
 
-const EmptyState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 60vh;
-  padding: ${props => props.theme.spacing.xxl};
-  text-align: center;
+const Stats = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+
+  @media (max-width: 680px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
-const EmptyIcon = styled.div`
-  font-size: 64px;
-  margin-bottom: ${props => props.theme.spacing.lg};
-  opacity: 0.5;
+const Stat = styled.div`
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(228,231,236,0.92);
+  border-radius: 18px;
+  padding: 13px;
 `;
 
-const EmptyTitle = styled.h2`
-  ${props => props.theme.typography.heading2}
+const StatValue = styled.div`
   color: ${props => props.theme.colors.text.primary};
-  margin: 0 0 ${props => props.theme.spacing.sm} 0;
+  font-size: 24px;
+  font-weight: 900;
 `;
 
-const EmptyMessage = styled.p`
-  ${props => props.theme.typography.body1}
+const StatLabel = styled.div`
   color: ${props => props.theme.colors.text.secondary};
-  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
 `;
 
-import API_BASE_URL from '@config/api';
+const Content = styled.main`
+  width: min(1180px, calc(100% - 28px));
+  margin: 0 auto;
+`;
+
+const Loading = styled.div`
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  color: ${props => props.theme.colors.text.secondary};
+  font-weight: 900;
+`;
+
+const Empty = styled.div`
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: ${props => props.theme.colors.text.secondary};
+  font-weight: 800;
+`;
 
 export const RecommendedPage = ({ location }) => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
+  const [feed, setFeed] = useState(null);
   const [loading, setLoading] = useState(true);
-  const userId = 'default';
+  const suburb = location?.suburb || location?.city || 'your area';
+
+  const query = useMemo(() => {
+    const params = new URLSearchParams({ limit: '48', suburb });
+    if (location?.lat && location?.lng) {
+      params.set('lat', location.lat);
+      params.set('lng', location.lng);
+    }
+    if (location) params.set('location', JSON.stringify(location));
+    return params.toString();
+  }, [location, suburb]);
 
   useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/products/recommended?userId=${userId}&limit=50`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setProducts(data.data || []);
+    let active = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/community/recommended-by-neighbors?${query}`);
+        const data = await response.json();
+        if (active && data.success) setFeed(data.data);
+      } catch (error) {
+        console.error('Error loading neighbor recommendations:', error);
+      } finally {
+        if (active) setLoading(false);
       }
-    } catch (err) {
-      console.error('Error loading recommended products:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    load();
+    return () => { active = false; };
+  }, [query]);
 
-  const handleProductClick = (product) => {
-    navigate(`/product/${product.id}`);
-  };
+  const products = feed?.products || [];
 
   const handleAddToCart = async (product) => {
-    if (!product || !product.id) return;
-
     try {
-      const cartItem = {
-        ...product,
-        quantity: 1,
-        selectedVariant: null,
-        addedAt: new Date().toISOString(),
-      };
-
-      const cart = JSON.parse(localStorage.getItem('shopply_cart') || '[]');
-      const existingIndex = cart.findIndex(item => 
-        item.id === product.id && 
-        JSON.stringify(item.selectedVariant) === JSON.stringify(null)
-      );
-
-      if (existingIndex >= 0) {
-        cart[existingIndex].quantity += 1;
-      } else {
-        cart.push(cartItem);
-      }
-
-      localStorage.setItem('shopply_cart', JSON.stringify(cart));
-      const cartCount = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      localStorage.setItem('shopply_cart_count', cartCount.toString());
-
-      try {
-        await fetch(`${API_BASE_URL}/cart/items`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: 'default',
-            productId: product.id,
-            quantity: 1,
-            variant: null,
-            storeId: product.storeId,
-          }),
-        });
-      } catch (error) {
-        console.error('Error syncing cart to backend:', error);
-      }
-
+      await fetch(`${API_BASE_URL}/cart/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: 'default', productId: product.id, quantity: 1, storeId: product.storeId }),
+      });
       window.dispatchEvent(new Event('cartUpdated'));
-      console.log('Added to cart:', product.name);
     } catch (error) {
-      console.error('Error adding to cart:', error);
+      console.error('Error adding product to cart:', error);
     }
   };
 
-  if (loading) {
-    return (
-      <Container>
-        <TopNavigation 
-          location={location}
-          onLocationClick={() => console.log('Location clicked')}
-          onSearch={(query) => console.log('Search:', query)}
-          onNotificationClick={() => navigate('/')}
-          onSearchClick={() => navigate('/search')}
-        />
-        <LoadingContainer>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⏳</div>
-          <div>Loading recommendations...</div>
-        </LoadingContainer>
-        <BottomNavigation currentPath="/recommended" />
-      </Container>
-    );
-  }
-
   return (
-    <Container>
-      <TopNavigation 
-        location={location}
-        onLocationClick={() => console.log('Location clicked')}
-        onSearch={(query) => console.log('Search:', query)}
-        onNotificationClick={() => navigate('/')}
-        onSearchClick={() => navigate('/search')}
-      />
-      
+    <Page>
+      <TopNavigation location={location} title="Recommended by Neighbors" />
+      <Hero>
+        <BackButton type="button" onClick={() => navigate(-1)} aria-label="Go back">&lt;</BackButton>
+        <Eyebrow>Community picks</Eyebrow>
+        <Title>Recommended by Neighbors</Title>
+        <Subtitle>{feed?.subtitle || `Furniture picks people around ${suburb} keep saving, buying, and rating highly.`}</Subtitle>
+        <Stats>
+          <Stat><StatValue>{feed?.totalNeighborSignals || 0}</StatValue><StatLabel>neighbor signals</StatLabel></Stat>
+          <Stat><StatValue>{products.length}</StatValue><StatLabel>trusted local finds</StatLabel></Stat>
+          <Stat><StatValue>{String(feed?.topCategory || 'home').replace(/_/g, ' ')}</StatValue><StatLabel>top room</StatLabel></Stat>
+        </Stats>
+      </Hero>
       <Content>
-        <HeroHeader>
-          <HeaderContent>
-            <StarIcon>✨</StarIcon>
-            <Title>Recommended For You</Title>
-            <Subtitle>Curated just for you based on your preferences</Subtitle>
-            <PersonalBadge>
-              🎯 Personalized
-            </PersonalBadge>
-            <ProductCount>
-              {products.length} {products.length === 1 ? 'recommendation' : 'recommendations'} for you
-            </ProductCount>
-          </HeaderContent>
-        </HeroHeader>
-
-        {products.length === 0 ? (
-          <EmptyState>
-            <EmptyIcon>✨</EmptyIcon>
-            <EmptyTitle>No Recommendations Yet</EmptyTitle>
-            <EmptyMessage>
-              Start browsing to get personalized recommendations!
-            </EmptyMessage>
-          </EmptyState>
+        {loading ? (
+          <Loading>Loading neighbor recommendations...</Loading>
+        ) : products.length === 0 ? (
+          <Empty>Check back soon for neighbor recommendations near {suburb}.</Empty>
         ) : (
           <ProductGrid
             products={products}
-            onProductClick={handleProductClick}
+            onProductClick={(product) => navigate(`/product/${product.id}`)}
             onAddToCart={handleAddToCart}
           />
         )}
       </Content>
-      
       <BottomNavigation currentPath="/recommended" />
-    </Container>
+    </Page>
   );
 };
-
-

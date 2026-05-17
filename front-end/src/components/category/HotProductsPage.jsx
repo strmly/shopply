@@ -122,6 +122,7 @@ const EmptyMessage = styled.p`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 export const HotProductsPage = ({ location }) => {
   const navigate = useNavigate();
@@ -192,7 +193,7 @@ export const HotProductsPage = ({ location }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: 'default',
+            userId: getCurrentUserId(),
             productId: product.id,
             quantity: 1,
             variant: null,

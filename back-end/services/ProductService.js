@@ -12,6 +12,60 @@ class ProductServiceClass {
   constructor() {
     this.products = [];
     this.nextId = 1;
+    this._index = new Map(); // term -> Set<productId>
+  }
+
+  // Build an inverted index over the searchable text fields of every product.
+  // Called once after bulk seeding; also called after individual create/update/delete.
+  _buildIndex() {
+    this._index.clear();
+    for (const p of this.products) {
+      this._indexOne(p);
+    }
+  }
+
+  _indexOne(product) {
+    const id = product.id;
+    const texts = [
+      product.name,
+      product.subcategory,
+      product.furnitureCategory,
+      product.category,
+      product.brand,
+      product.style,
+      product.materialPrimary,
+      product.room,
+      ...(product.tags || []),
+    ];
+    for (const text of texts) {
+      if (!text) continue;
+      for (const token of text.toLowerCase().split(/\W+/)) {
+        if (token.length < 3) continue;
+        if (!this._index.has(token)) this._index.set(token, new Set());
+        this._index.get(token).add(id);
+      }
+    }
+  }
+
+  // Return the Set of candidate product IDs for a raw query string,
+  // or null if the query is empty (caller should use all products).
+  getCandidateIds(rawQuery) {
+    if (!rawQuery?.trim()) return null;
+    const tokens = rawQuery.toLowerCase().split(/\W+/).filter(t => t.length >= 3);
+    if (tokens.length === 0) return null;
+
+    const union = new Set();
+    for (const token of tokens) {
+      // Exact token hit
+      this._index.get(token)?.forEach(id => union.add(id));
+      // Prefix hit (e.g. "sofa" matches "sofas")
+      for (const [term, ids] of this._index) {
+        if (term !== token && (term.startsWith(token) || token.startsWith(term))) {
+          ids.forEach(id => union.add(id));
+        }
+      }
+    }
+    return union;
   }
 
   /**
@@ -508,6 +562,7 @@ class ProductServiceClass {
     const previousCount = this.products.length;
     this.products = [];
     this.nextId = 1;
+    this._index.clear();
     console.log(`🗑️  Cleared ${previousCount} products from ProductService`);
     return previousCount;
   }
@@ -564,6 +619,7 @@ class ProductServiceClass {
     }
     
     console.log(`✅ Successfully added ${addedCount} products to ProductService`);
+    this._buildIndex();
     return this.products.length;
   }
 
@@ -637,6 +693,7 @@ class ProductServiceClass {
     }
 
     this.products.push(product);
+    this._indexOne(product); // update inverted search index
 
     // H3 indexing: attach store location data and compute quality score
     try {
@@ -717,6 +774,7 @@ class ProductServiceClass {
     }
 
     this.products[productIndex] = updatedProduct;
+    this._buildIndex(); // rebuild inverted search index after update
 
     // H3 indexing: re-index after update
     try {
@@ -744,6 +802,7 @@ class ProductServiceClass {
     }
 
     this.products.splice(productIndex, 1);
+    this._buildIndex(); // rebuild inverted search index after delete
     return true;
   }
 

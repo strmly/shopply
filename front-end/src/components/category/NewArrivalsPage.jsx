@@ -6,6 +6,7 @@ import { TopNavigation } from '../home/TopNavigation';
 import { ProductGrid } from '../home/ProductGrid';
 import { BottomNavigation } from '../home/BottomNavigation';
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -212,7 +213,7 @@ export const NewArrivalsPage = ({ location }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: 'default',
+            userId: getCurrentUserId(),
             productId: product.id,
             quantity: 1,
             variant: null,

@@ -10,6 +10,7 @@ const communityController = new CommunityController();
 router.get('/feed', (req, res, next) => communityController.getFeed(req, res, next));
 router.get('/posts/:id', (req, res, next) => communityController.getPost(req, res, next));
 router.post('/posts', (req, res, next) => communityController.createPost(req, res, next));
+router.get('/recommended-by-neighbors', (req, res, next) => communityController.getNeighborRecommendations(req, res, next));
 router.get('/recommendations', (req, res, next) => communityController.getRecommendations(req, res, next));
 router.get('/bundles/:bundleType', (req, res, next) => communityController.getBundleProducts(req, res, next));
 router.get('/bundles/:bundleType/curated', (req, res, next) => communityController.getCuratedItems(req, res, next));

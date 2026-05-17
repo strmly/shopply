@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -267,6 +267,7 @@ const getStatusType = (status, actionRequired) => {
 };
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 export const ReturnDetailPage = ({ location }) => {
   const navigate = useNavigate();
@@ -275,7 +276,7 @@ export const ReturnDetailPage = ({ location }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const userId = 'default'; // In production, get from auth context
+  const userId = getCurrentUserId();
 
   useEffect(() => {
     loadReturn();

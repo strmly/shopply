@@ -45,6 +45,20 @@ const FeedHeader = styled.div`
   padding: 0 clamp(14px, 5vw, 48px);
 `;
 
+const FeedHeaderRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+
+  @media (max-width: 380px) {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+`;
+
 const FeedEyebrow = styled.div`
   ${props => props.theme.typography.caption}
   color: ${props => props.theme.colors.primary};
@@ -58,9 +72,54 @@ const FeedTitle = styled.h2`
   color: ${props => props.theme.colors.text.primary};
   margin: 0;
   line-height: 1.1;
+  min-width: 0;
 
   @media (max-width: 520px) {
     font-size: 24px;
+  }
+`;
+
+const FeedViewAllButton = styled.button`
+  ${props => props.theme.typography.body2}
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: ${props => props.theme.colors.gradient.primary};
+  color: ${props => props.theme.colors.text.inverse};
+  cursor: pointer;
+  font-weight: 600;
+  transition: ${props => props.theme.transitions.swift};
+  display: flex;
+  align-items: center;
+  gap: ${props => props.theme.spacing.xs};
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 14px 28px rgba(61, 129, 239, 0.22);
+
+  &:hover {
+    color: ${props => props.theme.colors.text.inverse};
+    transform: translateY(-1px);
+    box-shadow: 0 18px 34px rgba(61, 129, 239, 0.28);
+  }
+
+  &::after {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-1px);
+    transition: ${props => props.theme.transitions.swift};
+  }
+
+  &:hover::after {
+    transform: rotate(45deg) translate(2px, -3px);
+  }
+
+  @media (max-width: 380px) {
+    min-height: 34px;
+    padding: 0 12px;
   }
 `;
 
@@ -75,26 +134,42 @@ const LoadingContainer = styled.div`
 
 import API_BASE_URL from '@config/api';
 import { toast } from './ui/Toast';
+import { useHomeData } from '../hooks/useHomeData';
+import { getCurrentUserId } from '../utils/currentUser';
 
 export const HomeScreen = ({ location, onLocationChange }) => {
   const navigate = useNavigate();
   const suburb = location?.suburb || 'Your area';
   const city = location?.city || '';
 
-  const [hotProducts, setHotProducts] = useState([]);
-  const [flashDeals, setFlashDeals] = useState([]);
-  const [recommended, setRecommended] = useState([]);
-  const [bundles, setBundles] = useState([]);
-  const [newArrivals, setNewArrivals] = useState([]);
-  const [topRated, setTopRated] = useState([]);
+  const { data: homeData, loading } = useHomeData(location);
+
+  const hotProducts  = homeData?.hotProducts  ?? [];
+  const flashDeals   = homeData?.flashDeals   ?? [];
+  const recommended  = homeData?.recommended  ?? [];
+  const newArrivals  = homeData?.newArrivals  ?? [];
+  const bundles      = homeData?.bundles      ?? [];
+  const topRated     = homeData?.topRated     ?? [];
+
   const [feedProducts, setFeedProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [feedPage, setFeedPage] = useState(1);
+  const [feedHasMore, setFeedHasMore] = useState(false);
+  const [feedLoading, setFeedLoading] = useState(false);
+
+  // Sync feed state from cached home data when it arrives
+  useEffect(() => {
+    if (!homeData) return;
+    setFeedProducts(homeData.feedProducts ?? []);
+    setFeedPage(1);
+    setFeedHasMore(homeData.feedHasMore ?? false);
+  }, [homeData]);
+
   const [hyperlocalFeed, setHyperlocalFeed] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const userId = 'default'; // In a real app, this would come from auth context
+  const userId = getCurrentUserId();
 
   // Fetch unread notification count
   useEffect(() => {
@@ -102,17 +177,11 @@ export const HomeScreen = ({ location, onLocationChange }) => {
       try {
         const response = await fetch(`${API_BASE_URL}/notifications/user/${userId}/count`);
         const data = await response.json();
-        if (data.success) {
-          setUnreadCount(data.data?.count || 0);
-        }
-      } catch (error) {
-        console.error('Error fetching unread count:', error);
-      }
+        if (data.success) setUnreadCount(data.data?.count || 0);
+      } catch {}
     };
-
     fetchUnreadCount();
-    // Refresh count periodically
-    const interval = setInterval(fetchUnreadCount, 30000); // Every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, [userId]);
 
@@ -129,73 +198,6 @@ export const HomeScreen = ({ location, onLocationChange }) => {
         .finally(() => setGeoLoading(false));
     } catch {}
   }, []);
-
-  const itemsPerPage = 8;
-
-  // Fetch products from API — re-run when the user's area changes
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-
-        const locQS = location?.lat && location?.lng
-          ? `lat=${location.lat}&lng=${location.lng}&`
-          : '';
-
-        const fallback = (err) => {
-          console.error(err);
-          return { ok: false, json: async () => ({ success: false, data: [] }) };
-        };
-
-        const [hotRes, dealsRes, recommendedRes, newRes, allRes, bundlesRes, topRatedRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/products/hot?${locQS}limit=10`).catch(e => fallback('hot: ' + e)),
-          fetch(`${API_BASE_URL}/products/flash-deals?limit=10`).catch(e => fallback('flash: ' + e)),
-          fetch(`${API_BASE_URL}/products/recommended?${locQS}limit=10`).catch(e => fallback('recommended: ' + e)),
-          fetch(`${API_BASE_URL}/products/new-arrivals?${locQS}limit=10`).catch(e => fallback('new: ' + e)),
-          fetch(`${API_BASE_URL}/products?${locQS}page=1&limit=30`).catch(e => fallback('all: ' + e)),
-          fetch(`${API_BASE_URL}/products/bundles?${locQS}limit=10`).catch(e => fallback('bundles: ' + e)),
-          fetch(`${API_BASE_URL}/products/top-rated?${locQS}limit=10`).catch(e => fallback('top-rated: ' + e)),
-        ]);
-
-        const [hotData, dealsData, recommendedData, newData, allData, bundlesData, topRatedData] = await Promise.all([
-          hotRes.json().catch(() => ({ success: false, data: [] })),
-          dealsRes.json().catch(() => ({ success: false, data: [] })),
-          recommendedRes.json().catch(() => ({ success: false, data: [] })),
-          newRes.json().catch(() => ({ success: false, data: [] })),
-          allRes.json().catch(() => ({ success: false, data: [], pagination: { hasMore: false } })),
-          bundlesRes.json().catch(() => ({ success: false, data: [] })),
-          topRatedRes.json().catch(() => ({ success: false, data: [] })),
-        ]);
-
-        setHotProducts(hotData.success && Array.isArray(hotData.data) ? hotData.data : []);
-        setFlashDeals(dealsData.success && Array.isArray(dealsData.data) ? dealsData.data : []);
-        setRecommended(recommendedData.success && Array.isArray(recommendedData.data) ? recommendedData.data : []);
-        setNewArrivals(newData.success && Array.isArray(newData.data) ? newData.data : []);
-        setBundles(bundlesData.success && Array.isArray(bundlesData.data) ? bundlesData.data : []);
-        setTopRated(topRatedData.success && Array.isArray(topRatedData.data) ? topRatedData.data : []);
-
-        if (allData.success && Array.isArray(allData.data)) {
-          setFeedProducts(allData.data);
-        } else {
-          setFeedProducts([]);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        setHotProducts([]);
-        setFlashDeals([]);
-        setRecommended([]);
-        setNewArrivals([]);
-        setBundles([]);
-        setTopRated([]);
-        setFeedProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location?.suburb]);
 
   const handleProductClick = (product) => {
     // Navigate to product detail page
@@ -229,6 +231,28 @@ export const HomeScreen = ({ location, onLocationChange }) => {
     }).catch(() => {});
 
     toast.success(`${product.name} added to cart`);
+  };
+
+  const handleLoadMoreFeed = async () => {
+    if (feedLoading || !feedHasMore) return;
+    setFeedLoading(true);
+    try {
+      const nextPage = feedPage + 1;
+      const locQS = location?.lat && location?.lng
+        ? `lat=${location.lat}&lng=${location.lng}&`
+        : '';
+      const res = await fetch(`${API_BASE_URL}/products?${locQS}page=${nextPage}&limit=8`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setFeedProducts(prev => [...prev, ...data.data]);
+        setFeedPage(nextPage);
+        setFeedHasMore(data.pagination?.hasMore ?? false);
+      }
+    } catch (e) {
+      console.error('Load more feed failed:', e);
+    } finally {
+      setFeedLoading(false);
+    }
   };
 
   const openSearch = () => navigate('/search');
@@ -332,7 +356,12 @@ export const HomeScreen = ({ location, onLocationChange }) => {
                   <FeedEyebrow>
                     {hyperlocalFeed.wasAutoExpanded ? 'Nearest available' : 'Near you'}
                   </FeedEyebrow>
-                  <FeedTitle>Top picks · {hyperlocalFeed.tierLabel}</FeedTitle>
+                  <FeedHeaderRow>
+                    <FeedTitle>Top picks · {hyperlocalFeed.tierLabel}</FeedTitle>
+                    <FeedViewAllButton onClick={() => navigate('/trending')}>
+                      See all
+                    </FeedViewAllButton>
+                  </FeedHeaderRow>
                 </FeedHeader>
                 <ProductGrid
                   products={hyperlocalFeed.modules.topNearYou}
@@ -346,9 +375,14 @@ export const HomeScreen = ({ location, onLocationChange }) => {
               <>
                 <FeedHeader>
                   <FeedEyebrow>Best sellers</FeedEyebrow>
-                  <FeedTitle>
-                    {hyperlocalFeed.wasAutoExpanded ? 'Top-rated picks' : 'Popular in your area'}
-                  </FeedTitle>
+                  <FeedHeaderRow>
+                    <FeedTitle>
+                      {hyperlocalFeed.wasAutoExpanded ? 'Top-rated picks' : 'Popular in your area'}
+                    </FeedTitle>
+                    <FeedViewAllButton onClick={() => navigate('/hot')}>
+                      See all
+                    </FeedViewAllButton>
+                  </FeedHeaderRow>
                 </FeedHeader>
                 <ProductGrid
                   products={hyperlocalFeed.modules.bestSellersNearby}
@@ -368,6 +402,7 @@ export const HomeScreen = ({ location, onLocationChange }) => {
                   products={hyperlocalFeed.modules.topRatedSellers}
                   onProductClick={handleProductClick}
                   onAddToCart={handleAddToCart}
+                  onSeeMore={() => navigate('/recommended')}
                   loading={false}
                 />
               </>
@@ -444,7 +479,11 @@ export const HomeScreen = ({ location, onLocationChange }) => {
           />
         )}
         
-        <CommunityRecommendations location={location} />
+        <CommunityRecommendations
+          location={location}
+          onProductClick={handleProductClick}
+          onAddToCart={handleAddToCart}
+        />
 
         <TrendingInArea location={location} />
         
@@ -458,7 +497,9 @@ export const HomeScreen = ({ location, onLocationChange }) => {
               products={feedProducts.length > 0 ? feedProducts : bundles}
               onProductClick={handleProductClick}
               onAddToCart={handleAddToCart}
-              itemsPerPage={itemsPerPage}
+              onLoadMore={feedProducts.length > 0 ? handleLoadMoreFeed : undefined}
+              hasMore={feedProducts.length > 0 ? feedHasMore : false}
+              loading={feedLoading}
             />
           </>
         )}

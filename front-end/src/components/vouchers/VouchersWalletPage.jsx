@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 import { VoucherCard } from './VoucherCard.jsx';
 import { BottomNavigation } from '../home/BottomNavigation';
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -204,7 +205,7 @@ export const VouchersWalletPage = () => {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const userId = 'default';
+  const userId = getCurrentUserId();
 
   const loadVouchers = useCallback(async () => {
     try {

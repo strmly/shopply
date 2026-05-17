@@ -6,6 +6,7 @@ import { TopNavigation } from '../home/TopNavigation';
 import { BottomNavigation } from '../home/BottomNavigation';
 import { toast } from '../ui/Toast';
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 /* ─── Animations ─────────────────────────────────────────── */
 const pulse = keyframes`
@@ -502,7 +503,7 @@ export const FlashDealsPage = ({ location }) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        userId: 'default',
+        userId: getCurrentUserId(),
         productId: product.id,
         quantity: 1,
         variant: null,

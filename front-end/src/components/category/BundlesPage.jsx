@@ -5,6 +5,7 @@ import { fadeIn } from '../../theme/animations';
 import { TopNavigation } from '../home/TopNavigation';
 import { BottomNavigation } from '../home/BottomNavigation';
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 const Page = styled.div`
   min-height: 100vh;
@@ -605,7 +606,7 @@ export const BundlesPage = ({ location }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'default',
+          userId: getCurrentUserId(),
           productId: bundle.id,
           quantity: 1,
           variant: null,

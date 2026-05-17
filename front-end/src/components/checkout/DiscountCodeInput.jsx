@@ -1,6 +1,7 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 const Card = styled.div`
   background: ${props => props.theme.colors.surface};
@@ -121,7 +122,7 @@ export const DiscountCodeInput = ({ promoCode, onPromoCodeChange, cart }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'default',
+          userId: getCurrentUserId(),
           promoCode: inputValue.trim(),
         }),
       });

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -162,6 +162,7 @@ const ErrorState = styled.div`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 export const ReturnsHubPage = ({ location }) => {
   const navigate = useNavigate();
@@ -177,7 +178,7 @@ export const ReturnsHubPage = ({ location }) => {
     cancelled: 0,
   });
 
-  const userId = 'default'; // In production, get from auth context
+  const userId = getCurrentUserId();
   const touchStartY = useRef(0);
   const touchEndY = useRef(0);
   const isPulling = useRef(false);

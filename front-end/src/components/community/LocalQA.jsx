@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
 
@@ -230,6 +230,7 @@ const MetaText = styled.div`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 export const LocalQA = ({ productId, location }) => {
   const [questions, setQuestions] = useState([]);
@@ -276,7 +277,7 @@ export const LocalQA = ({ productId, location }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             question: trimmed,
-            userId: 'default',
+            userId: getCurrentUserId(),
             userName: 'You',
           }),
         }

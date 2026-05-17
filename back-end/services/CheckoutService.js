@@ -207,12 +207,44 @@ class CheckoutService {
       }
     }
 
-    // Validate delivery address if delivery method is selected
+    // Validate delivery address presence
     if (cart.deliveryMethod === 'delivery' && !location && !cart.deliveryAddress) {
       issues.push({
         type: 'missing_address',
         message: 'Delivery address is required',
       });
+    }
+
+    // H3 delivery zone validation — check each product can actually reach the buyer
+    if (cart.deliveryMethod === 'delivery') {
+      const dLat = cart.deliveryAddress?.lat ?? location?.lat;
+      const dLng = cart.deliveryAddress?.lng ?? location?.lng;
+
+      if (dLat && dLng) {
+        try {
+          const { latLngToCell } = await import('h3-js');
+          const { getStoreById } = await import('./StoreService.js');
+          const buyerCell = latLngToCell(dLat, dLng, 7); // R7 ≈ 1.2 km hex
+
+          for (const item of cart.items) {
+            try {
+              const product = await ProductService.getProductById(item.productId);
+              if (!product) continue;
+              const p = typeof product.toJSON === 'function' ? product.toJSON() : product;
+              const store = getStoreById(p.storeId) || getStoreById(String(p.storeId));
+              // Only reject if the store has an explicit delivery zone AND the buyer isn't in it
+              if (store?.deliveryCells?.length && !store.deliveryCells.includes(buyerCell)) {
+                issues.push({
+                  type: 'out_of_delivery_zone',
+                  productId: item.productId,
+                  storeName: store.name || 'this store',
+                  message: `${p.name || 'This item'} cannot be delivered to your address — outside the store's delivery zone`,
+                });
+              }
+            } catch { /* per-item failure is non-fatal */ }
+          }
+        } catch { /* h3-js import failure is non-fatal — skip zone check */ }
+      }
     }
 
     return {

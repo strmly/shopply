@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -192,6 +192,7 @@ const MenuItem = styled.button`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 export const PaymentMethodsPage = ({ location }) => {
   const navigate = useNavigate();
@@ -200,7 +201,7 @@ export const PaymentMethodsPage = ({ location }) => {
   const [deleteDialog, setDeleteDialog] = useState(null);
   const [menuSheet, setMenuSheet] = useState(null);
 
-  const userId = 'default'; // TODO: Get from auth context
+  const userId = getCurrentUserId();
 
   useEffect(() => {
     loadPaymentMethods();

@@ -5,6 +5,7 @@ import API_BASE_URL from '@config/api';
 import { AuthModal } from '../auth';
 import { isSignedIn, getAuthUser } from '../../utils/authState';
 import { useUser } from '../../context/UserContext';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 /* ─── Shell ───────────────────────────────────────────── */
 
@@ -1243,7 +1244,7 @@ export const TopNavigation = ({
       const response = await fetch(`${API_BASE_URL}/cart/items/${item.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'default', quantity: nextQuantity }),
+        body: JSON.stringify({ userId: getCurrentUserId(), quantity: nextQuantity }),
       });
       const data = await response.json();
       if (data.success) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { fadeIn } from '../../theme/animations';
@@ -8,6 +8,7 @@ import { BottomNavigation } from '../home/BottomNavigation';
 import { OrderTimeline } from './OrderTimeline';
 import { OrderListSkeleton } from './SkeletonLoader';
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -327,7 +328,7 @@ export const OrderDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [reordering, setReordering] = useState(false);
   const [itemsWithImages, setItemsWithImages] = useState([]);
-  const userId = 'default';
+  const userId = getCurrentUserId();
 
   useEffect(() => {
     const loadOrder = async () => {

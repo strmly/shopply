@@ -1,227 +1,292 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
+import API_BASE_URL from '@config/api';
 import { fadeIn } from '../../theme/animations';
+import { ProductCard } from '../home/ProductCard';
 
-const Container = styled.div`
+const Section = styled.section`
   width: min(1180px, calc(100% - 28px));
-  margin: 0 auto 34px;
-  animation: ${fadeIn} 0.3s ease-in;
-  min-width: 0;
+  margin: 0 auto 38px;
+  animation: ${fadeIn} 0.35s ease;
+`;
+
+const Shell = styled.div`
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96)) padding-box,
+    linear-gradient(140deg, rgba(61,129,239,0.24), rgba(21,161,124,0.16), rgba(196,184,252,0.24)) border-box;
+  border: 1px solid transparent;
+  border-radius: 28px;
+  padding: clamp(16px, 3vw, 22px);
+  box-shadow: 0 22px 54px rgba(16, 24, 40, 0.08);
+  overflow: hidden;
 `;
 
 const Header = styled.div`
-  margin-bottom: ${props => props.theme.spacing.md};
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 16px;
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const Eyebrow = styled.div`
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 6px;
 `;
 
 const Title = styled.h2`
-  ${props => props.theme.typography.heading3}
+  margin: 0;
   color: ${props => props.theme.colors.text.primary};
+  font-size: clamp(24px, 5vw, 36px);
+  line-height: 1.04;
+  font-weight: 900;
+  letter-spacing: 0;
+`;
+
+const Subtitle = styled.p`
+  margin: 8px 0 0;
+  max-width: 720px;
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 14px;
+  line-height: 1.45;
   font-weight: 700;
-  font-size: 20px;
-  margin: 0 0 ${props => props.theme.spacing.xs} 0;
+`;
+
+const SeeAll = styled.button`
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: ${props => props.theme.colors.gradient.primary};
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 16px 30px rgba(61,129,239,0.22);
+`;
+
+const Stats = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+
+  @media (max-width: 680px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const Stat = styled.div`
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(228,231,236,0.9);
+  border-radius: 18px;
+  padding: 12px;
+`;
+
+const StatValue = styled.div`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 900;
+`;
+
+const StatLabel = styled.div`
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 5px;
+`;
+
+const Rail = styled.div`
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 2px 2px 8px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+
+const Item = styled.div`
+  width: clamp(220px, 44vw, 264px);
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+`;
+
+const Signal = styled.div`
+  margin-top: 10px;
+  border: 1px solid rgba(228,231,236,0.9);
+  border-radius: 18px;
+  padding: 11px;
+  background: rgba(255,255,255,0.86);
+`;
+
+const SignalRow = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.sm};
-`;
-
-const Subtitle = styled.div`
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 13px;
-`;
-
-const RecommendationsList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
-`;
-
-const RecommendationCard = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.radii.lg};
-  padding: ${props => props.theme.spacing.md};
-  border: 1px solid ${props => props.theme.colors.border.light};
-  animation: ${fadeIn} 0.3s ease-in;
-`;
-
-const CardHeader = styled.div`
-  display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: ${props => props.theme.spacing.sm};
-  gap: 12px;
-  min-width: 0;
+  gap: 10px;
 `;
 
-const CardTitle = styled.div`
-  ${props => props.theme.typography.body1}
-  color: ${props => props.theme.colors.text.primary};
-  font-weight: 700;
-  font-size: 16px;
-  margin-bottom: 4px;
-  overflow-wrap: anywhere;
-`;
-
-const CardDescription = styled.div`
-  ${props => props.theme.typography.body2}
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: 13px;
-  overflow-wrap: anywhere;
-`;
-
-const CuratorInfo = styled.div`
+const NeighborStack = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  margin-top: ${props => props.theme.spacing.xs};
 `;
 
-const AvatarGroup = styled.div`
-  display: flex;
-  align-items: center;
-  margin-left: -8px;
-`;
-
-const Avatar = styled.div`
+const Avatar = styled.span`
   width: 24px;
   height: 24px;
   border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin-left: -7px;
+  border: 2px solid #ffffff;
   background: ${props => props.theme.colors.primarySoftBg};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  border: 2px solid ${props => props.theme.colors.background};
-  margin-left: -8px;
-  
+  color: ${props => props.theme.colors.primarySoftText};
+  font-size: 10px;
+  font-weight: 900;
+
   &:first-child {
     margin-left: 0;
   }
 `;
 
-const CuratorText = styled.div`
-  ${props => props.theme.typography.caption}
-  color: ${props => props.theme.colors.text.secondary};
+const Pill = styled.span`
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: ${props => props.theme.colors.primarySoftBg};
+  color: ${props => props.theme.colors.primarySoftText};
   font-size: 11px;
-  margin-left: ${props => props.theme.spacing.xs};
+  font-weight: 900;
+  white-space: nowrap;
 `;
 
-const ViewButton = styled.button`
-  padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.gradient.primary};
-  color: ${props => props.theme.colors.text.inverse};
-  border: none;
-  border-radius: ${props => props.theme.radii.md};
-  ${props => props.theme.typography.button}
-  font-weight: 700;
+const Reason = styled.div`
+  margin-top: 8px;
+  color: ${props => props.theme.colors.text.secondary};
   font-size: 12px;
-  cursor: pointer;
-  transition: ${props => props.theme.transitions.swift};
-  margin-top: ${props => props.theme.spacing.sm};
+  line-height: 1.35;
+  font-weight: 800;
+`;
 
-  &:hover {
-    background: ${props => props.theme.colors.primaryHover};
-    transform: translateY(-1px);
-  }
+const LoadingCard = styled.div`
+  height: 360px;
+  width: clamp(220px, 44vw, 264px);
+  flex: 0 0 auto;
+  border-radius: 24px;
+  background: linear-gradient(110deg, #eef4ff 8%, #ffffff 18%, #eef4ff 33%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s linear infinite;
 
-  @media (max-width: 420px) {
-    width: 100%;
-    min-height: 42px;
+  @keyframes shimmer {
+    to { background-position-x: -200%; }
   }
 `;
 
-import API_BASE_URL from '@config/api';
-
-export const CommunityRecommendations = ({ location }) => {
+export const CommunityRecommendations = ({ location, onProductClick, onAddToCart }) => {
   const navigate = useNavigate();
-  const [recommendations, setRecommendations] = useState([]);
+  const [feed, setFeed] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadRecommendations();
-  }, [location]);
+  const suburb = location?.suburb || location?.city || 'your area';
 
-  const loadRecommendations = async () => {
-    try {
-      setLoading(true);
-      const locationParam = location ? encodeURIComponent(JSON.stringify(location)) : '';
-      const response = await fetch(
-        `${API_BASE_URL}/community/recommendations?location=${locationParam}&limit=5`
-      );
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      if (data.success) {
-        setRecommendations(data.data);
-      }
-    } catch (error) {
-      console.error('Error loading recommendations:', error);
-    } finally {
-      setLoading(false);
+  const query = useMemo(() => {
+    const params = new URLSearchParams({ limit: '10', suburb });
+    if (location?.lat && location?.lng) {
+      params.set('lat', location.lat);
+      params.set('lng', location.lng);
     }
-  };
+    if (location) params.set('location', JSON.stringify(location));
+    return params.toString();
+  }, [location, suburb]);
 
-  if (loading) {
-    return <div>Loading recommendations...</div>;
-  }
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${API_BASE_URL}/community/recommended-by-neighbors?${query}`);
+        const data = await response.json();
+        if (active && data.success) setFeed(data.data);
+      } catch (error) {
+        console.error('Error loading neighbor recommendations:', error);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [query]);
 
-  if (recommendations.length === 0) {
-    return null;
-  }
+  const products = feed?.products || [];
+  if (!loading && products.length === 0) return null;
 
   return (
-    <Container>
-      <Header>
-        <Title>🌟 Recommended by Neighbors</Title>
-        <Subtitle>Curated picks from your local community</Subtitle>
-      </Header>
+    <Section>
+      <Shell>
+        <Header>
+          <div>
+            <Eyebrow>Community picks</Eyebrow>
+            <Title>Recommended by Neighbors</Title>
+            <Subtitle>{feed?.subtitle || `Furniture picks people around ${suburb} keep saving, buying, and rating highly.`}</Subtitle>
+          </div>
+          <SeeAll type="button" onClick={() => navigate('/recommended')}>See all</SeeAll>
+        </Header>
 
-      <RecommendationsList>
-        {recommendations.map((rec, index) => (
-          <RecommendationCard key={rec.id || index}>
-            <CardHeader>
-              <div style={{ flex: 1 }}>
-                <CardTitle>{rec.title}</CardTitle>
-                <CardDescription>{rec.description}</CardDescription>
-                {rec.curatorCount > 0 && (
-                  <CuratorInfo>
-                    <AvatarGroup>
-                      {Array.from({ length: Math.min(rec.curatorCount, 5) }).map((_, i) => (
-                        <Avatar key={i}>👤</Avatar>
+        <Stats>
+          <Stat>
+            <StatValue>{feed?.totalNeighborSignals || 0}</StatValue>
+            <StatLabel>neighbor signals nearby</StatLabel>
+          </Stat>
+          <Stat>
+            <StatValue>{products.length || '...'}</StatValue>
+            <StatLabel>locally trusted picks</StatLabel>
+          </Stat>
+          <Stat>
+            <StatValue>{String(feed?.topCategory || 'home').replace(/_/g, ' ')}</StatValue>
+            <StatLabel>most recommended room</StatLabel>
+          </Stat>
+        </Stats>
+
+        <Rail>
+          {loading
+            ? Array.from({ length: 4 }).map((_, index) => <LoadingCard key={index} />)
+            : products.map(product => (
+              <Item key={product.id}>
+                <ProductCard
+                  product={product}
+                  variant="recommended"
+                  onClick={() => onProductClick ? onProductClick(product) : navigate(`/product/${product.id}`)}
+                  onAddToCart={() => onAddToCart && onAddToCart(product)}
+                />
+                <Signal>
+                  <SignalRow>
+                    <NeighborStack>
+                      {(product.neighborSignal?.curatorNames || []).map(name => (
+                        <Avatar key={name}>{name.slice(0, 1)}</Avatar>
                       ))}
-                    </AvatarGroup>
-                    <CuratorText>
-                      Curated by {rec.curatorCount} {rec.curatorCount === 1 ? 'local' : 'locals'}
-                    </CuratorText>
-                  </CuratorInfo>
-                )}
-              </div>
-            </CardHeader>
-            <ViewButton onClick={() => {
-              if (rec.bundleType) {
-                navigate(`/community/bundle/${rec.bundleType}`);
-              }
-            }}>
-              View Bundle
-            </ViewButton>
-          </RecommendationCard>
-        ))}
-      </RecommendationsList>
-    </Container>
+                    </NeighborStack>
+                    <Pill>{product.neighborSignal?.neighborCount || 0} neighbors</Pill>
+                  </SignalRow>
+                  <Reason>
+                    Recommended for {product.neighborSignal?.reason || 'strong local quality'}.
+                  </Reason>
+                </Signal>
+              </Item>
+            ))}
+        </Rail>
+      </Shell>
+    </Section>
   );
 };
-
-
-
-
-
-
-
-
-
-
-

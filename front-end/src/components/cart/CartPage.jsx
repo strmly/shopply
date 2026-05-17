@@ -71,6 +71,7 @@ const LoadingContainer = styled.div`
 `;
 
 import API_BASE_URL from '@config/api';
+import { getCurrentUserId } from '../../utils/currentUser.js';
 
 export const CartPage = ({ location, onClose }) => {
   const navigate = useNavigate();
@@ -178,7 +179,7 @@ export const CartPage = ({ location, onClose }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: 'default',
+            userId: getCurrentUserId(),
             productId: item.id,
             quantity: item.quantity || 1,
             variant: item.selectedVariant || null,
@@ -265,7 +266,7 @@ export const CartPage = ({ location, onClose }) => {
       const response = await fetch(`${API_BASE_URL}/cart/items/${itemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'default', quantity: parseInt(quantity) }),
+        body: JSON.stringify({ userId: getCurrentUserId(), quantity: parseInt(quantity) }),
       });
 
       if (!response.ok) { loadCart(); return; }
@@ -316,7 +317,7 @@ export const CartPage = ({ location, onClose }) => {
       const response = await fetch(`${API_BASE_URL}/cart/promo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'default', code }),
+        body: JSON.stringify({ userId: getCurrentUserId(), code }),
       });
       
       const data = await response.json();
@@ -353,7 +354,7 @@ export const CartPage = ({ location, onClose }) => {
       const response = await fetch(`${API_BASE_URL}/cart/delivery-method`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'default', method }),
+        body: JSON.stringify({ userId: getCurrentUserId(), method }),
       });
       
       const data = await response.json();
@@ -371,7 +372,7 @@ export const CartPage = ({ location, onClose }) => {
       const response = await fetch(`${API_BASE_URL}/cart/payment-method`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'default', method }),
+        body: JSON.stringify({ userId: getCurrentUserId(), method }),
       });
       
       const data = await response.json();
