@@ -447,6 +447,21 @@ const HoverMeta = styled.div`
   margin-top: 2px;
 `;
 
+const HoverNotice = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px 0 10px;
+  padding: 10px 11px;
+  border-radius: 16px;
+  background: ${props => props.$success ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)'};
+  border: 1px solid ${props => props.$success ? 'rgba(16, 185, 129, 0.18)' : 'rgba(245, 158, 11, 0.18)'};
+  color: ${props => props.$success ? '#047857' : '#92400e'};
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.35;
+`;
+
 const HoverFooter = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1014,19 +1029,24 @@ export const TopNavigation = ({
   const [cartPreview, setCartPreview] = useState(null);
   const [cartLoading, setCartLoading] = useState(false);
   const [cartBusyItem, setCartBusyItem] = useState(null);
+  const [cartError, setCartError] = useState('');
   const [notifications, setNotifications] = useState([]);
   const [notificationUnread, setNotificationUnread] = useState(unreadCount);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [notificationBusy, setNotificationBusy] = useState(false);
+  const [notificationError, setNotificationError] = useState('');
   const [profilePreview, setProfilePreview] = useState(null);
   const [profilePrefs, setProfilePrefs] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const profileSignedIn = contextLoading ? isSignedIn() : role !== 'guest';
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('signin');
   const suburb = location?.suburb || 'Your Area';
   const city = location?.city || '';
   const isTitleMode = Boolean(title);
   const canShowBack = routerLocation.pathname !== '/';
+
+  const activeUserId = () => getCurrentUserId() || getAuthUser()?.id || 'default';
 
   const syncCartState = (cart) => {
     const count = cart?.itemCount ?? getCartItems(cart).reduce((sum, item) => sum + (item.quantity || 1), 0);
@@ -1046,16 +1066,23 @@ export const TopNavigation = ({
 
   const loadCartPreview = async () => {
     setCartLoading(true);
+    setCartError('');
     try {
       const locationParam = location ? `&location=${encodeURIComponent(JSON.stringify(location))}` : '';
-      const response = await fetch(`${API_BASE_URL}/cart?userId=default${locationParam}`);
+      const userId = encodeURIComponent(activeUserId());
+      const response = await fetch(`${API_BASE_URL}/cart?userId=${userId}${locationParam}`);
       if (!response.ok) throw new Error(`Cart request failed: ${response.status}`);
       const data = await response.json();
       if (!data.success) throw new Error(data.message || 'Cart request failed');
       syncCartState(data.data);
     } catch {
       const localCart = readLocalCartPreview();
-      if (localCart) syncCartState(localCart);
+      if (localCart) {
+        syncCartState(localCart);
+        setCartError('Showing your saved cart while the server reconnects.');
+      } else {
+        setCartError('We could not refresh your cart right now.');
+      }
     } finally {
       setCartLoading(false);
     }
@@ -1063,11 +1090,16 @@ export const TopNavigation = ({
 
   const loadNotificationPreview = async () => {
     setNotificationsLoading(true);
+    setNotificationError('');
     try {
+      const userId = encodeURIComponent(activeUserId());
       const [listResponse, countResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/notifications/user/default?limit=5`),
-        fetch(`${API_BASE_URL}/notifications/user/default/count`),
+        fetch(`${API_BASE_URL}/notifications/user/${userId}?limit=5`),
+        fetch(`${API_BASE_URL}/notifications/user/${userId}/count`),
       ]);
+      if (!listResponse.ok || !countResponse.ok) {
+        throw new Error('Notification request failed');
+      }
       const [listData, countData] = await Promise.all([
         listResponse.json(),
         countResponse.json(),
@@ -1075,7 +1107,7 @@ export const TopNavigation = ({
       if (listData.success) setNotifications(listData.data || []);
       if (countData.success) setNotificationUnread(countData.data?.count || 0);
     } catch {
-      setNotifications([]);
+      setNotificationError('We could not refresh notifications right now.');
     } finally {
       setNotificationsLoading(false);
     }
@@ -1093,6 +1125,7 @@ export const TopNavigation = ({
           item.id === notification.id ? { ...item, read: true } : item
         )));
         setNotificationUnread(prev => Math.max(0, prev - 1));
+        window.dispatchEvent(new Event('notificationUpdated'));
       }
     } finally {
       setNotificationBusy(false);
@@ -1102,15 +1135,22 @@ export const TopNavigation = ({
 
   const markAllNotificationsRead = async () => {
     setNotificationBusy(true);
+    setNotificationError('');
     try {
-      const response = await fetch(`${API_BASE_URL}/notifications/user/default/read-all`, {
+      const userId = encodeURIComponent(activeUserId());
+      const response = await fetch(`${API_BASE_URL}/notifications/user/${userId}/read-all`, {
         method: 'PUT',
       });
       const data = await response.json();
       if (data.success) {
         setNotifications(prev => prev.map(item => ({ ...item, read: true })));
         setNotificationUnread(0);
+        window.dispatchEvent(new Event('notificationUpdated'));
+      } else {
+        setNotificationError(data.message || 'We could not mark notifications as read.');
       }
+    } catch {
+      setNotificationError('We could not mark notifications as read.');
     } finally {
       setNotificationBusy(false);
     }
@@ -1197,6 +1237,7 @@ export const TopNavigation = ({
   const handleCartClick = () => onCartClick ? onCartClick() : navigate('/cart');
   const handleProfileClick = () => {
     if (!profileSignedIn) {
+      setAuthMode('signin');
       setShowAuthModal(true);
       return;
     }
@@ -1210,6 +1251,7 @@ export const TopNavigation = ({
   };
   const handleProfileRoute = (path) => {
     if (!profileSignedIn) {
+      setAuthMode('signin');
       setShowAuthModal(true);
       return;
     }
@@ -1244,17 +1286,20 @@ export const TopNavigation = ({
       const response = await fetch(`${API_BASE_URL}/cart/items/${item.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: getCurrentUserId(), quantity: nextQuantity }),
+        body: JSON.stringify({ userId: activeUserId(), quantity: nextQuantity }),
       });
       const data = await response.json();
       if (data.success) {
         syncCartState(data.data);
         window.dispatchEvent(new Event('cartUpdated'));
       } else {
+        const message = data.message || 'We could not update that item.';
         await loadCartPreview();
+        setCartError(message);
       }
     } catch {
       await loadCartPreview();
+      setCartError('We could not update that item.');
     } finally {
       setCartBusyItem(null);
     }
@@ -1264,7 +1309,8 @@ export const TopNavigation = ({
     if (!item?.id) return;
     setCartBusyItem(item.id);
     try {
-      const response = await fetch(`${API_BASE_URL}/cart/items/${item.id}?userId=default`, {
+      const userId = encodeURIComponent(activeUserId());
+      const response = await fetch(`${API_BASE_URL}/cart/items/${item.id}?userId=${userId}`, {
         method: 'DELETE',
       });
       const data = await response.json();
@@ -1272,10 +1318,13 @@ export const TopNavigation = ({
         syncCartState(data.data);
         window.dispatchEvent(new Event('cartUpdated'));
       } else {
+        const message = data.message || 'We could not remove that item.';
         await loadCartPreview();
+        setCartError(message);
       }
     } catch {
       await loadCartPreview();
+      setCartError('We could not remove that item.');
     } finally {
       setCartBusyItem(null);
     }
@@ -1314,7 +1363,13 @@ export const TopNavigation = ({
           </SearchButton>
 
           <HoverAction onMouseEnter={loadNotificationPreview} onFocus={loadNotificationPreview}>
-            <IconButton onClick={onNotificationClick} aria-label="Notifications">
+            <IconButton
+              onClick={() => {
+                if (onNotificationClick) onNotificationClick();
+                else navigate('/account/notifications');
+              }}
+              aria-label="Notifications"
+            >
               <NavIconWrap><BellIcon /></NavIconWrap>
               {displayUnread > 0 && (
                 <NotificationBadge>{displayUnread > 9 ? '9+' : displayUnread}</NotificationBadge>
@@ -1334,6 +1389,7 @@ export const TopNavigation = ({
                   </HoverMeta>
                 </div>
               </HoverTop>
+              {notificationError && <HoverNotice>{notificationError}</HoverNotice>}
 
               {notifications.length > 0 ? (
                 <>
@@ -1369,6 +1425,7 @@ export const TopNavigation = ({
 
                   <HoverFooter>
                     <HoverBtn
+                      type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         markAllNotificationsRead();
@@ -1378,6 +1435,7 @@ export const TopNavigation = ({
                       Mark read
                     </HoverBtn>
                     <HoverBtn
+                      type="button"
                       $primary
                       onClick={(event) => {
                         event.stopPropagation();
@@ -1396,8 +1454,25 @@ export const TopNavigation = ({
                     No notifications yet. Important order and deal updates will appear here.
                   </CartEmptyState>
                   <HoverFooter>
-                    <HoverBtn onClick={() => navigate('/orders')}>Orders</HoverBtn>
-                    <HoverBtn $primary onClick={() => navigate('/account/notifications')}>Settings</HoverBtn>
+                    <HoverBtn
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        loadNotificationPreview();
+                      }}
+                    >
+                      Refresh
+                    </HoverBtn>
+                    <HoverBtn
+                      type="button"
+                      $primary
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        navigate('/account/notifications');
+                      }}
+                    >
+                      Settings
+                    </HoverBtn>
                   </HoverFooter>
                 </>
               )}
@@ -1425,6 +1500,7 @@ export const TopNavigation = ({
                   </HoverMeta>
                 </div>
               </HoverTop>
+              {cartError && <HoverNotice>{cartError}</HoverNotice>}
 
               {cartItems.length > 0 ? (
                 <>
@@ -1490,8 +1566,25 @@ export const TopNavigation = ({
                   </CartSummaryRow>
 
                   <HoverFooter>
-                    <HoverBtn onClick={() => navigate('/cart')}>View cart</HoverBtn>
-                    <HoverBtn $primary onClick={() => navigate('/checkout')}>Checkout</HoverBtn>
+                    <HoverBtn
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        navigate('/cart');
+                      }}
+                    >
+                      View cart
+                    </HoverBtn>
+                    <HoverBtn
+                      type="button"
+                      $primary
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        navigate('/checkout');
+                      }}
+                    >
+                      Checkout
+                    </HoverBtn>
                   </HoverFooter>
                 </>
               ) : (
@@ -1501,8 +1594,25 @@ export const TopNavigation = ({
                     Your cart is ready for something beautiful.
                   </CartEmptyState>
                   <HoverFooter>
-                    <HoverBtn onClick={() => navigate('/search')}>Search</HoverBtn>
-                    <HoverBtn $primary onClick={() => navigate('/')}>Shop home</HoverBtn>
+                    <HoverBtn
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        navigate('/search');
+                      }}
+                    >
+                      Search
+                    </HoverBtn>
+                    <HoverBtn
+                      type="button"
+                      $primary
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        loadCartPreview();
+                      }}
+                    >
+                      Refresh
+                    </HoverBtn>
                   </HoverFooter>
                 </>
               )}
@@ -1592,8 +1702,8 @@ export const TopNavigation = ({
                     Sign in or create an account to keep your cart, saved rooms, and order updates together.
                   </ProfileAuthCopy>
                   <ProfileAuthActions>
-                    <HoverBtn onClick={() => setShowAuthModal(true)}>Sign in</HoverBtn>
-                    <HoverBtn $primary onClick={() => setShowAuthModal(true)}>Sign up</HoverBtn>
+                    <HoverBtn onClick={() => { setAuthMode('signin'); setShowAuthModal(true); }}>Sign in</HoverBtn>
+                    <HoverBtn $primary onClick={() => { setAuthMode('signup'); setShowAuthModal(true); }}>Sign up</HoverBtn>
                   </ProfileAuthActions>
                 </ProfileAuthPanel>
               )}
@@ -1611,6 +1721,7 @@ export const TopNavigation = ({
       isOpen={showAuthModal}
       onClose={() => setShowAuthModal(false)}
       onSuccess={handleAuthSuccess}
+      initialMode={authMode}
     />
     </>
   );

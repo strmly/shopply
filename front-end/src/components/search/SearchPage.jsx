@@ -8,6 +8,7 @@ import { SearchResults } from './SearchResults';
 import { FilterOverlay } from './FilterOverlay';
 import ExpansionBanner from '../hyperlocal/ExpansionBanner';
 import ProgressiveExpansionLoader from '../hyperlocal/ProgressiveExpansionLoader';
+import { PlatformBanners } from '../home/PlatformBanners';
 
 const slideDown = keyframes`
   from {
@@ -1488,6 +1489,10 @@ export const SearchPage = ({ location, onBack }) => {
             ))}
           </HistoryChips>
         </HistoryPanel>
+      )}
+
+      {searchState === 'idle' && (
+        <PlatformBanners placement="search" location={location} limit={2} />
       )}
 
       {searchState === 'idle' && (

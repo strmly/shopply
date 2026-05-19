@@ -8,6 +8,52 @@ import { GeoIndex } from '../services/GeoIndex.js';
 import { TrendingService } from '../services/TrendingService.js';
 import { generateH3Cells } from '../utils/h3Utils.js';
 
+async function getCoverageForLocation(lat, lng) {
+  const stores = getAllStores();
+  const products = await ProductService.getAll();
+
+  for (let tierIndex = 0; tierIndex < RADIUS_TIERS.length; tierIndex++) {
+    const tier = RADIUS_TIERS[tierIndex];
+    const h3Cells = getH3CellsForTier(lat, lng, tier);
+    const h3Set = new Set(h3Cells);
+
+    let count = 0;
+    let nearestKm = Infinity;
+
+    for (const product of products) {
+      if (product.stock === 'out' || product.isVisible === false) continue;
+      const store = stores.find(s => String(s.id) === String(product.storeId));
+      if (!store) continue;
+      if (!h3Set.has(store[`h3_r${tier.resolution}`])) continue;
+
+      count++;
+      const dist = calculateDistance(lat, lng, store.address.lat, store.address.lng);
+      if (dist < nearestKm) nearestKm = dist;
+      if (count >= 50) break;
+    }
+
+    if (count > 0) {
+      return {
+        tier: tier.id,
+        tierLabel: tier.label,
+        count,
+        estimatedResults: count,
+        nearestKm: nearestKm === Infinity ? null : parseFloat(nearestKm.toFixed(1)),
+        nearestDistanceKm: nearestKm === Infinity ? null : parseFloat(nearestKm.toFixed(1)),
+      };
+    }
+  }
+
+  return {
+    tier: null,
+    tierLabel: 'No availability',
+    count: 0,
+    estimatedResults: 0,
+    nearestKm: null,
+    nearestDistanceKm: null,
+  };
+}
+
 /**
  * Hyperlocal Controller
  * Handles hyperlocal search, feed, and discovery endpoints
@@ -620,18 +666,16 @@ export async function getCoverageBatch(req, res, next) {
         let nearestKm = Infinity;
 
         for (const product of products) {
-          const store = stores.find(s => s.id === product.storeId);
+          // Use product.stock field — inventory records may not be seeded
+          if (product.stock === 'out' || product.isVisible === false) continue;
+          const store = stores.find(s => String(s.id) === String(product.storeId));
           if (!store) continue;
           if (!h3Set.has(store[`h3_r${tier.resolution}`])) continue;
-
-          const invKey = `${product.storeId}_${product.id}`;
-          const inventory = inventories.find(i => `${i.storeId}_${i.productId}` === invKey);
-          if (!inventory || !inventory.availableNow) continue;
 
           count++;
           const dist = calculateDistance(lat, lng, store.address.lat, store.address.lng);
           if (dist < nearestKm) nearestKm = dist;
-          if (count >= 5) break;
+          if (count >= 50) break; // enough to confirm coverage; actual count capped at 50
         }
 
         if (count > 0) {
@@ -641,7 +685,9 @@ export async function getCoverageBatch(req, res, next) {
             tier: tier.id,
             tierLabel: tier.label,
             count,
-            nearestKm: parseFloat(nearestKm.toFixed(3)),
+            estimatedResults: count, // alias used by the location picker
+            nearestKm: nearestKm === Infinity ? null : parseFloat(nearestKm.toFixed(1)),
+            nearestDistanceKm: nearestKm === Infinity ? null : parseFloat(nearestKm.toFixed(1)),
           });
           found = true;
           break;
@@ -649,13 +695,54 @@ export async function getCoverageBatch(req, res, next) {
       }
 
       if (!found) {
-        results.push({ lat, lng, tier: null, tierLabel: 'No availability', count: 0, nearestKm: null });
+        results.push({ lat, lng, tier: null, tierLabel: 'No availability', count: 0, estimatedResults: 0, nearestKm: null, nearestDistanceKm: null });
       }
     }
 
     res.json({
       success: true,
       data: { results },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/hyperlocal/delivery-area/confirm
+ * Validates a selected delivery area and returns live coverage data.
+ */
+export async function confirmDeliveryArea(req, res, next) {
+  try {
+    const location = req.body?.location || req.body || {};
+    const lat = parseFloat(location.lat);
+    const lng = parseFloat(location.lng);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Choose a valid delivery area.',
+      });
+    }
+
+    const coverage = await getCoverageForLocation(lat, lng);
+    const confirmedLocation = {
+      lat,
+      lng,
+      suburb: String(location.suburb || '').trim(),
+      city: String(location.city || '').trim(),
+      province: String(location.province || '').trim(),
+    };
+
+    res.json({
+      success: true,
+      data: {
+        location: confirmedLocation,
+        coverage,
+        message: coverage.tier
+          ? `${coverage.estimatedResults} nearby items available for this area.`
+          : 'This area is saved. Shopply is still growing local stock nearby.',
+      },
     });
   } catch (error) {
     next(error);
@@ -672,6 +759,7 @@ export default {
   getNearbySellers,
   getHeatmap,
   getCoverageBatch,
+  confirmDeliveryArea,
   getSellerDemandSignal,
 };
 

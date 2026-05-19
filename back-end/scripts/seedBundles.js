@@ -1,5 +1,6 @@
 import { Product } from '../models/Product.js';
 import { ProductService } from '../services/ProductService.js';
+import { getAllStores } from '../services/StoreService.js';
 
 const BUNDLE_PRODUCTS = [
   {
@@ -132,15 +133,21 @@ export async function seedBundles() {
   const alreadySeeded = ProductService.products.some(p => p.tags?.includes('bundle'));
   if (alreadySeeded) return;
 
+  // Distribute bundles across the real stores so they appear in GeoIndex and search
+  const stores = getAllStores().filter(s => s.id !== 0);
   let nextId = Math.max(...ProductService.products.map(p => p.id), 1000) + 1;
 
-  for (const data of BUNDLE_PRODUCTS) {
-    const product = new Product({
+  const plainObjects = BUNDLE_PRODUCTS.map((data, i) => {
+    const store = stores.length ? stores[i % stores.length] : null;
+    return {
       id: nextId++,
       ...data,
       category: 'furniture',
-      storeId: 0,
-      storeName: 'Shopply Home Furniture',
+      storeId: store?.id ?? 'shopply-jhb-sandton',
+      storeName: store?.name ?? 'Shopply Home Furniture',
+      storeLocation: store?.address
+        ? { lat: store.address.lat, lng: store.address.lng, suburb: store.address.suburb, city: store.address.city }
+        : undefined,
       stock: 'in',
       stockQuantity: 20,
       isTrending: true,
@@ -153,9 +160,10 @@ export async function seedBundles() {
       leadTimeDaysMax: 7,
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
-    ProductService.products.push(product);
-  }
+    };
+  });
 
+  // Use addProducts so they're picked up by the inverted index
+  ProductService.addProducts(plainObjects);
   console.log(`✅ Seeded ${BUNDLE_PRODUCTS.length} bundle products`);
 }

@@ -290,13 +290,25 @@ const Sheet = styled.div`
   right: 0;
   bottom: 0;
   z-index: 1001;
-  background: #ffffff;
-  border-radius: 28px 28px 0 0;
-  max-height: 82vh;
+  width: min(720px, calc(100vw - 24px));
+  margin: 0 auto 12px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.99), rgba(248,250,252,0.98)) padding-box,
+    ${props => props.theme.colors.gradient.primary} border-box;
+  border: 1px solid rgba(255,255,255,0.84);
+  border-radius: 28px;
+  max-height: min(86vh, 820px);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -24px 60px rgba(16, 24, 40, 0.18);
+  box-shadow: 0 30px 96px rgba(16, 24, 40, 0.26);
   animation: ${slideUp} 0.32s cubic-bezier(0.34, 1.2, 0.64, 1);
+
+  @media (max-width: 560px) {
+    width: 100%;
+    margin: 0;
+    border-radius: 28px 28px 0 0;
+    max-height: 88vh;
+  }
 `;
 
 const Handle = styled.div`
@@ -312,15 +324,82 @@ const Header = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 10px;
+  padding: 16px 20px 8px;
   flex-shrink: 0;
 `;
 
 const Title = styled.h2`
-  font-size: 18px;
-  font-weight: 900;
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 950;
   color: ${props => props.theme.colors.text.primary};
   margin: 0;
+  letter-spacing: 0;
+`;
+
+const HeaderCopy = styled.p`
+  margin: 4px 0 0;
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  line-height: 1.45;
+  font-weight: 750;
+`;
+
+const HeroPanel = styled.div`
+  margin: 0 20px 12px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid rgba(61, 129, 239, 0.16);
+  background:
+    linear-gradient(135deg, rgba(61,129,239,0.10), rgba(255,255,255,0.94) 54%, rgba(245,158,11,0.10));
+  box-shadow: 0 16px 38px rgba(16,24,40,0.08);
+  flex-shrink: 0;
+`;
+
+const HeroTitle = styled.div`
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 950;
+`;
+
+const HeroSub = styled.div`
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 700;
+  margin-top: 4px;
+`;
+
+const MetricRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+
+  @media (max-width: 420px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const Metric = styled.div`
+  min-width: 0;
+  padding: 10px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.82);
+  border: 1px solid rgba(228,231,236,0.82);
+`;
+
+const MetricValue = styled.div`
+  color: ${props => props.theme.colors.primary};
+  font-size: 14px;
+  font-weight: 950;
+`;
+
+const MetricLabel = styled.div`
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: 10px;
+  font-weight: 850;
+  margin-top: 2px;
 `;
 
 const CloseButton = styled.button`
@@ -454,7 +533,7 @@ const Divider = styled.div`
 const ListWrap = styled.div`
   overflow-y: auto;
   flex: 1;
-  padding: 0 8px 24px;
+  padding: 0 8px 116px;
   will-change: transform;
 
   &::-webkit-scrollbar { width: 4px; }
@@ -471,7 +550,7 @@ const SectionLabel = styled.div`
   text-transform: uppercase;
   color: ${props => props.theme.colors.text.secondary};
   letter-spacing: 0.06em;
-  padding: 6px 12px 4px;
+  padding: 8px 12px 6px;
 `;
 
 const SuburbRow = styled.button`
@@ -479,10 +558,10 @@ const SuburbRow = styled.button`
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 10px 12px;
-  border: none;
-  border-radius: 14px;
-  background: ${props => props.$active ? props.theme.colors.primarySoftBg : 'transparent'};
+  padding: 11px 12px;
+  border: 1px solid ${props => props.$selected ? 'rgba(61,129,239,0.34)' : 'transparent'};
+  border-radius: 16px;
+  background: ${props => props.$selected ? props.theme.colors.primarySoftBg : props.$active ? 'rgba(61,129,239,0.06)' : 'transparent'};
   cursor: pointer;
   text-align: left;
   transition: ${props => props.theme.transitions.swift};
@@ -630,7 +709,7 @@ const ProvinceGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  padding: 4px 4px 24px;
+  padding: 4px 4px 18px;
 
   @media (max-width: 360px) {
     grid-template-columns: repeat(2, 1fr);
@@ -731,8 +810,109 @@ const ProvinceBreadcrumbCount = styled.div`
 `;
 
 const RecentSection = styled.div`
-  margin: 0 20px 4px;
+  margin: 0 20px 10px;
   flex-shrink: 0;
+`;
+
+const SelectedCard = styled.div`
+  margin: 0 20px 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(61,129,239,0.18);
+  background: rgba(61,129,239,0.06);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+`;
+
+const SelectedMark = styled.div`
+  width: 36px;
+  height: 36px;
+  border-radius: 13px;
+  background: ${props => props.theme.colors.gradient.primary};
+  color: #fff;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+`;
+
+const SelectedInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const SelectedTitle = styled.div`
+  font-size: 13px;
+  font-weight: 950;
+  color: ${props => props.theme.colors.text.primary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const SelectedSub = styled.div`
+  font-size: 11px;
+  font-weight: 750;
+  color: ${props => props.theme.colors.text.secondary};
+  margin-top: 2px;
+`;
+
+const Footer = styled.div`
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.96) 22%, #fff);
+  border-radius: 0 0 28px 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const FooterInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const FooterLabel = styled.div`
+  font-size: 10px;
+  font-weight: 900;
+  color: ${props => props.theme.colors.text.secondary};
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+`;
+
+const FooterValue = styled.div`
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 950;
+  color: ${props => props.theme.colors.text.primary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const FooterError = styled.div`
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  color: ${props => props.theme.colors.danger?.[600] || '#c62850'};
+`;
+
+const ConfirmAreaButton = styled.button`
+  min-height: 46px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: ${props => props.$disabled ? 'rgba(228,231,236,0.9)' : props.theme.colors.gradient.primary};
+  color: ${props => props.$disabled ? props.theme.colors.text.secondary : '#fff'};
+  font-size: 13px;
+  font-weight: 950;
+  cursor: ${props => props.$disabled ? 'default' : 'pointer'};
+  box-shadow: ${props => props.$disabled ? 'none' : '0 14px 28px rgba(61,129,239,0.24)'};
+  white-space: nowrap;
 `;
 
 const RecentRow = styled.button`
@@ -876,6 +1056,9 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   const [gpsResult, setGpsResult] = useState(null);
   const [locationHistory, setLocationHistory] = useState([]);
   const [provinceCoverage, setProvinceCoverage] = useState({});
+  const [selectedArea, setSelectedArea] = useState(currentLocation || null);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState('');
 
   useEffect(() => {
     const t = setTimeout(() => inputRef.current?.focus(), 80);
@@ -1053,14 +1236,39 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   const handleConfirmGPS = () => {
     if (gpsResult) {
       saveToHistory(gpsResult);
-      onSelect(gpsResult);
+      setSelectedArea(gpsResult);
+      setConfirmError('');
     }
   };
 
   const handleSelect = (s) => {
     const entry = { lat: s.lat, lng: s.lng, suburb: s.suburb, city: s.city, province: s.province };
-    saveToHistory(entry);
-    onSelect(entry);
+    setSelectedArea(entry);
+    setConfirmError('');
+  };
+
+  const handleConfirmSelection = async () => {
+    if (!selectedArea) return;
+    setConfirming(true);
+    setConfirmError('');
+    try {
+      const response = await fetch(`${API_BASE_URL}/hyperlocal/delivery-area/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ location: selectedArea }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Could not confirm this delivery area.');
+      }
+      const confirmed = data.data?.location || selectedArea;
+      saveToHistory(confirmed);
+      onSelect(confirmed);
+    } catch (error) {
+      setConfirmError(error.message || 'Could not confirm this delivery area.');
+    } finally {
+      setConfirming(false);
+    }
   };
 
   const handleRemoveHistory = useCallback((e, index) => {
@@ -1080,8 +1288,24 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
   const isActive = (s) =>
     currentLocation?.suburb === s.suburb && currentLocation?.city === s.city;
 
+  const isSelected = (s) =>
+    selectedArea?.suburb === s.suburb && selectedArea?.city === s.city;
+
   const isActiveProvince = (province) =>
     currentLocation?.province === province;
+
+  const coveredProvinceCount = Object.values(provinceCoverage).filter(c => c?.tier && c.count > 0).length;
+  const selectedCoverage = selectedArea
+    ? coverageMap[`${Number(selectedArea.lat).toFixed(4)},${Number(selectedArea.lng).toFixed(4)}`]
+    : null;
+  const selectedCoverageLabel =
+    selectedCoverage?.loading ? 'Checking availability...' :
+    selectedCoverage?.tier === 'T0' ? 'Local availability' :
+    selectedCoverage?.tier === 'T1' ? 'Nearby availability' :
+    selectedCoverage?.tier === 'T2' ? 'Area availability' :
+    selectedCoverage?.tier === 'T3' || selectedCoverage?.tier === 'T4' ? 'Expanded availability' :
+    selectedCoverage ? 'Coming soon' :
+    'Coverage will be checked when you open the province';
 
   const SuburbList = ({ items, showProvince = false }) => (
     <>
@@ -1099,20 +1323,21 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
           <SuburbRow
             key={`${s.suburb}-${s.city}`}
             $active={isActive(s)}
+            $selected={isSelected(s)}
             onClick={() => handleSelect(s)}
           >
-            <SuburbIconWrap $active={isActive(s)}>
+            <SuburbIconWrap $active={isActive(s) || isSelected(s)}>
               <PinIcon />
             </SuburbIconWrap>
             <SuburbInfo>
-              <SuburbName $active={isActive(s)}>{s.suburb}</SuburbName>
+              <SuburbName $active={isActive(s) || isSelected(s)}>{s.suburb}</SuburbName>
               <SuburbCity>{s.city}{showProvince ? ` · ${s.province}` : ''}</SuburbCity>
             </SuburbInfo>
             {cov?.loading && <CoverageLoadingDot />}
             {!cov?.loading && tierLabel && (
               <CoveragePill $tier={cov?.tier || 'none'}>{tierLabel}</CoveragePill>
             )}
-            {isActive(s) && (
+            {(isActive(s) || isSelected(s)) && (
               <CheckCircle>
                 <CheckSVGIcon />
               </CheckCircle>
@@ -1129,38 +1354,45 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
       <Sheet role="dialog" aria-modal="true" aria-label="Choose delivery area">
         <Handle />
         <Header>
-          <Title>
-            {!isSearching && selectedProvince ? selectedProvince : 'Choose delivery area'}
-          </Title>
+          <div>
+            <Title>
+              {!isSearching && selectedProvince ? selectedProvince : 'Choose delivery area'}
+            </Title>
+            <HeaderCopy>Pick the area you want Shopply to use for nearby stock, delivery estimates, and seller availability.</HeaderCopy>
+          </div>
           <CloseButton onClick={onClose} aria-label="Close">&#10005;</CloseButton>
         </Header>
 
-        <SearchWrap>
-          <SearchRow>
-            <SearchIconWrap>
-              <SearchSVGIcon />
-            </SearchIconWrap>
-            <SearchInput
-              ref={inputRef}
-              type="text"
-              placeholder="Search suburb, city or province..."
-              value={search}
-              onChange={handleSearchChange}
-            />
-          </SearchRow>
-        </SearchWrap>
+        {!selectedProvince && !isSearching && (
+          <HeroPanel>
+            <HeroTitle>Find the closest furniture that is actually available.</HeroTitle>
+            <HeroSub>Coverage is checked with the server for each area, so the home feed and search can adapt to your delivery location.</HeroSub>
+            <MetricRow>
+              <Metric>
+                <MetricValue>{provinces.length}</MetricValue>
+                <MetricLabel>provinces</MetricLabel>
+              </Metric>
+              <Metric>
+                <MetricValue>{SUBURBS.length}</MetricValue>
+                <MetricLabel>delivery areas</MetricLabel>
+              </Metric>
+              <Metric>
+                <MetricValue>{coveredProvinceCount || '--'}</MetricValue>
+                <MetricLabel>with live stock</MetricLabel>
+              </Metric>
+            </MetricRow>
+          </HeroPanel>
+        )}
 
-        {/* GPS detect button */}
-        {!gpsResult && (
-          <GPSButton onClick={handleGPS} disabled={detecting}>
-            <GPSIconCircle>
-              <GPSCrosshairIcon />
-            </GPSIconCircle>
-            <div>
-              <GPSLabel>{detecting ? 'Detecting…' : 'Use my location'}</GPSLabel>
-              <GPSSub>Automatically find the nearest area</GPSSub>
-            </div>
-          </GPSButton>
+        {selectedArea && (
+          <SelectedCard>
+            <SelectedMark><PinIcon /></SelectedMark>
+            <SelectedInfo>
+              <SelectedTitle>{selectedArea.suburb}, {selectedArea.city}</SelectedTitle>
+              <SelectedSub>{selectedArea.province || 'South Africa'} - {selectedCoverageLabel}</SelectedSub>
+            </SelectedInfo>
+            {selectedCoverage?.tier && <CoveragePill $tier={selectedCoverage.tier}>{selectedCoverage.count || 'A few'} items</CoveragePill>}
+          </SelectedCard>
         )}
 
         {/* GPS coverage confirmation */}
@@ -1255,7 +1487,16 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
                       <MapRegionIcon />
                     </ProvinceIconCircle>
                     <ProvinceName $active={isActiveProvince(province)}>{province}</ProvinceName>
-                    <ProvinceCount>{grouped[province].length} areas</ProvinceCount>
+                    <ProvinceCount>
+                      {(() => {
+                        const cov = provinceCoverage[province];
+                        if (!cov) return `${grouped[province].length} areas`;
+                        if (!cov.tier || cov.count === 0) return 'Coming soon';
+                        if (cov.tier === 'T0' || cov.tier === 'T1') return `${cov.count}+ items`;
+                        if (cov.tier === 'T2') return `${cov.count}+ nearby`;
+                        return 'Limited coverage';
+                      })()}
+                    </ProvinceCount>
                   </ProvinceCard>
                 ))}
               </ProvinceGrid>
@@ -1267,6 +1508,24 @@ export const LocationPickerModal = ({ currentLocation, onClose, onSelect }) => {
             <SuburbList items={provinceSuburbs} />
           )}
         </ListWrap>
+
+        <Footer>
+          <FooterInfo>
+            <FooterLabel>Selected area</FooterLabel>
+            <FooterValue>
+              {selectedArea ? `${selectedArea.suburb}, ${selectedArea.city}` : 'Choose an area to continue'}
+            </FooterValue>
+            {confirmError && <FooterError>{confirmError}</FooterError>}
+          </FooterInfo>
+          <ConfirmAreaButton
+            type="button"
+            $disabled={!selectedArea || confirming}
+            disabled={!selectedArea || confirming}
+            onClick={handleConfirmSelection}
+          >
+            {confirming ? 'Checking...' : 'Confirm area'}
+          </ConfirmAreaButton>
+        </Footer>
       </Sheet>
     </>
   );

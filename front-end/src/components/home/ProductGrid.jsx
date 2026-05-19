@@ -148,6 +148,7 @@ export const ProductGrid = ({
   hasMore = false,
   loading = false,
   itemsPerPage = 8,
+  enableLocalLoadMore = true,
 }) => {
   const [displayedCount, setDisplayedCount] = useState(itemsPerPage);
 
@@ -159,18 +160,21 @@ export const ProductGrid = ({
 
   const validProducts = products.filter(p => p && p.id && p.name);
 
-  const displayedProducts = onLoadMore
+  const displayedProducts = onLoadMore || !enableLocalLoadMore
     ? validProducts
     : validProducts.slice(0, displayedCount);
 
   const canLoadMore = !!onLoadMore && !onSeeMore && hasMore;
+  const canLoadMoreLocal = enableLocalLoadMore && !onLoadMore && !onSeeMore && displayedCount < validProducts.length;
 
   const canSeeMore = !!onSeeMore && validProducts.length > itemsPerPage;
 
   const handleLoadMore = () => {
     if (onLoadMore) {
       onLoadMore();
+      return;
     }
+    setDisplayedCount(prev => Math.min(prev + itemsPerPage, validProducts.length));
   };
 
   if (validProducts.length === 0 && !loading) return null;
@@ -188,7 +192,7 @@ export const ProductGrid = ({
         ))}
       </Grid>
 
-      {canLoadMore && (
+      {(canLoadMore || canLoadMoreLocal) && (
         <LoadMoreButton onClick={handleLoadMore} disabled={loading}>
           {loading ? 'Loading...' : 'Load More'}
         </LoadMoreButton>

@@ -14,6 +14,7 @@ import { PaymentDeliverySelectors } from './PaymentDeliverySelectors';
 import { CheckoutBar } from './CheckoutBar';
 import { EmptyCartState } from './EmptyCartState';
 import { BottomNavigation } from '../home/BottomNavigation';
+import { PlatformBanners } from '../home/PlatformBanners';
 import { VoucherSelector } from '../vouchers/VoucherSelector';
 import { CartItemSkeleton } from '../ui/Skeleton';
 
@@ -418,6 +419,11 @@ export const CartPage = ({ location, onClose }) => {
     return (
       <Container>
         <CartHeader itemCount={0} onClose={onClose} />
+        <Content>
+          <CartMain>
+            <PlatformBanners placement="cart" location={location} limit={1} compact />
+          </CartMain>
+        </Content>
         <EmptyCartState onStartShopping={() => navigate('/')} />
         <BottomNavigation currentPath="/cart" />
       </Container>
@@ -472,6 +478,8 @@ export const CartPage = ({ location, onClose }) => {
         </CartMain>
 
         <CartAside>
+          <PlatformBanners placement="cart" location={location} limit={1} compact />
+
           <CartSummary totals={cart.totals} />
 
           <PromoCodeInput
@@ -508,4 +516,3 @@ export const CartPage = ({ location, onClose }) => {
     </Container>
   );
 };
-

@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import API_BASE_URL from '@config/api';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+// Bump this version string whenever a seeder or feed change requires a fresh fetch.
+const CACHE_VERSION = 'v2';
 
 // Module-level cache keyed by location suburb so navigating away and back is instant.
-const cache = new Map(); // suburb -> { data, time }
-const pending = new Map(); // suburb -> Promise (deduplicates concurrent fetches)
+const cache = new Map(); // key -> { data, time }
+const pending = new Map(); // key -> Promise (deduplicates concurrent fetches)
 
 function cacheKey(location) {
-  return location?.suburb || '__default__';
+  return `${CACHE_VERSION}:${location?.suburb || '__default__'}`;
 }
 
 async function fetchHomeData(location) {

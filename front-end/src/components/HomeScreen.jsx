@@ -15,6 +15,7 @@ import { ModeIndicator } from './home/ModeIndicator';
 import { TrendingInArea, CommunityRecommendations } from './community';
 import { SellerBannerCompact, SellerBannerFull } from './home/SellerBanner';
 import { SellerTopBanner } from './home/SellerTopBanner';
+import { PlatformBanners } from './home/PlatformBanners';
 import { NotificationsPanel } from './ui';
 import { LocationPickerModal } from './home/LocationPickerModal';
 import { ProductGridSkeleton } from './ui/Skeleton';
@@ -320,6 +321,8 @@ export const HomeScreen = ({ location, onLocationChange }) => {
             navigate(action.route);
           }
         }} />
+
+        <PlatformBanners placement="home" location={location} limit={2} />
         
         <CategoryGrid onCategoryClick={(category) => {
           // Navigate to category products page (furniture room)
@@ -368,6 +371,7 @@ export const HomeScreen = ({ location, onLocationChange }) => {
                   onProductClick={handleProductClick}
                   onAddToCart={handleAddToCart}
                   loading={false}
+                  enableLocalLoadMore={false}
                 />
               </>
             )}
@@ -389,6 +393,7 @@ export const HomeScreen = ({ location, onLocationChange }) => {
                   onProductClick={handleProductClick}
                   onAddToCart={handleAddToCart}
                   loading={false}
+                  enableLocalLoadMore={false}
                 />
               </>
             )}
@@ -447,13 +452,15 @@ export const HomeScreen = ({ location, onLocationChange }) => {
           />
         )}
         
-        <BundlesSection
-          products={bundles}
-          suburb={suburb}
-          onViewAll={() => navigate('/bundles')}
-          onProductClick={handleProductClick}
-          onAddToCart={handleAddToCart}
-        />
+        {bundles.length > 0 && (
+          <BundlesSection
+            products={bundles}
+            suburb={suburb}
+            onViewAll={() => navigate('/bundles')}
+            onProductClick={handleProductClick}
+            onAddToCart={handleAddToCart}
+          />
+        )}
         
         {newArrivals.length > 0 && (
           <DiscoveryModule

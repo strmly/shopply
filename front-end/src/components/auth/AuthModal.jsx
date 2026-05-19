@@ -334,6 +334,14 @@ const ErrorBox = styled.div`
   font-size: 12px; font-weight: 800; line-height: 1.45;
 `;
 
+const NoticeBox = styled.div`
+  margin-top: 10px; padding: 10px 13px;
+  border: 1px solid rgba(61,129,239,0.16); border-radius: 12px;
+  background: ${p => p.theme.colors.primarySoftBg};
+  color: ${p => p.theme.colors.primarySoftText};
+  font-size: 12px; font-weight: 850; line-height: 1.45;
+`;
+
 const TextBtn = styled.button`
   display: block; margin: 6px auto 0;
   border: 0; background: none;
@@ -421,7 +429,18 @@ const Fine = styled.p`
 
 /* ─── Pure helpers ────────────────────────────────────── */
 
-const normalizeMobile = v => v.trim();
+const normalizeMobile = (v) => {
+  const raw = String(v || '').trim();
+  if (!raw) return '';
+
+  const digits = raw.replace(/\D/g, '');
+  if (raw.startsWith('+')) return `+${digits}`;
+  if (digits.startsWith('00')) return `+${digits.slice(2)}`;
+  if (digits.startsWith('27') && digits.length >= 11) return `+${digits}`;
+  if (digits.startsWith('0') && digits.length === 10) return `+27${digits.slice(1)}`;
+  if (digits.length === 9) return `+27${digits}`;
+  return digits ? `+${digits}` : '';
+};
 const normalizeEmail  = v => v.trim().toLowerCase();
 
 const maskEmail = (e) => {
@@ -447,19 +466,79 @@ const getPasswordStrength = (pw) => {
 };
 
 const isValidEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-const isValidPhone = p => p.replace(/\D/g, '').length >= 10;
+const PHONE_HELP = 'Use a South African mobile number, e.g. 078 123 4567.';
+const isValidPhone = p => /^\+27[6-8]\d{8}$/.test(normalizeMobile(p));
+const friendlyAuthError = (message = '') => {
+  const text = String(message || '').trim();
+  if (!text) return 'Something went wrong. Please try again in a moment.';
+  if (/twilio|verify failed|invalid parameter|60200|json/i.test(text)) {
+    return 'We could not send a verification SMS right now. Check the number and try again.';
+  }
+  if (/email was rejected|smtp|send the email code/i.test(text)) {
+    return 'We could not send the email code right now. Check the address and try again.';
+  }
+  if (/failed to fetch|network/i.test(text)) {
+    return 'Could not reach Shopply right now. Check your connection and try again.';
+  }
+  if (/weak password/i.test(text)) {
+    return 'Create a stronger password using the rules above.';
+  }
+  if (/account or password is incorrect/i.test(text)) {
+    return 'Those details did not match. Check your email or phone and password, then try again.';
+  }
+  if (/expired/i.test(text)) {
+    return 'That code has expired. Request a new code and try again.';
+  }
+  if (/too many attempts/i.test(text)) {
+    return 'Too many tries for this code. Please request a fresh code.';
+  }
+  return text;
+};
 
 const STRENGTH_COLORS = ['', '#ef4444', '#f59e0b', '#3b82f6', '#22c55e'];
 
 const PW_RULES = [
-  { label: '8+ characters', test: pw => pw.length >= 8 },
-  { label: 'Uppercase',     test: pw => /[A-Z]/.test(pw) },
-  { label: 'Lowercase',     test: pw => /[a-z]/.test(pw) },
-  { label: 'Number',        test: pw => /\d/.test(pw) },
+  { label: 'At least 8 characters', test: pw => pw.length >= 8 },
+  { label: 'One uppercase letter',   test: pw => /[A-Z]/.test(pw) },
+  { label: 'One lowercase letter',   test: pw => /[a-z]/.test(pw) },
+  { label: 'One number',             test: pw => /\d/.test(pw) },
 ];
 
 const STEP_ORDER   = ['phone', 'otp', 'password', 'signinPassword', 'reset'];
 const MAX_ATTEMPTS = 5;
+const AUTH_DRAFT_KEY = 'shopply_auth_draft';
+const AUTH_DRAFT_TTL_MS = 30 * 60 * 1000;
+
+const canUseStorage = () => typeof window !== 'undefined' && window.localStorage;
+const safeStep = (value) => STEP_ORDER.includes(value) ? value : 'phone';
+
+const loadAuthDraft = () => {
+  if (!canUseStorage()) return null;
+  try {
+    const draft = JSON.parse(window.localStorage.getItem(AUTH_DRAFT_KEY) || 'null');
+    if (!draft || Date.now() - Number(draft.updatedAt || 0) > AUTH_DRAFT_TTL_MS) {
+      window.localStorage.removeItem(AUTH_DRAFT_KEY);
+      return null;
+    }
+    return draft;
+  } catch {
+    window.localStorage.removeItem(AUTH_DRAFT_KEY);
+    return null;
+  }
+};
+
+const saveAuthDraft = (draft) => {
+  if (!canUseStorage()) return;
+  window.localStorage.setItem(AUTH_DRAFT_KEY, JSON.stringify({
+    ...draft,
+    updatedAt: Date.now(),
+  }));
+};
+
+const clearAuthDraft = () => {
+  if (!canUseStorage()) return;
+  window.localStorage.removeItem(AUTH_DRAFT_KEY);
+};
 
 /* ─── Eye icon SVG ────────────────────────────────────── */
 
@@ -490,6 +569,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
   const [showPw, setShowPw]                 = useState(false);
   const [showConfirm, setShowConfirm]       = useState(false);
   const [error, setError]                   = useState('');
+  const [notice, setNotice]                 = useState('');
   const [submitting, setSubmitting]         = useState(false);
   const [resendSeconds, setResendSeconds]   = useState(0);
   const [touched, setTouched]               = useState({});
@@ -500,6 +580,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
   const formRef   = useRef(null);
   const primaryRef = useRef(null);
   const digitRefs  = useRef([]);
+  const hydratedRef = useRef(false);
 
   const isSignup    = mode === 'signup';
   const strength    = getPasswordStrength(password);
@@ -521,15 +602,43 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
-  // Reset on open / mode change
+  // Restore unfinished auth flow when the modal opens.
   useEffect(() => {
     if (!isOpen) return;
-    setError(''); setStep('phone'); setCode('');
-    setPassword(''); setConfirmPassword('');
-    setShowPw(false); setShowConfirm(false);
-    setTouched({}); setSucceeded(false);
-    setOtpError(false); setOtpAttempts(0);
-  }, [isOpen, mode]);
+    const draft = loadAuthDraft();
+
+    setMode(draft?.mode === 'signup' ? 'signup' : draft?.mode === 'signin' ? 'signin' : initialMode);
+    setStep(safeStep(draft?.step));
+    setChannel(draft?.channel === 'phone' ? 'phone' : 'email');
+    setName(String(draft?.name || ''));
+    setMobile(String(draft?.mobile || ''));
+    setEmail(String(draft?.email || ''));
+    setCode('');
+    setPassword('');
+    setConfirmPassword('');
+    setError('');
+    setNotice(draft?.step && draft.step !== 'phone' ? 'Welcome back. We saved your place so you can continue.' : '');
+    setShowPw(false);
+    setShowConfirm(false);
+    setTouched({});
+    setSucceeded(false);
+    setOtpError(false);
+    setOtpAttempts(0);
+    setResendSeconds(0);
+    hydratedRef.current = true;
+  }, [isOpen, initialMode]);
+
+  useEffect(() => {
+    if (!isOpen || !hydratedRef.current || succeeded) return;
+    saveAuthDraft({
+      mode,
+      step,
+      channel,
+      name: name.trim(),
+      mobile,
+      email: cleanEmail,
+    });
+  }, [isOpen, succeeded, mode, step, channel, name, mobile, cleanEmail]);
 
   // Auto-focus: digit boxes on OTP steps, primary input otherwise
   useEffect(() => {
@@ -592,8 +701,24 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
       token: data.token,
     };
     const saved = saveAuthUser(authUser);
+    clearAuthDraft();
     setSucceeded(true);
     setTimeout(() => { onSuccess?.(saved); onClose?.(); }, 950);
+  };
+
+  const resetToEntry = (next = {}) => {
+    if (next.mode) setMode(next.mode);
+    if (next.channel) setChannel(next.channel);
+    setStep('phone');
+    setCode('');
+    setPassword('');
+    setConfirmPassword('');
+    setError('');
+    setNotice('');
+    setTouched({});
+    setOtpError(false);
+    setOtpAttempts(0);
+    setResendSeconds(0);
   };
 
   const startAuth = async () => apiPost(`/auth/${channel}/start`, {
@@ -604,20 +729,22 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
 
   const handleResend = async () => {
     setError('');
+    setNotice('');
     try {
       await startAuth();
       setCode('');
       setOtpError(false);
       setOtpAttempts(0);
       setResendSeconds(60);
+      setNotice(`Fresh code sent to ${maskedId}.`);
       setTimeout(() => digitRefs.current[0]?.focus(), 0);
     } catch (e) {
-      setError(e.message);
+      setError(friendlyAuthError(e.message));
     }
   };
 
   const startForgot = async () => {
-    setSubmitting(true); setError('');
+    setSubmitting(true); setError(''); setNotice('');
     try {
       await apiPost('/auth/password/forgot', {
         mobile: channel === 'phone' ? cleanMobile : undefined,
@@ -625,8 +752,9 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
       });
       setCode(''); setPassword(''); setConfirmPassword('');
       setStep('reset');
+      setNotice(`Password reset code sent to ${maskedId}.`);
     } catch (err) {
-      setError(err.message);
+      setError(friendlyAuthError(err.message));
     } finally {
       setSubmitting(false);
     }
@@ -671,38 +799,44 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
   /* ── Field validation ───────────────────────────── */
 
   const touch = (field) => setTouched(t => ({ ...t, [field]: true }));
-  const emailError = touched.email && email && !isValidEmail(cleanEmail) ? 'Enter a valid email address' : '';
+  const emailError = touched.email && email && !isValidEmail(cleanEmail) ? 'Enter a valid email address, e.g. you@example.com' : '';
   const emailOk    = touched.email && email && isValidEmail(cleanEmail);
-  const phoneError = touched.mobile && mobile && !isValidPhone(mobile) ? 'Enter a valid 10-digit number' : '';
+  const phoneError = touched.mobile && mobile && !isValidPhone(mobile) ? PHONE_HELP : '';
   const phoneOk    = touched.mobile && mobile && isValidPhone(mobile);
-  const nameError  = touched.name && name && name.trim().length < 2 ? 'Name must be at least 2 characters' : '';
+  const nameError  = touched.name && name && name.trim().length < 2 ? 'Enter your full name.' : '';
 
   /* ── Submit ─────────────────────────────────────── */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setTouched({ email: true, mobile: true, name: true });
-    setSubmitting(true); setError('');
+    setSubmitting(true); setError(''); setNotice('');
 
     try {
       if (step === 'phone') {
+        if (channel === 'phone' && !mobile.trim())
+          throw new Error('Enter your mobile number.');
         if (channel === 'phone' && !isValidPhone(mobile))
-          throw new Error('Enter a valid mobile number.');
+          throw new Error(PHONE_HELP);
+        if (channel === 'email' && !cleanEmail)
+          throw new Error('Enter your email address.');
         if (channel === 'email' && !isValidEmail(cleanEmail))
-          throw new Error('Enter a valid email address.');
+          throw new Error('Enter a valid email address, e.g. you@example.com.');
         if (isSignup && name.trim().length < 2)
-          throw new Error('Please enter your full name.');
+          throw new Error('Enter your full name so sellers and support know who to contact.');
 
         const data = await startAuth();
         if (data.requiresPassword) {
           setStep('signinPassword');
+          setNotice('Account found. Enter your password to continue.');
         } else {
           setStep('otp');
+          setNotice(`Verification code sent to ${maskedId}.`);
         }
 
       } else if (step === 'otp') {
         const cleanCode = code.replace(/\s/g, '');
-        if (cleanCode.length < 6) throw new Error('Enter the complete 6-digit code.');
+        if (cleanCode.length < 6) throw new Error('Enter all 6 digits from the code we sent.');
         await apiPost(`/auth/${channel}/verify`, {
           mobile: channel === 'phone' ? cleanMobile : undefined,
           email:  channel === 'email' ? cleanEmail  : undefined,
@@ -710,10 +844,11 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
           name:   name.trim(),
         });
         setStep('password');
+        setNotice('Code verified. Create a password to finish your account.');
 
       } else if (step === 'password') {
-        if (strength < 4) throw new Error('Please satisfy all password requirements.');
-        if (password !== confirmPassword) throw new Error('Passwords do not match.');
+        if (strength < 4) throw new Error('Use at least 8 characters with uppercase, lowercase, and a number.');
+        if (password !== confirmPassword) throw new Error('The passwords do not match yet.');
         const data = await apiPost('/auth/password/set', {
           mobile: channel === 'phone' ? cleanMobile : undefined,
           email:  channel === 'email' ? cleanEmail  : undefined,
@@ -722,6 +857,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
         completeAuth(data);
 
       } else if (step === 'signinPassword') {
+        if (!password) throw new Error('Enter your password to continue.');
         const data = await apiPost('/auth/password/sign-in', {
           mobile: channel === 'phone' ? cleanMobile : undefined,
           email:  channel === 'email' ? cleanEmail  : undefined,
@@ -731,8 +867,9 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
 
       } else if (step === 'reset') {
         const cleanCode = code.replace(/\s/g, '');
-        if (password !== confirmPassword) throw new Error('Passwords do not match.');
-        if (strength < 4) throw new Error('Please satisfy all password requirements.');
+        if (cleanCode.length < 6) throw new Error('Enter all 6 digits from the reset code we sent.');
+        if (password !== confirmPassword) throw new Error('The passwords do not match yet.');
+        if (strength < 4) throw new Error('Use at least 8 characters with uppercase, lowercase, and a number.');
         const data = await apiPost('/auth/password/reset', {
           mobile: channel === 'phone' ? cleanMobile : undefined,
           email:  channel === 'email' ? cleanEmail  : undefined,
@@ -742,8 +879,9 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
         completeAuth(data);
       }
     } catch (err) {
-      setError(err.message);
-      if (step === 'otp' && err.message.toLowerCase().includes('incorrect')) {
+      const friendlyMessage = friendlyAuthError(err.message);
+      setError(friendlyMessage);
+      if ((step === 'otp' || step === 'reset') && friendlyMessage.toLowerCase().includes('incorrect')) {
         setOtpError(true);
         setOtpAttempts(n => Math.min(n + 1, MAX_ATTEMPTS));
       }
@@ -756,13 +894,13 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
 
   const STEP_COPY = {
     phone: {
-      signin: { title: 'Welcome back',   sub: 'Sign in to unlock deals and track your orders.' },
-      signup: { title: 'Join Shopply',   sub: 'Create your account in a minute.' },
+      signin: { title: 'Welcome back',   sub: 'Sign in to shop faster, track orders, and keep your cart safe.' },
+      signup: { title: 'Join Shopply',   sub: 'Create your account with a quick email or SMS check.' },
     },
-    otp:            { title: 'Check your inbox',    sub: null },
+    otp:            { title: 'Enter your code',     sub: null },
     password:       { title: 'Set your password',   sub: "Choose something strong — you'll use it every time." },
-    signinPassword: { title: 'Enter your password', sub: null },
-    reset:          { title: 'Reset your password', sub: 'Enter the code we sent, then choose a new password.' },
+    signinPassword: { title: 'Enter your password', sub: 'This keeps your Shopply account protected.' },
+    reset:          { title: 'Reset your password', sub: 'Use the code we sent, then choose a new password.' },
   };
 
   const stepCopy = step === 'phone'
@@ -771,18 +909,21 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
 
   const stepTitle = stepCopy.title || 'Sign in';
   const stepSub   = step === 'otp'
-    ? `We sent a 6-digit code to ${maskedId}.`
+    ? `We sent a 6-digit code to ${maskedId}. It expires in 5 minutes.`
     : (stepCopy.sub || '');
 
   const submitLabel = {
     phone:          isSignup ? 'Create account' : 'Continue',
     otp:            'Verify code',
-    password:       'Create account',
+    password:       'Finish account',
     signinPassword: 'Sign in',
     reset:          'Set new password',
   }[step] || 'Continue';
 
   const showStepDots = step === 'otp' || step === 'password';
+  const successSub = mode === 'signup'
+    ? 'Your Shopply account is ready.'
+    : 'Taking you back now...';
 
   /* ── Shared OTP boxes JSX ───────────────────────── */
   const otpBoxes = (
@@ -848,7 +989,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
       </InputWrap>
       {confirmPassword.length > 0 && (
         <MatchStatus $match={confirmPassword === password}>
-          {confirmPassword === password ? '✓ Passwords match' : '✗ Passwords don\'t match'}
+          {confirmPassword === password ? 'Passwords match.' : 'Passwords do not match yet.'}
         </MatchStatus>
       )}
     </Label>
@@ -864,8 +1005,8 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
           <SuccessOverlay>
             <SuccessInner>
               <SuccessCircle>✓</SuccessCircle>
-              <SuccessLabel>You're signed in!</SuccessLabel>
-              <SuccessSub>Taking you back now…</SuccessSub>
+              <SuccessLabel>{mode === 'signup' ? 'Account created!' : 'You are signed in!'}</SuccessLabel>
+              <SuccessSub>{successSub}</SuccessSub>
             </SuccessInner>
           </SuccessOverlay>
         )}
@@ -905,13 +1046,13 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
             {step === 'phone' && (
               <Stack>
                 <Segment aria-label="Account mode">
-                  <SegBtn type="button" $active={!isSignup} onClick={() => setMode('signin')}>Sign in</SegBtn>
-                  <SegBtn type="button" $active={isSignup}  onClick={() => setMode('signup')}>Create account</SegBtn>
+                  <SegBtn type="button" $active={!isSignup} onClick={() => resetToEntry({ mode: 'signin' })}>Sign in</SegBtn>
+                  <SegBtn type="button" $active={isSignup}  onClick={() => resetToEntry({ mode: 'signup' })}>Create account</SegBtn>
                 </Segment>
 
                 <Segment aria-label="Verification method">
-                  <SegBtn type="button" $active={channel === 'email'} onClick={() => setChannel('email')}>Email</SegBtn>
-                  <SegBtn type="button" $active={channel === 'phone'} onClick={() => setChannel('phone')}>Phone</SegBtn>
+                  <SegBtn type="button" $active={channel === 'email'} onClick={() => resetToEntry({ channel: 'email' })}>Email</SegBtn>
+                  <SegBtn type="button" $active={channel === 'phone'} onClick={() => resetToEntry({ channel: 'phone' })}>Phone</SegBtn>
                 </Segment>
 
                 {isSignup && (
@@ -944,7 +1085,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
                       $valid={!!emailOk}
                     />
                     {emailError && <FieldHint $error>{emailError}</FieldHint>}
-                    {emailOk    && <FieldHint $ok>✓ Looks good</FieldHint>}
+                    {emailOk    && <FieldHint $ok>Email looks good.</FieldHint>}
                   </Label>
                 ) : (
                   <Label>
@@ -955,13 +1096,13 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
                       value={mobile}
                       onChange={e => setMobile(e.target.value)}
                       onBlur={() => touch('mobile')}
-                      placeholder=""
+                      placeholder="078 123 4567"
                       autoComplete="tel"
                       $error={!!phoneError}
                       $valid={!!phoneOk}
                     />
                     {phoneError && <FieldHint $error>{phoneError}</FieldHint>}
-                    {phoneOk    && <FieldHint $ok>✓ Looks good</FieldHint>}
+                    {phoneOk    && <FieldHint $ok>Mobile number is ready for SMS.</FieldHint>}
                   </Label>
                 )}
               </Stack>
@@ -970,20 +1111,20 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
             {/* ── OTP verification ── */}
             {step === 'otp' && (
               <Stack>
-                <Label>Enter the 6-digit code</Label>
+                <Label>6-digit verification code</Label>
                 {otpBoxes}
                 {otpAttempts > 0 && otpAttempts < MAX_ATTEMPTS && (
                   <AttemptsHint $warn={otpAttempts < 3}>
-                    {MAX_ATTEMPTS - otpAttempts} of {MAX_ATTEMPTS} attempts remaining
+                    {MAX_ATTEMPTS - otpAttempts} tries left before you need a new code.
                   </AttemptsHint>
                 )}
 
                 <ResendRow>
                   {resendSeconds > 0 ? (
-                    <>Resend in <TimerBadge>{resendSeconds}</TimerBadge></>
+                    <>You can resend in <TimerBadge>{resendSeconds}</TimerBadge></>
                   ) : (
                     <>
-                      Didn't get it?&nbsp;
+                      No code yet?&nbsp;
                       <ResendBtn type="button" onClick={handleResend} disabled={submitting}>
                         Resend code
                       </ResendBtn>
@@ -991,7 +1132,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
                   )}
                 </ResendRow>
 
-                <TextBtn type="button" onClick={() => { setStep('phone'); setCode(''); }}>
+                <TextBtn type="button" onClick={() => resetToEntry()}>
                   ← Change {channel === 'phone' ? 'phone number' : 'email address'}
                 </TextBtn>
               </Stack>
@@ -1033,7 +1174,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
                     <ChipLabel>Signing in as</ChipLabel>
                     <ChipValue>{channel === 'email' ? email : mobile}</ChipValue>
                   </ChipInfo>
-                  <ChipChangeBtn type="button" onClick={() => setStep('phone')}>
+                  <ChipChangeBtn type="button" onClick={() => resetToEntry()}>
                     Change
                   </ChipChangeBtn>
                 </IdentityChip>
@@ -1067,15 +1208,15 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
             {/* ── Password reset ── */}
             {step === 'reset' && (
               <Stack>
-                <Label>Enter the reset code</Label>
+                <Label>6-digit reset code</Label>
                 {otpBoxes}
 
                 <ResendRow>
                   {resendSeconds > 0 ? (
-                    <>Resend in <TimerBadge>{resendSeconds}</TimerBadge></>
+                    <>You can resend in <TimerBadge>{resendSeconds}</TimerBadge></>
                   ) : (
                     <>
-                      Didn't get it?&nbsp;
+                      No code yet?&nbsp;
                       <ResendBtn type="button" onClick={startForgot} disabled={submitting}>
                         Resend code
                       </ResendBtn>
@@ -1106,6 +1247,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
 
           </StepContent>
 
+          {notice && !error && <NoticeBox role="status">{notice}</NoticeBox>}
           {error && <ErrorBox role="alert">{error}</ErrorBox>}
 
           <SubmitBtn type="submit" disabled={submitting} $soft={step === 'otp'}>
@@ -1122,7 +1264,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess, initialMode = 'signin' }
           {step === 'password' && (
             <TextBtn
               type="button"
-              onClick={() => { setStep('phone'); setCode(''); setPassword(''); setConfirmPassword(''); setError(''); }}
+              onClick={() => { clearAuthDraft(); resetToEntry(); }}
             >
               ← Start over
             </TextBtn>

@@ -1,6 +1,18 @@
 import { User } from '../models/User.js';
 import { hashPassword } from '../utils/crypto.js';
 
+const normalizeMobile = (mobile) => {
+  const raw = String(mobile || '').trim();
+  if (!raw) return '';
+  const digits = raw.replace(/\D/g, '');
+  if (raw.startsWith('+')) return `+${digits}`;
+  if (digits.startsWith('00')) return `+${digits.slice(2)}`;
+  if (digits.startsWith('27') && digits.length >= 11) return `+${digits}`;
+  if (digits.startsWith('0') && digits.length === 10) return `+27${digits.slice(1)}`;
+  if (digits.length === 9) return `+27${digits}`;
+  return digits ? `+${digits}` : '';
+};
+
 class UserServiceClass {
   constructor() {
     this.users = [];
@@ -48,10 +60,8 @@ class UserServiceClass {
    * Get user by mobile number
    */
   async getUserByMobile(mobile) {
-    const normalizedMobile = String(mobile || '').replace(/[^\d+]/g, '');
-    return this.users.find(user => (
-      String(user.mobile || '').replace(/[^\d+]/g, '') === normalizedMobile
-    ));
+    const normalizedMobile = normalizeMobile(mobile);
+    return this.users.find(user => normalizeMobile(user.mobile) === normalizedMobile);
   }
 
   /**

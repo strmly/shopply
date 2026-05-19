@@ -130,6 +130,33 @@ const Grid = styled.div`
   }
 `;
 
+const LoadMoreWrap = styled.div`
+  max-width: 1180px;
+  margin: 0 auto 28px;
+  padding: 0 min(5vw, 48px);
+  display: flex;
+  justify-content: center;
+`;
+
+const LoadMoreButton = styled.button`
+  width: min(100%, 420px);
+  min-height: 54px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 22px;
+  background: ${props => props.theme.colors.gradient.primary};
+  color: ${props => props.theme.colors.text.inverse};
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 18px 34px rgba(61,129,239,0.24);
+  transition: ${props => props.theme.transitions.swift};
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 48px rgba(61,129,239,0.3);
+  }
+`;
+
 /* ─── Deal Card ───────────────────────────────────────────── */
 const Card = styled.div`
   background:
@@ -453,11 +480,13 @@ export const FlashDealsPage = ({ location }) => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(12);
 
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
+        setVisibleCount(12);
         const res  = await fetch(`${API_BASE_URL}/products/flash-deals?limit=60`);
         const data = await res.json();
         if (data.success) setProducts(data.data || []);
@@ -542,6 +571,7 @@ export const FlashDealsPage = ({ location }) => {
     if (!p.flashDeal?.endDate) return true;
     return new Date(p.flashDeal.endDate) > Date.now();
   });
+  const visibleDeals = activeDeals.slice(0, visibleCount);
 
   return (
     <Container>
@@ -569,8 +599,9 @@ export const FlashDealsPage = ({ location }) => {
           <StateMessage>Check back soon for limited-time offers from local stores.</StateMessage>
         </CenterState>
       ) : (
+        <>
         <Grid>
-          {activeDeals.map((product, i) => (
+          {visibleDeals.map((product, i) => (
             <DealCard
               key={product.id ?? i}
               product={product}
@@ -579,6 +610,14 @@ export const FlashDealsPage = ({ location }) => {
             />
           ))}
         </Grid>
+        {visibleCount < activeDeals.length && (
+          <LoadMoreWrap>
+            <LoadMoreButton type="button" onClick={() => setVisibleCount(prev => Math.min(prev + 12, activeDeals.length))}>
+              Load More
+            </LoadMoreButton>
+          </LoadMoreWrap>
+        )}
+        </>
       )}
 
       <BottomNavigation currentPath="/deals" />

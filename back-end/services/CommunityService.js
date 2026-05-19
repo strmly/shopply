@@ -105,7 +105,24 @@ class CommunityService {
       : (await ProductService.getRecommendedProducts('neighbor-feed', Math.max(limit * 3, 24)))
         .map(product => (typeof product.toJSON === 'function' ? product.toJSON() : product));
 
-    const names = ['Ayesha', 'Thabo', 'Nomsa', 'Johan', 'Priya', 'Sipho', 'Lerato', 'Marcus'];
+    // Count ALL qualifying products in the area (not capped by limit) for the stat.
+    // This is the real "how many good products are near you" number.
+    let localFindsCount = sourceProducts.length;
+    if (lat && lng && GeoIndex.initialized) {
+      const localTiers = RADIUS_TIERS.slice(0, 3);
+      const qualifyingIds = new Set();
+      for (const tier of localTiers) {
+        const cells = getH3CellsForTier(lat, lng, tier);
+        for (const { product } of GeoIndex.getProductsInCells(cells)) {
+          const p = typeof product.toJSON === 'function' ? product.toJSON() : product;
+          if ((p.rating || 0) >= 4.0 && p.stock !== 'out' && p.isVisible !== false) {
+            qualifyingIds.add(String(p.id));
+          }
+        }
+      }
+      localFindsCount = qualifyingIds.size;
+    }
+
     const reasons = [
       'great quality for the price',
       'fast local delivery',
@@ -115,14 +132,18 @@ class CommunityService {
       'solid reviews from nearby shoppers',
     ];
 
+    const names = ['Ayesha', 'Thabo', 'Nomsa', 'Johan', 'Priya', 'Sipho', 'Lerato', 'Marcus'];
+
     const products = sourceProducts
       .filter(product => product && product.id && product.isVisible !== false && product.stock !== 'out')
       .slice()
       .sort((a, b) => ((b.rating || 0) * 20 + (b.reviewCount || 0) / 8 + (b.trendScore || 0)) - ((a.rating || 0) * 20 + (a.reviewCount || 0) / 8 + (a.trendScore || 0)))
       .slice(0, limit)
       .map((product, index) => {
-        const neighborCount = 7 + ((Number(product.id) || index + 1) % 43);
-        const curatorNames = Array.from({ length: Math.min(4, neighborCount) }, (_, offset) => names[(index + offset) % names.length]);
+        // Use real reviewCount as the community signal — not a fake modulo.
+        const neighborCount = product.reviewCount || 0;
+        const curatorCount  = Math.min(4, Math.ceil(neighborCount / 100) || 1);
+        const curatorNames  = Array.from({ length: curatorCount }, (_, i) => names[(index + i) % names.length]);
         return {
           ...product,
           neighborSignal: {
@@ -130,8 +151,10 @@ class CommunityService {
             neighborCount,
             curatorNames,
             reason: reasons[index % reasons.length],
-            confidence: Math.min(99, 72 + Math.round((product.rating || 4.3) * 4) + Math.min(8, Math.round((product.reviewCount || 0) / 80))),
-            distanceLabel: product.distanceKm ? `${Number(product.distanceKm).toFixed(1)} km` : product.distance ? `${Number(product.distance).toFixed(1)} km` : 'Nearby',
+            confidence: Math.min(99, 60 + Math.round((product.rating || 0) * 6) + Math.min(15, Math.round(neighborCount / 100))),
+            distanceLabel: product.distanceKm != null
+              ? `${Number(product.distanceKm).toFixed(1)} km`
+              : 'Nearby',
           },
         };
       });
@@ -146,7 +169,10 @@ class CommunityService {
       title: 'Recommended by Neighbors',
       subtitle: `Furniture picks people around ${suburb} keep saving, buying, and rating highly.`,
       suburb,
-      totalNeighborSignals: products.reduce((sum, product) => sum + (product.neighborSignal?.neighborCount || 0), 0),
+      // Real signals: total reviews of shown products (actual community engagement)
+      totalNeighborSignals: products.reduce((sum, p) => sum + (p.neighborSignal?.neighborCount || 0), 0),
+      // Real count: qualifying products in the neighborhood
+      localFindsCount,
       topCategory: Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] || 'home',
       products,
     };

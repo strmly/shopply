@@ -31,6 +31,7 @@ import furnitureRoutes from './furnitureRoutes.js';
 import uploadRoutes from './uploadRoutes.js';
 import storefrontRoutes from './storefrontRoutes.js';
 import adminRoutes from './adminRoutes.js';
+import bannerRoutes from './bannerRoutes.js';
 
 const router = express.Router();
 
@@ -45,6 +46,7 @@ router.use('/products', productRoutes);
 router.use('/search', searchRoutes);
 router.use('/furniture', furnitureRoutes);
 router.use('/stores', storefrontRoutes);
+router.use('/banners', bannerRoutes);
 router.use('/cart', cartRoutes);
 router.use('/checkout', checkoutRoutes);
 router.use('/orders', orderTrackingRoutes);

@@ -202,7 +202,7 @@ export const CommunityRecommendations = ({ location, onProductClick, onAddToCart
   const suburb = location?.suburb || location?.city || 'your area';
 
   const query = useMemo(() => {
-    const params = new URLSearchParams({ limit: '10', suburb });
+    const params = new URLSearchParams({ limit: '10', suburb, v: '2' });
     if (location?.lat && location?.lng) {
       params.set('lat', location.lat);
       params.set('lng', location.lng);
@@ -246,12 +246,12 @@ export const CommunityRecommendations = ({ location, onProductClick, onAddToCart
 
         <Stats>
           <Stat>
-            <StatValue>{feed?.totalNeighborSignals || 0}</StatValue>
-            <StatLabel>neighbor signals nearby</StatLabel>
+            <StatValue>{feed?.totalNeighborSignals?.toLocaleString() || 0}</StatValue>
+            <StatLabel>community reviews nearby</StatLabel>
           </Stat>
           <Stat>
-            <StatValue>{products.length || '...'}</StatValue>
-            <StatLabel>locally trusted picks</StatLabel>
+            <StatValue>{feed?.localFindsCount ?? products.length ?? '...'}</StatValue>
+            <StatLabel>quality finds nearby</StatLabel>
           </Stat>
           <Stat>
             <StatValue>{String(feed?.topCategory || 'home').replace(/_/g, ' ')}</StatValue>

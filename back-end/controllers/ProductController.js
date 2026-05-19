@@ -135,7 +135,7 @@ export class ProductController {
           p => p.isTrending || p.isNew || (p.reviewCount || 0) > 50,
           { limit },
         );
-        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
+        if (ranked?.length) return res.json({ success: true, data: ranked, count: ranked.length });
       }
       const products = await ProductService.getHotProductsNearLocation(userLoc, limit);
       res.json({ success: true, data: products.map(p => p.toJSON ? p.toJSON() : p), count: products.length });
@@ -172,7 +172,7 @@ export class ProductController {
       const limit = parseInt(req.query.limit) || 10;
       if (userLoc) {
         const ranked = await getRanked(userLoc.lat, userLoc.lng, p => p.isNew, { limit });
-        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
+        if (ranked?.length) return res.json({ success: true, data: ranked, count: ranked.length });
       }
       const products = await ProductService.getNewArrivals(limit);
       res.json({ success: true, data: products.map(p => p.toJSON ? p.toJSON() : p), count: products.length });
@@ -191,7 +191,7 @@ export class ProductController {
           p => (p.rating || 0) >= 4.0 || (p.reviewCount || 0) > 20,
           { limit },
         );
-        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
+        if (ranked?.length) return res.json({ success: true, data: ranked, count: ranked.length });
       }
       const products = await ProductService.getRecommendedProducts(req.query.userId, limit);
       res.json({ success: true, data: products.map(p => p.toJSON ? p.toJSON() : p), count: products.length });
@@ -210,7 +210,7 @@ export class ProductController {
           p => (p.rating || 0) >= 4.0 && p.stock !== 'out',
           { limit },
         );
-        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
+        if (ranked?.length) return res.json({ success: true, data: ranked, count: ranked.length });
       }
       const products = await ProductService.getTopRated(limit);
       res.json({ success: true, data: products.map(p => p.toJSON ? p.toJSON() : p), count: products.length });
@@ -221,22 +221,8 @@ export class ProductController {
 
   async getBundles(req, res, next) {
     try {
-      const userLoc = parseUserLoc(req.query);
-      const limit = parseInt(req.query.limit) || 10;
-      if (userLoc) {
-        const room = req.query.room;
-        const BUNDLE_TERMS = ['bundle', 'set', 'collection', 'package'];
-        const ranked = await getRanked(
-          userLoc.lat, userLoc.lng,
-          p => {
-            const isBundle = (p.tags || []).some(t => BUNDLE_TERMS.includes(t.toLowerCase()))
-              || BUNDLE_TERMS.some(t => (p.name || '').toLowerCase().includes(t));
-            return isBundle && (!room || p.room === room);
-          },
-          { limit },
-        );
-        if (ranked) return res.json({ success: true, data: ranked, count: ranked.length });
-      }
+      // Bundles are curated catalog items with computed metadata (roomLabel, bundleSavings, etc.)
+      // that only ProductService.getBundles() produces — always use it as the primary source.
       const result = await ProductService.getBundles({
         limit: req.query.limit, page: req.query.page,
         room: req.query.room, sort: req.query.sort,

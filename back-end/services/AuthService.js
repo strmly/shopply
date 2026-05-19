@@ -7,6 +7,7 @@ const otpStore = new Map();
 const OTP_TTL_MS     = 5  * 60 * 1000;
 const VERIFIED_TTL_MS = 10 * 60 * 1000;
 const MAX_OTP_ATTEMPTS = 5;
+const PHONE_HELP = 'Use a South African mobile number, e.g. 078 123 4567 or +27 78 123 4567.';
 
 // Prune expired OTP records every minute
 setInterval(() => {
@@ -16,9 +17,40 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-const normalizeMobile = (mobile) => String(mobile || '').replace(/[^\d+]/g, '');
+const normalizeMobile = (mobile) => {
+  const raw = String(mobile || '').trim();
+  if (!raw) return '';
+
+  const digits = raw.replace(/\D/g, '');
+  if (raw.startsWith('+')) return `+${digits}`;
+  if (digits.startsWith('00')) return `+${digits.slice(2)}`;
+  if (digits.startsWith('27') && digits.length >= 11) return `+${digits}`;
+  if (digits.startsWith('0') && digits.length === 10) return `+27${digits.slice(1)}`;
+  if (digits.length === 9) return `+27${digits}`;
+  return digits ? `+${digits}` : '';
+};
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 const buildOtpKey = (channel, value, purpose = 'auth') => `${purpose}:${channel}:${value}`;
+
+const createError = (message, statusCode = 400, errors = null) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  if (errors) error.errors = errors;
+  return error;
+};
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));
+const isValidMobile = (mobile) => /^\+27[6-8]\d{8}$/.test(normalizeMobile(mobile));
+const isValidCode = (code) => /^\d{6}$/.test(String(code || '').trim());
+
+const parseProviderError = async (response) => {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
 
 export const safeUser = (user) => {
   if (!user) return null;
@@ -65,8 +97,13 @@ class AuthServiceClass {
       });
 
       if (!response.ok) {
-        const message = await response.text();
-        throw new Error(`Twilio Verify failed to send OTP: ${message}`);
+        const details = await parseProviderError(response);
+        console.warn('[auth] Twilio Verify send failed', {
+          status: response.status,
+          code: details.code,
+          message: details.message,
+        });
+        throw createError('We could not send a verification SMS right now. Check the number and try again.', 502);
       }
 
       return { sent: true, provider: 'twilio-verify' };
@@ -93,8 +130,13 @@ class AuthServiceClass {
     });
 
     if (!response.ok) {
-      const message = await response.text();
-      throw new Error(`Twilio failed to send OTP: ${message}`);
+      const details = await parseProviderError(response);
+      console.warn('[auth] Twilio SMS send failed', {
+        status: response.status,
+        code: details.code,
+        message: details.message,
+      });
+      throw createError('We could not send a verification SMS right now. Check the number and try again.', 502);
     }
 
     return { sent: true, provider: 'twilio' };
@@ -124,22 +166,36 @@ class AuthServiceClass {
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       if (response.status === 400 || response.status === 404) return false;
-      throw new Error(`Twilio Verify failed to check OTP: ${payload.message || response.statusText}`);
+      console.warn('[auth] Twilio Verify check failed', {
+        status: response.status,
+        code: payload.code,
+        message: payload.message || response.statusText,
+      });
+      throw createError('We could not verify the code right now. Please try again.', 502);
     }
 
     return payload.status === 'approved' || payload.valid === true;
   }
 
   async sendEmailOtp(email, otp, purpose = 'verify') {
-    return sendOtpEmail(email, otp, purpose);
+    try {
+      return await sendOtpEmail(email, otp, purpose);
+    } catch (error) {
+      console.warn('[auth] Email OTP send failed', {
+        message: error.message,
+        statusCode: error.statusCode,
+      });
+      throw createError('We could not send the email code right now. Check the email address and try again.', 502);
+    }
   }
 
   async startPhoneAuth({ mobile, name }) {
     const normalizedMobile = normalizeMobile(mobile);
-    if (normalizedMobile.replace(/\D/g, '').length < 10) {
-      const error = new Error('Enter a valid mobile number');
-      error.statusCode = 400;
-      throw error;
+    if (!normalizedMobile) {
+      throw createError('Enter your mobile number.');
+    }
+    if (!isValidMobile(normalizedMobile)) {
+      throw createError(PHONE_HELP);
     }
 
     const user = await UserService.getUserByMobile(normalizedMobile);
@@ -153,9 +209,7 @@ class AuthServiceClass {
     }
 
     if (!user && String(name || '').trim().length < 2) {
-      const error = new Error('Please enter your full name to create an account.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Please enter your full name to create an account.');
     }
 
     const otp = this.generateOtp();
@@ -185,18 +239,20 @@ class AuthServiceClass {
 
   async verifyPhone({ mobile, code, name }) {
     const normalizedMobile = normalizeMobile(mobile);
+    if (!isValidMobile(normalizedMobile)) {
+      throw createError(PHONE_HELP);
+    }
+    if (!isValidCode(code)) {
+      throw createError('Enter the 6-digit verification code.');
+    }
     const record = otpStore.get(buildOtpKey('phone', normalizedMobile));
 
     if (!record || record.expiresAt < Date.now()) {
-      const error = new Error('Verification code expired. Request a new code.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Verification code expired. Request a new code.');
     }
 
     if (record.attempts >= MAX_OTP_ATTEMPTS) {
-      const error = new Error('Too many attempts. Request a new code.');
-      error.statusCode = 429;
-      throw error;
+      throw createError('Too many attempts. Request a new code.', 429);
     }
 
     record.attempts += 1;
@@ -205,9 +261,7 @@ class AuthServiceClass {
       : null;
 
     if (record.provider === 'twilio-verify' ? !verifiedByProvider : record.otp !== String(code || '').trim()) {
-      const error = new Error('Verification code is incorrect.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Verification code is incorrect.');
     }
 
     let user = record.userId ? await UserService.getUserById(record.userId) : await UserService.getUserByMobile(normalizedMobile);
@@ -239,10 +293,11 @@ class AuthServiceClass {
 
   async startEmailAuth({ email, name }) {
     const normalizedEmail = normalizeEmail(email);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      const error = new Error('Enter a valid email address');
-      error.statusCode = 400;
-      throw error;
+    if (!normalizedEmail) {
+      throw createError('Enter your email address.');
+    }
+    if (!isValidEmail(normalizedEmail)) {
+      throw createError('Enter a valid email address, e.g. you@example.com.');
     }
 
     const user = await UserService.getUserByEmail(normalizedEmail);
@@ -256,9 +311,7 @@ class AuthServiceClass {
     }
 
     if (!user && String(name || '').trim().length < 2) {
-      const error = new Error('Please enter your full name to create an account.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Please enter your full name to create an account.');
     }
 
     const otp = this.generateOtp();
@@ -287,25 +340,25 @@ class AuthServiceClass {
 
   async verifyEmail({ email, code, name }) {
     const normalizedEmail = normalizeEmail(email);
+    if (!isValidEmail(normalizedEmail)) {
+      throw createError('Enter a valid email address, e.g. you@example.com.');
+    }
+    if (!isValidCode(code)) {
+      throw createError('Enter the 6-digit verification code.');
+    }
     const record = otpStore.get(buildOtpKey('email', normalizedEmail));
 
     if (!record || record.expiresAt < Date.now()) {
-      const error = new Error('Verification code expired. Request a new code.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Verification code expired. Request a new code.');
     }
 
     if (record.attempts >= MAX_OTP_ATTEMPTS) {
-      const error = new Error('Too many attempts. Request a new code.');
-      error.statusCode = 429;
-      throw error;
+      throw createError('Too many attempts. Request a new code.', 429);
     }
 
     record.attempts += 1;
     if (record.otp !== String(code || '').trim()) {
-      const error = new Error('Verification code is incorrect.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Verification code is incorrect.');
     }
 
     let user = record.userId ? await UserService.getUserById(record.userId) : await UserService.getUserByEmail(normalizedEmail);
@@ -337,10 +390,11 @@ class AuthServiceClass {
 
   async startProfileEmailVerification({ userId = 'default', email }) {
     const normalizedEmail = normalizeEmail(email);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      const error = new Error('Enter a valid email address');
-      error.statusCode = 400;
-      throw error;
+    if (!normalizedEmail) {
+      throw createError('Enter your email address.');
+    }
+    if (!isValidEmail(normalizedEmail)) {
+      throw createError('Enter a valid email address, e.g. you@example.com.');
     }
 
     let user = await UserService.getUserById(userId);
@@ -393,32 +447,30 @@ class AuthServiceClass {
 
   async verifyProfileEmail({ userId = 'default', email, code }) {
     const normalizedEmail = normalizeEmail(email);
+    if (!isValidEmail(normalizedEmail)) {
+      throw createError('Enter a valid email address, e.g. you@example.com.');
+    }
+    if (!isValidCode(code)) {
+      throw createError('Enter the 6-digit verification code.');
+    }
     const user = await UserService.getUserById(userId);
     if (!user) {
-      const error = new Error('User not found');
-      error.statusCode = 404;
-      throw error;
+      throw createError('User not found', 404);
     }
 
     const key = buildOtpKey('profile-email', `${user.id}:${normalizedEmail}`);
     const record = otpStore.get(key);
     if (!record || record.expiresAt < Date.now()) {
-      const error = new Error('Verification code expired. Request a new code.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Verification code expired. Request a new code.');
     }
 
     if (record.attempts >= MAX_OTP_ATTEMPTS) {
-      const error = new Error('Too many attempts. Request a new code.');
-      error.statusCode = 429;
-      throw error;
+      throw createError('Too many attempts. Request a new code.', 429);
     }
 
     record.attempts += 1;
     if (record.otp !== String(code || '').trim()) {
-      const error = new Error('Verification code is incorrect.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Verification code is incorrect.');
     }
 
     const updatedUser = await UserService.updateUser(user.id, {
@@ -440,35 +492,32 @@ class AuthServiceClass {
     const normalizedEmail = normalizeEmail(email);
     const channel = normalizedEmail ? 'email' : 'phone';
     const identifier = normalizedEmail || normalizedMobile;
+    if (channel === 'phone' && !isValidMobile(identifier)) {
+      throw createError(PHONE_HELP);
+    }
+    if (channel === 'email' && !isValidEmail(identifier)) {
+      throw createError('Enter a valid email address, e.g. you@example.com.');
+    }
     const record = otpStore.get(buildOtpKey(channel, identifier));
 
     if (!record?.verified || record.expiresAt < Date.now()) {
-      const error = new Error(`Verify your ${channel === 'email' ? 'email' : 'phone'} before setting a password.`);
-      error.statusCode = 401;
-      throw error;
+      throw createError(`Verify your ${channel === 'email' ? 'email' : 'phone'} before setting a password.`, 401);
     }
 
     const errors = validatePassword(password);
     if (errors.length > 0) {
-      const error = new Error('Weak password');
-      error.statusCode = 400;
-      error.errors = errors;
-      throw error;
+      throw createError('Create a stronger password.', 400, errors);
     }
 
     const user = await UserService.getUserById(record.userId);
     if (!user) {
-      const error = new Error('User not found');
-      error.statusCode = 404;
-      throw error;
+      throw createError('User not found', 404);
     }
 
     const history = user.passwordHistory || [];
     if (user.passwordHash) history.push(user.passwordHash);
     if (history.some(h => verifyPassword({ passwordHash: h }, password))) {
-      const error = new Error("Choose a password you haven't used before.");
-      error.statusCode = 400;
-      throw error;
+      throw createError("Choose a password you haven't used before.");
     }
 
     const updatedUser = await UserService.updateUser(user.id, {
@@ -484,14 +533,24 @@ class AuthServiceClass {
   async signIn({ mobile, email, password }) {
     const normalizedMobile = normalizeMobile(mobile);
     const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail && !normalizedMobile) {
+      throw createError('Enter your email address or mobile number.');
+    }
+    if (normalizedEmail && !isValidEmail(normalizedEmail)) {
+      throw createError('Enter a valid email address, e.g. you@example.com.');
+    }
+    if (!normalizedEmail && !isValidMobile(normalizedMobile)) {
+      throw createError(PHONE_HELP);
+    }
+    if (!password) {
+      throw createError('Enter your password.');
+    }
     const user = normalizedEmail
       ? await UserService.getUserByEmail(normalizedEmail)
       : await UserService.getUserByMobile(normalizedMobile);
 
     if (!user || !user.passwordHash || !verifyPassword(user, password)) {
-      const error = new Error('Account or password is incorrect.');
-      error.statusCode = 401;
-      throw error;
+      throw createError('Account or password is incorrect.', 401);
     }
 
     return { user: safeUser(user), token: signToken({ userId: user.id, role: user.role || 'buyer' }) };
@@ -502,6 +561,15 @@ class AuthServiceClass {
     const normalizedMobile = normalizeMobile(mobile);
     const channel = normalizedEmail ? 'email' : 'phone';
     const identifier = normalizedEmail || normalizedMobile;
+    if (!identifier) {
+      throw createError('Enter your email address or mobile number.');
+    }
+    if (channel === 'email' && !isValidEmail(identifier)) {
+      throw createError('Enter a valid email address, e.g. you@example.com.');
+    }
+    if (channel === 'phone' && !isValidMobile(identifier)) {
+      throw createError(PHONE_HELP);
+    }
     const user = normalizedEmail
       ? await UserService.getUserByEmail(normalizedEmail)
       : await UserService.getUserByMobile(normalizedMobile);
@@ -550,18 +618,26 @@ class AuthServiceClass {
     const normalizedMobile = normalizeMobile(mobile);
     const channel = normalizedEmail ? 'email' : 'phone';
     const identifier = normalizedEmail || normalizedMobile;
+    if (!identifier) {
+      throw createError('Enter your email address or mobile number.');
+    }
+    if (channel === 'email' && !isValidEmail(identifier)) {
+      throw createError('Enter a valid email address, e.g. you@example.com.');
+    }
+    if (channel === 'phone' && !isValidMobile(identifier)) {
+      throw createError(PHONE_HELP);
+    }
+    if (!isValidCode(code)) {
+      throw createError('Enter the 6-digit reset code.');
+    }
     const record = otpStore.get(buildOtpKey(channel, identifier, 'reset'));
 
     if (!record || record.expiresAt < Date.now()) {
-      const error = new Error('Reset code expired. Request a new code.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Reset code expired. Request a new code.');
     }
 
     if (record.attempts >= MAX_OTP_ATTEMPTS) {
-      const error = new Error('Too many attempts. Request a new code.');
-      error.statusCode = 429;
-      throw error;
+      throw createError('Too many attempts. Request a new code.', 429);
     }
 
     record.attempts += 1;
@@ -570,32 +646,23 @@ class AuthServiceClass {
       : null;
 
     if (record.provider === 'twilio-verify' ? !verifiedByProvider : record.otp !== String(code || '').trim()) {
-      const error = new Error('Reset code is incorrect.');
-      error.statusCode = 400;
-      throw error;
+      throw createError('Reset code is incorrect.');
     }
 
     const errors = validatePassword(password);
     if (errors.length > 0) {
-      const error = new Error('Weak password');
-      error.statusCode = 400;
-      error.errors = errors;
-      throw error;
+      throw createError('Create a stronger password.', 400, errors);
     }
 
     const user = await UserService.getUserById(record.userId);
     if (!user) {
-      const error = new Error('User not found');
-      error.statusCode = 404;
-      throw error;
+      throw createError('User not found', 404);
     }
 
     const passwordHistory = user.passwordHistory || [];
     if (user.passwordHash) passwordHistory.push(user.passwordHash);
     if (passwordHistory.some(h => verifyPassword({ passwordHash: h }, password))) {
-      const error = new Error("Choose a password you haven't used before.");
-      error.statusCode = 400;
-      throw error;
+      throw createError("Choose a password you haven't used before.");
     }
 
     const updatedUser = await UserService.updateUser(user.id, {

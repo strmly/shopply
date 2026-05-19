@@ -24,9 +24,10 @@ class RedisClient {
       port: parseInt(process.env.REDIS_PORT) || 6379,
       password: process.env.REDIS_PASSWORD || undefined,
       db: parseInt(process.env.REDIS_DB) || 0,
+      lazyConnect: true,
       retryStrategy: (times) => {
-        const delay = Math.min(times * 50, 2000);
-        return delay;
+        if (times > 3) return null;
+        return Math.min(times * 50, 500);
       },
       maxRetriesPerRequest: 3,
     };
@@ -55,8 +56,14 @@ class RedisClient {
       return this.client;
     } catch (error) {
       console.error('Failed to connect to Redis:', error);
+      if (this.client) {
+        this.client.disconnect();
+        this.client = null;
+      }
       // Fall back to in-memory store if Redis unavailable
-      return this.createMockClient();
+      this.client = this.createMockClient();
+      this.isConnected = true;
+      return this.client;
     }
   }
 
